@@ -21,7 +21,7 @@
     Description       = 'Keen.Git provides Git command wrappers for simplified and structured usage in PowerShell.'
 
     # Minimum required PowerShell version
-    PowerShellVersion = '5.1'
+    PowerShellVersion = '7.0'
 
     <#
      # 🚀 Exported Components
@@ -30,6 +30,7 @@
     # Public function names (must match function names defined in scripts)
     FunctionsToExport = @(
         'Invoke-GitCheckout',
+        'Invoke-GitFetch',
         'Invoke-GitSync'
     )
 
@@ -40,6 +41,7 @@
     # Aliases that map to exported functions (user-friendly or shorthand commands)
     AliasesToExport   = @(
         'Git-Checkout',
+        'Git-Fetch',
         'Git-Sync'
     )
 
@@ -51,13 +53,15 @@
         PSData = @{
 
             # Keywords to improve discoverability (for PSGallery or documentation)
-            Tags = @(
+            Tags       = @(
                 'git',
                 'checkout',
                 'version-control',
                 'powershell',
                 'automation',
-                'cli'
+                'cli',
+                'fetch',
+                'sync'
             )
 
             # Licensing and source information
