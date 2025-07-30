@@ -2,27 +2,27 @@
 
 ### 1. Markdown Formatting for Code Snippets
 
-When writing code snippets in documentation, **ALWAYS** use proper Markdown syntax. Enclose all code snippets with:
+When writing code snippets in documentation, **ALWAYS** use proper Markdown syntax. Enclose all code blocks with:
 
-```
+````markdown
+```kotlin
 // ...
 ```
+````
 
-This ensures that the code is readable and properly formatted.
+This ensures consistent syntax highlighting and improves readability.
 
-### 2. Use of @property Tag for Public Variables
+### 2. Use of `@property` for Public Variables
 
-When documenting classes, **PREFER** using the `@property` tag to describe public variables, rather than documenting
-them within the class body.
+When documenting classes, **PREFER** using the `@property` tag to describe public variables instead of documenting them inline within the class body.
 
 ### 3. Preferred Use of Reference Links
 
-**PREFER** using reference links (e.g., [String]) over monospace formatting (e.g., `String`) when referencing types or
-other significant elements in the documentation.
+**PREFER** using reference-style links (e.g., `[String]`) over monospace formatting (e.g., `` `String` ``) when referring to types or other significant elements.
 
 ### 4. Usage Examples
 
-When providing usage examples in docstring comments, follow this syntax:
+When providing usage examples in docstring comments, follow this structure:
 
 ````kotlin
 /**
@@ -46,5 +46,5 @@ When providing usage examples in docstring comments, follow this syntax:
 fun foo(params) = elements.forEach(action)
 ````
 
-### Important Note:
-**Place examples before the `@tags`.** Examples of `@tags` include `@param`, `@return`, `@throws`, etc.
+> [!important]
+> **Place examples before the `@tags` section.** Common tags include `@param`, `@return`, `@throws`, etc.
