@@ -9,26 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - TBD
 
+## [0.0.3] – 2025-07-23
+
 ### ✨ Added
 
 - Introduced `CHANGELOG.md` following Keep a Changelog and SemVer standard.
-- Enhanced test logging in `keen.library` by enabling `useJUnitPlatform()`.
-- Added shared Java toolchain configuration:
-    - Introduced `JvmToolchain.kt` utility for setting a consistent Java version (Java 22).
-    - Applied the shared Java toolchain setup in the `keen.jvm` convention plugin for both Java and Kotlin compilers.
-- Added `kotest` as a dependency in version catalog (`libs.versions.toml`).
-- Introduced basic optimization interfaces and engine:
-    - `Feature<T, F>`: A generic representation with `map` and `flatMap`.
-    - `ScalarFeature`: A concrete implementation using a single `Double` value.
-    - `OptimizationEngine<F>`: Interface for optimizers with an `objectiveFunction`.
-    - `SimpleHillClimber`: A basic hill climbing implementation operating on `ScalarFeature`.
-
-### 🔧 Changed
-
-- Improved annotations and compiler configuration comments in `keen.kotlin` plugin for clarity.
-- Improved contributing guidelines in `README.md`, including references to `dev-resources/` and a clear summary of the Code of Conduct based on Contributor Covenant v2.1.
-- Upgraded Kotlin to `2.1.20` and updated badge in `README.md`.
-- Bumped CI to use Java 22 instead of Java 21.
+- Added `Keen.Git` PowerShell module for standardized Git operations.
+- Introduced `EnableGitUtilities.ps1` to load the `Keen.Git` module into the session, and `DisableGitUtilities.ps1` to unload it.
+- Added `Invoke-GitCheckout` wrapper for safer and validated Git branch checkout.
 
 ## [0.0.2.2] – 2025-04-30
 
