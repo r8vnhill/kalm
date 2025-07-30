@@ -1,6 +1,3 @@
-. $PSScriptRoot/../internal/Test-GitBranchExists.ps1
-. $PSScriptRoot/../internal/Get-CommandOrElse.ps1
-
 <#
 .SYNOPSIS
     Checks out a specified Git branch, creating a tracking branch if needed.
@@ -35,6 +32,8 @@ function Invoke-GitCheckout {
         [string[]] $ExtraArgs = @()
     )
     
+    . $PSScriptRoot/../internal/Get-CommandOrElse.ps1
+
     $git = Get-CommandOrElse -Command git -Else {
         throw '❌ Git is required to perform checkout operations.'
     }
@@ -81,6 +80,8 @@ function Get-GitCheckoutArgs {
         [ValidateNotNullOrEmpty()]
         [string] $Remote = 'origin'
     )
+
+    . $PSScriptRoot/../internal/Test-GitBranchExists.ps1
 
     if (Test-GitBranchExists -BranchName $BranchName) {
         Write-Verbose "Branch '$BranchName' exists locally."
