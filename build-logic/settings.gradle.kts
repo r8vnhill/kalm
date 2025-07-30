@@ -1,55 +1,74 @@
 /*
- * Copyright (c) 2025, Ignacio Slater M.
+ * Copyright (c) 2025,
  * 2-Clause BSD License.
+ *
+ * This is the *included build* that produces convention/precompiled script plugins.
+ * It is its own Gradle build, so it needs its own plugin/dependency repositories and its own toolchain resolver plugin.
  */
 
-// region ROOT PROJECT NAME
-// This name appears in IDEs, build output, and when publishing artifacts.
 rootProject.name = "build-logic"
-// endregion
 
-// region PLUGIN RESOLUTION MANAGEMENT
-// Controls how Gradle locates plugins declared in `plugins {}` blocks,
-// such as those in convention plugins or build logic scripts.
+// === PLUGIN RESOLUTION MANAGEMENT ===
+// Where Gradle resolves plugins declared in `plugins {}` blocks *for this build*.
 pluginManagement {
     repositories {
-        gradlePluginPortal() // Primary source for official and community Gradle plugins
-        mavenCentral()       // Fallback for plugins published to Maven Central
+        gradlePluginPortal() // Main source of Gradle plugins
+        mavenCentral() // Fallback for plugins published to Maven Central
+    }
+
+    // Read the version from gradle.properties (falls back to 1.0.0)
+    val foojayResolverVersion: String = providers
+        .gradleProperty("version.foojay.resolver")
+        .orElse("1.0.0")
+        .get()
+
+    // Declare the settings plugin and its version here
+    plugins {
+        id("org.gradle.toolchains.foojay-resolver-convention") version foojayResolverVersion
     }
 }
-// endregion
 
-// region DEPENDENCY RESOLUTION MANAGEMENT
-
-// Configures central repository resolution and version catalogs.
-// Ensures consistent dependency resolution across all modules.
-@Suppress("UnstableApiUsage") // Needed for `repositoriesMode`, which is still incubating
+// === DEPENDENCY RESOLUTION ===
+// Centralize repositories and version catalogs for *this* build.
+//
+// We choose FAIL_ON_PROJECT_REPOS to forbid repositories declared elsewhere.
+// This is stricter than PREFER_SETTINGS and improves reproducibility.
+@Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
-    // Prefer repositories declared here over those declared in individual build scripts.
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 
     repositories {
         gradlePluginPortal()
         mavenCentral()
+
+        // Repository content filters to reduce accidental lookups
+        mavenCentral {
+            content {
+                // Block plugin groups that should come from the plugin portal
+                excludeGroupByRegex("org\\.gradle\\..*")
+            }
+        }
     }
 
-    // Define a shared version catalog named `libs`, making dependency and plugin versions consistent.
+    // Use the shared version catalog from the root build to keep versions aligned.
     versionCatalogs {
         create("libs") {
             from(files("../gradle/libs.versions.toml"))
         }
     }
 }
-// endregion
 
-// region TOOLCHAIN RESOLUTION
-
-// Toolchain resolution support via Foojay API
-//
-// Adds automatic resolution of JDKs from Foojay when using toolchains.
-// Recommended in clean environments or CI where the JDK must be downloaded.
-// See: https://docs.gradle.org/current/userguide/toolchains.html#sub:download_repositories
+// === TOOLCHAIN RESOLUTION ===
+// Add Foojay resolver here so this included build can auto-resolve JDKs for its own toolchain usage, independent of the
+// root build.
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+    id("org.gradle.toolchains.foojay-resolver-convention")
 }
-// endregion
+
+// ===  BUILD CACHE ===
+// Centralized cache config improves local + CI performance and reproducibility.
+buildCache {
+    local {
+        isEnabled = true
+    }
+}

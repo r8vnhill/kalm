@@ -1,43 +1,41 @@
 [versions]
-kotlin = "2.2.0-RC"
-kotlin-bin-compatibility-validator = "0.17.0"
+arrow = "2.1.2"
 detekt = "1.23.8"
-kotest = "6.0.0.M4"
-kotest-framework-datatest = "5.9.1"
+kotest = "6.0.0.M8"
 kotest-arrow = "2.0.0"
-arrow = "2.1.0"
+kotlin = "2.2.20-Beta2"
+kotlin-bin-compatibility-validator = "0.18.1"
+dokka = "2.0.0"
 
 [libraries]
-# Core Kotlin Gradle plugin (required for all Kotlin projects)
-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
-
 # Arrow for functional programming in Kotlin
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
-
 # Optional formatting plugin for Detekt (requires detekt CLI/tooling)
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
-
+kotest-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version.ref = "kotest-arrow" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
-kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest-framework-datatest" }
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
-kotest-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version.ref = "kotest-arrow" }
+# Core Kotlin Gradle plugin (required for all Kotlin projects)
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 [plugins]
-# Plugin to check binary compatibility of public APIs
-kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-bin-compatibility-validator" }
-
 # Static analysis plugin for Kotlin codebases
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+# Plugin to check binary compatibility of public APIs
+kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-bin-compatibility-validator" }
+# Dokka plugin for generating documentation
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 
 [bundles]
+arrow = [
+    "arrow-core",
+]
 kotest = [
+    "kotest-arrow",
     "kotest-assertions-core",
-#    "kotest-framework-datatest",
     "kotest-framework-engine",
     "kotest-property",
     "kotest-runner-junit5",
-    "kotest-arrow"
 ]
-arrow = ["arrow-core"]

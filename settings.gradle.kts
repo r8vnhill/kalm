@@ -1,49 +1,64 @@
 /*
- * Copyright (c) 2025, Ignacio Slater M.
+ * Copyright (c) 2025
  * 2-Clause BSD License.
+ *
+ * === Purpose ===
+ * Centralizes project-wide settings that affect *all* included builds and subprojects:
+ *  - Plugin resolution (where plugins come from + versions for settings plugins)
+ *  - Dependency resolution policy and repositories
+ *  - Toolchain resolver (foojay) at settings scope
+ *  - Build cache configuration
+ *  - Project structure (root name + modules)
  */
-// region PLUGIN MANAGEMENT
 
-// Include local builds that define convention and build logic plugins.
-//
-// This enables the use of precompiled script plugins (e.g., `keen.reproducible`) throughout the project without needing
-// to publish them to a remote repository.
+// === FEATURE PREVIEWS ===
+// Enables type-safe project accessors so you can reference modules as `projects.core` instead of string paths in build
+// scripts. This only changes the generated accessors; it’s safe to enable.
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
+// === PLUGIN MANAGEMENT ===
 pluginManagement {
-    includeBuild("build-logic") // Reusable precompiled Gradle plugins for project modules
+    // Include the build that provides your precompiled/convention plugins.
+    includeBuild("build-logic")
 
     repositories {
-        mavenCentral()                    // For dependencies from Maven Central
-        gradlePluginPortal()              // For resolving external Gradle plugins
+        gradlePluginPortal()
+        mavenCentral()
+    }
+
+    // Version the *settings-level* plugin(s) here so the top-level `plugins {}` can be versionless.
+    // Allows centralizing versions via gradle.properties.
+    val foojayResolverVersion = providers
+        .gradleProperty("version.foojay.resolver")
+        .orElse("1.0.0")
+        .get()
+
+    plugins {
+        id("org.gradle.toolchains.foojay-resolver-convention") version foojayResolverVersion
     }
 }
 
-// endregion
-
-@Suppress("UnstableApiUsage") // Incubating API used for repository mode and dependency resolution config
+// === DEPENDENCY RESOLUTION MANAGEMENT (for subprojects) ===
+// - Controls repositories for *project dependencies* (not plugins).
+// - `FAIL_ON_PROJECT_REPOS` ensures modules cannot add adhoc repositories, improving reproducibility.
+@Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
-    repositoriesMode = RepositoriesMode.PREFER_SETTINGS // Forces using only the repositories declared here
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
 
     repositories {
         mavenCentral()
     }
 }
 
-// region TOOLCHAIN RESOLUTION
-
-// Toolchain resolution support via Foojay API
-//
-// Adds automatic resolution of JDKs from Foojay when using toolchains.
-// Recommended in clean environments or CI where the JDK must be downloaded.
-// See: https://docs.gradle.org/current/userguide/toolchains.html#sub:download_repositories
+// === SETTINGS PLUGINS ===
+// Foojay resolver lets Gradle automatically provision JDKs for toolchains on CI/clean machines.
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+    id("org.gradle.toolchains.foojay-resolver-convention")
 }
-// endregion
 
-// Root project name used in logs and outputs
-rootProject.name = "keen-op"
-
-// Include project modules
-include(":core")
-include(":examples")
-include(":benchmark")
+// === BUILD CACHE ===
+buildCache {
+    local {
+        isEnabled = true
+    }
+}
