@@ -7,7 +7,7 @@
     RootModule        = 'Keen.Git.psm1'
 
     # Version of the module (semantic versioning recommended)
-    ModuleVersion     = '0.2.0'
+    ModuleVersion     = '0.3.0'
 
     # Unique identifier for the module (generated using [guid]::NewGuid())
     GUID              = '30cd722f-ccb0-46a3-a1da-d09194ec5954'
