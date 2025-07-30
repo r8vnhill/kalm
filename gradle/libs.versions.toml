@@ -1,32 +1,30 @@
 [versions]
 arrow = "2.1.2"
+ben-manes-versions = "0.52.0"
 detekt = "1.23.8"
-kotest = "6.0.0.M8"
+dokka = "2.0.0"
+kotest = "6.0.0.M9"
 kotest-arrow = "2.0.0"
 kotlin = "2.2.20-Beta2"
 kotlin-bin-compatibility-validator = "0.18.1"
-dokka = "2.0.0"
+version-catalog-update = "1.0.0"
 
 [libraries]
-# Arrow for functional programming in Kotlin
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
-# Optional formatting plugin for Detekt (requires detekt CLI/tooling)
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 kotest-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version.ref = "kotest-arrow" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
-# Core Kotlin Gradle plugin (required for all Kotlin projects)
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 
 [plugins]
-# Static analysis plugin for Kotlin codebases
+ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
-# Plugin to check binary compatibility of public APIs
-kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-bin-compatibility-validator" }
-# Dokka plugin for generating documentation
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-bin-compatibility-validator" }
+version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "version-catalog-update" }
 
 [bundles]
 arrow = [
