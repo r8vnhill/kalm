@@ -13,11 +13,11 @@ import cl.ravenhill.keen.repr.Solution
 import cl.ravenhill.keen.util.InequalityType
 import kotlin.math.pow
 
-val sphereObjective = Objective { solution: Solution<Double> ->
+public val sphereObjective: Objective<Double> = Objective { solution: Solution<Double> ->
     solution.sumOf { it.pow(2) }
 }
 
-fun sphereProblem(constraints: List<Constraint<Double>> = listOf()) = Problem(
+public fun sphereProblem(constraints: List<Constraint<Double>> = listOf()): Problem<Double> = Problem(
     objective = sphereObjective,
     constraints = constraints,
 )
@@ -45,7 +45,7 @@ fun sphereProblem(constraints: List<Constraint<Double>> = listOf()) = Problem(
  *   Defaults to 1.0.
  * @return An [InequalityConstraint] that checks if the point lies within the specified sphere.
  */
-fun sphereConstraint(dims: Int, radius: Double = 1.0): InequalityConstraint<Double> = InequalityConstraint(
+public fun sphereConstraint(dims: Int, radius: Double = 1.0): InequalityConstraint<Double> = InequalityConstraint(
     left = { it.take(dims).sumOf { x -> x.pow(2) } },
     right = { radius.pow(2) },
     operator = InequalityType.LESS_THAN_OR_EQUAL

@@ -65,4 +65,4 @@ buildCache {
     }
 }
 
-include(":core", ":examples", ":benchmark")
+include(":dependency-constraints", ":core", ":examples", ":benchmark")

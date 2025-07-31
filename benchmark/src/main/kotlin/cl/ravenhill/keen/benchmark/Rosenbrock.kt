@@ -24,7 +24,7 @@ import kotlin.math.pow
  *
  * @return An [Objective] instance representing the Rosenbrock function.
  */
-fun rosenbrock(): Objective<Double> = Objective { solution ->
+public fun rosenbrock(): Objective<Double> = Objective { solution ->
     solution.zipWithNext { x, y ->
         100 * (y - x.pow(2)).pow(2) + (1 - x).pow(2)
     }.sum()
@@ -38,5 +38,5 @@ fun rosenbrock(): Objective<Double> = Objective { solution ->
  * @param constraints A collection of [Constraint]s to enforce on candidate solutions.
  * @return A [Problem] configured with the Rosenbrock objective and the given constraints.
  */
-fun rosenbrockProblem(constraints: Collection<Constraint<Double>> = listOf()) =
+public fun rosenbrockProblem(constraints: Collection<Constraint<Double>> = listOf()): Problem<Double> =
     Problem(rosenbrock(), constraints = constraints)

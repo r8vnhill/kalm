@@ -1,6 +1,5 @@
 package utils
 
-import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -9,96 +8,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import utils.ProviderFactoryRef.Companion.DEFAULT_JAVA_VERSION
 import utils.ProviderFactoryRef.Companion.PROP_JAVA_DEFAULT
 import utils.ProviderFactoryRef.Companion.VALID_RANGE
-
-/**
- * Utility object to configure consistent Java/Kotlin toolchain versions in Gradle builds.
- *
- * Provides extension functions to simplify and unify how the Java version is set for both [JavaToolchainSpec] and
- * [KotlinJvmProjectExtension].
- *
- * Enables both eager and lazy configuration (via [Provider]) and adds input validation.
- */
-object JvmToolchain {
-
-    /**
-     * Logger for this utility object.
-     */
-    private val logger = Logging.getLogger(JvmToolchain::class.java)
-
-    /**
-     * Sets the Java language version for a [JavaToolchainSpec] using an eager integer value.
-     *
-     * @param version The Java version to use (e.g., 17, 21, 22).
-     * @throws IllegalArgumentException If the version is not in the valid range (8–99).
-     */
-    fun JavaToolchainSpec.setDefaultJavaVersion(version: Int) {
-        validate(version)
-        languageVersion.set(JavaLanguageVersion.of(version))
-    }
-
-    /**
-     * Sets the Java language version for a [JavaToolchainSpec] using a [Provider]-wrapped value.
-     *
-     * This form supports lazy evaluation and configuration caching.
-     *
-     * @param versionProvider A provider of the Java version to use (e.g., 17, 21, 22).
-     */
-    fun JavaToolchainSpec.setDefaultJavaVersion(versionProvider: Provider<Int>) {
-        languageVersion.set(versionProvider.map { version ->
-            validate(version)
-            JavaLanguageVersion.of(version)
-        })
-    }
-
-    /**
-     * Sets the Java language version for the Kotlin JVM toolchain using an eager integer value.
-     *
-     * @receiver The [KotlinJvmProjectExtension] to configure.
-     * @param version The Java version to use (e.g., 17, 21, 22).
-     * @throws IllegalArgumentException If the version is not in the valid range (8–99).
-     */
-    fun KotlinJvmProjectExtension.setDefaultJavaVersion(version: Int) {
-        validate(version)
-        jvmToolchain {
-            languageVersion.set(JavaLanguageVersion.of(version))
-        }
-    }
-
-    /**
-     * Sets the Java language version for the Kotlin JVM toolchain using a [Provider]-wrapped value.
-     *
-     * This form supports lazy evaluation and configuration caching.
-     *
-     * @receiver The [KotlinJvmProjectExtension] to configure.
-     * @param versionProvider A provider of the Java version to use (e.g., 17, 21, 22).
-     */
-    fun KotlinJvmProjectExtension.setDefaultJavaVersion(versionProvider: Provider<Int>) {
-        jvmToolchain {
-            languageVersion.set(versionProvider.map { v ->
-                validate(v)
-                JavaLanguageVersion.of(v)
-            })
-        }
-    }
-
-    /**
-     * Validates that the given Java version is within an acceptable range (8–99).
-     *
-     * Prints a warning if the version is less than 17, recommending LTS versions.
-     *
-     * @throws IllegalArgumentException If the version is outside the valid range.
-     */
-    private fun validate(version: Int) {
-        require(version in 8..99) {
-            "Unsupported Java version: $version. Expected a major version (e.g., 17, 21, 22)."
-        }
-        if (version < 17) {
-            logger.warn(
-                "Configuring toolchain to Java $version — consider using an LTS (17/21/22+) unless necessary."
-            )
-        }
-    }
-}
 
 /**
  * Lightweight facade over Gradle's [ProviderFactory] to resolve configuration properties as [Provider]s, plus a
@@ -205,6 +114,50 @@ fun ProviderFactory.resolveDefaultJavaVersion(): Provider<Int> {
             // Delegate to the real ProviderFactory for property lookup, keeping laziness intact.
             return this@resolveDefaultJavaVersion.gradleProperty(name)
         }
-    }
-        .resolveDefaultJavaVersion()
+    }.resolveDefaultJavaVersion()
 }
+
+/**
+ * Configure this [JavaToolchainSpec] with the default Java *major* version resolved from [ProviderFactory].
+ *
+ * The version is obtained via `providers.resolveDefaultJavaVersion()` which:
+ * - Reads the Gradle property `"keen.java.default"` when present.
+ * - Lazily falls back to the framework default (e.g., 22) when absent.
+ *
+ * This helper preserves laziness and is compatible with configuration cache.
+ *
+ * ## Usage:
+ * ```kotlin
+ * java.toolchain {
+ *   setDefaultJavaVersion(providers)
+ * }
+ * ```
+ *
+ * @receiver the [JavaToolchainSpec] being configured.
+ * @param providers the Gradle [ProviderFactory] used to resolve the default Java version lazily.
+ */
+fun JavaToolchainSpec.setDefaultJavaVersion(providers: ProviderFactory) =
+    setLanguageVersion(providers.resolveDefaultJavaVersion())
+
+/**
+ * Configure the Kotlin JVM toolchain with the default Java *major* version resolved from [ProviderFactory].
+ *
+ * The version is obtained via `providers.resolveDefaultJavaVersion()` which:
+ * - Reads the Gradle property `"keen.java.default"` when present.
+ * - Lazily falls back to the framework default (e.g., 22) when absent.
+ *
+ * Applies the resolved version to `kotlin.jvmToolchain { languageVersion.set(...) }`,
+ * preserving laziness and remaining configuration-cache friendly.
+ *
+ * ## Usage:
+ * ```kotlin
+ * kotlin {
+ *   setDefaultJavaVersion(providers)
+ * }
+ * ```
+ *
+ * @receiver the [KotlinJvmProjectExtension] to configure.
+ * @param providers the Gradle [ProviderFactory] used to resolve the default Java version lazily.
+ */
+fun KotlinJvmProjectExtension.setDefaultJavaVersion(providers: ProviderFactory) =
+    setLanguageVersion(providers.resolveDefaultJavaVersion())

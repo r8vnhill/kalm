@@ -1,39 +1,82 @@
+@file:Suppress("SpellCheckingInspection")
+
 /*
- * Copyright (c) 2025, Ignacio Slater M.
- * 2-Clause BSD License.
+ * =======================================
+ * keen.jvm — JVM/Kotlin convention plugin
+ * =======================================
+ * This convention plugin configures:
+ *  1. Java and Kotlin toolchains from a single property-based source
+ *  2. Kotlin bytecode (jvmTarget) based on the requested Java version
+ *  3. Common compiler flags for experimental APIs and context parameters
+ *
+ * --------
+ * Behavior
+ * --------
+ *  - Reads the desired Java version lazily via `providers.resolveDefaultJavaVersion()`
+ *  - Applies it to both Java and Kotlin toolchains
+ *  - Derives the Kotlin `jvmTarget` from the Java version
+ *  - Allows enabling warnings-as-errors via -Pkotlin.warningsAsErrors
+ *
+ * -----
+ * Usage
+ * -----
+ *  - Set `keen.java.default` in gradle.properties or via CLI to override the default Java version
+ *  - Example: `./gradlew build -Pkeen.java.default=21`
  */
 
-import utils.JvmToolchain.setDefaultJavaVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import utils.resolveDefaultJavaVersion
+import utils.setDefaultJavaVersion
 
-// region SHARED KOTLIN BUILD CONFIGURATION
-// Apply shared Kotlin build configuration via convention plugin.
 plugins {
-    kotlin("jvm")
+    kotlin("jvm") // Apply the Kotlin JVM plugin to enable JVM compilation
 }
-// endregion
 
-// region JAVA TOOLCHAIN
+// Lazily resolve the default Java version as a Provider<Int> (e.g., 17, 21, 22)
+val defaultJava: Provider<Int> = providers.resolveDefaultJavaVersion()
 
-// Configure Java toolchain for consistency across environments.
-//
-// Ensures that both Java and Kotlin compilers use the same Java version, as defined in the shared [JvmToolchain]
-// utility.
+// ------------------------
+// Configure Java toolchain
+// ------------------------
 java.toolchain {
-    setDefaultJavaVersion() // Applies the default Java version (e.g., Java 22)
+    // Apply the default Java version to the Java toolchain
+    // Using providers allows lazy evaluation and configuration-cache safety
+    setDefaultJavaVersion(providers)
 }
 
+// ---------------------------------------
+// Configure Kotlin toolchain and compiler
+// ---------------------------------------
 kotlin {
-    jvmToolchain {
-        setDefaultJavaVersion() // Applies the same version for Kotlin JVM compilation
-    }
+    // Apply the same default Java version to the Kotlin JVM toolchain
+    setDefaultJavaVersion(providers)
 
-    // Add compiler options
     compilerOptions {
-        @Suppress("SpellCheckingInspection")
-        freeCompilerArgs.addAll(
-            "-opt-in=kotlin.RequiresOptIn",     // Enable opt-in annotations for experimental APIs
-            "-Xcontext-parameters"              // Enable support for context parameters
-        )
+        // Map the requested Java version to a supported Kotlin JVM target
+        // Fallback to JVM_1_8 if below 17 to ensure compatibility
+        val requestedTarget = defaultJava.map { v ->
+            when {
+                v >= 22 -> JvmTarget.JVM_22
+                v == 21 -> JvmTarget.JVM_21
+                v == 20 -> JvmTarget.JVM_20
+                v == 19 -> JvmTarget.JVM_19
+                v == 18 -> JvmTarget.JVM_18
+                v == 17 -> JvmTarget.JVM_17
+                else    -> JvmTarget.JVM_1_8
+            }
+        }
+        jvmTarget.set(requestedTarget)
+
+        // Opt into experimental Kotlin APIs
+        optIn.add("kotlin.RequiresOptIn")
+
+        // Enable context parameters (still requires X-flag as of Kotlin 2.2.x)
+        freeCompilerArgs.add("-Xcontext-parameters")
+
+        // Configure warnings-as-errors via a Gradle property (-Pkotlin.warningsAsErrors)
+        val wError = providers.gradleProperty("kotlin.warningsAsErrors")
+            .map(String::toBoolean)
+            .orElse(false)
+        allWarningsAsErrors.set(wError)
     }
 }
-// endregion
