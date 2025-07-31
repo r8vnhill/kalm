@@ -98,6 +98,8 @@ tasks.withType<DependencyUpdatesTask>().configureEach {
     outputFormatter = "json,plain"
     outputDir = layout.buildDirectory.dir("dependencyUpdates").get().asFile.toString()
     reportfileName = "report"
+
+    notCompatibleWithConfigurationCache("This task inspects configurations, breaking configuration cache.")
 }
 
 // === Dependency maintenance umbrella task ===

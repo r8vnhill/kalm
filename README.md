@@ -32,4 +32,3 @@ cd keen-op
 ---
 
 *This project is maintained by [Ignacio Slater-Muñoz](https://www.ravenhill.cl).*
-
