@@ -3,25 +3,32 @@ function Sync-BranchWithUpstream {
     [OutputType([string])]
     param (
         [Parameter(Mandatory)]
-        [System.Management.Automation.CommandInfo] $GitCommand,
+        [System.Management.Automation.CommandInfo]
+        $GitCommand,
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string] $CurrentBranch,
+        [string]
+        $CurrentBranch,
 
         [ValidateNotNullOrEmpty()]
-        [string] $RepositoryPath = (Get-Location).Path,
+        [string]
+        $RepositoryPath = (Get-Location).Path,
 
         [ValidateNotNullOrEmpty()]
-        [string] $UpstreamRef,
+        [string]
+        $UpstreamRef,
 
         [ValidateNotNullOrEmpty()]
-        [string] $Remote = 'origin',
+        [string]
+        $Remote = 'origin',
 
         [ValidateSet('FFOnly', 'Merge', 'Rebase')]
-        [string] $Mode = 'Merge',
+        [string]
+        $Mode = 'Merge',
 
-        [switch] $PassThru
+        [switch]
+        $PassThru
     )
 
     $gitArgs = @('-C', $RepositoryPath)
@@ -36,28 +43,20 @@ function Sync-BranchWithUpstream {
             -DefaultBranch $CurrentBranch `
             -DefaultRemote $Remote
 
-        $gitArgs += @(
-            'pull'
-            $modeMap[$Mode]
-            $up.Remote
-            $up.Branch
-        )
+        $gitArgs += @('pull', $modeMap[$Mode], $up.Remote, $up.Branch)
 
     } else {
-        $gitArgs += @(
-            'merge'
-            $UpstreamRef
-        )
+        $gitArgs += @('merge', $UpstreamRef)
     }
 
     $cmdPreview = "git $($gitArgs -join ' ')"
     if (-not $PSCmdlet.ShouldProcess("$RepositoryPath", $cmdPreview)) { return }
 
     Write-Verbose "🔀 Sync mode: $Mode | Target: $UpstreamRef | Branch: $CurrentBranch"
-    $output = & $GitCommand @gitArgs 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "❌ git sync failed (exit $LASTEXITCODE). Command: $cmdPreview`n$output"
-    }
+    $output = Invoke-GitSafely `
+        -Git $GitCommand `
+        -Arguments $gitArgs `
+        -Context "Sync branch '$CurrentBranch' with upstream '$UpstreamRef'"
 
     if ($PassThru) { $output }
 }

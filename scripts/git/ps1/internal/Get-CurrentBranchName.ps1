@@ -66,13 +66,16 @@ function Get-CurrentBranchName {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [System.Management.Automation.CommandInfo] $GitCommand,
+        [System.Management.Automation.CommandInfo]
+        $GitCommand,
 
         [ValidateNotNullOrEmpty()]
-        [string] $RepositoryPath = (Get-Location).Path,
+        [string]
+        $RepositoryPath = (Get-Location).Path,
 
         [ValidateSet('Error', 'Name', 'Sha', 'Null')]
-        [string] $DetachedBehavior = 'Error',
+        [string]
+        $DetachedBehavior = 'Error',
 
         [switch] $EnsureGitRepository,
 
@@ -83,6 +86,9 @@ function Get-CurrentBranchName {
     # auto-detection).
     if (-not $SkipGitCommandCheck -and -not $GitCommand) {
         $GitCommand = Get-Command git -ErrorAction SilentlyContinue
+        if (-not $GitCommand) {
+            throw '❌ Git is required to determine the current branch.'
+        }
         if (-not $GitCommand) {
             throw '❌ Git is required to determine the current branch.'
         }
@@ -169,12 +175,15 @@ function Script:Get-CurrentBranchNameInternal {
         [string] $RepositoryPath,
 
         [ValidateSet('Error', 'Name', 'Sha', 'Null')]
-        [string] $DetachedBehavior = 'Error'
+        [string]
+        $DetachedBehavior = 'Error'
     )
 
     # Attempt to resolve the current branch via symbolic ref.
     # --short trims refs/heads/, -q suppresses errors for non-symbolic HEAD.
     Write-Verbose "🔎 Reading branch (symbolic-ref) in '$RepositoryPath'..."
+
+    # Attempt to get the symbolic branch name
     $branch = & $GitCommand -C $RepositoryPath symbolic-ref --short -q HEAD 2>$null
 
     # Success path: exit code 0 and a non-empty branch name → return trimmed value.

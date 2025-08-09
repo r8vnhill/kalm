@@ -48,21 +48,14 @@ function Invoke-GitSync {
         -RepositoryPath $RepositoryPath `
         -EnsureGitRepository
 
-    $detected = $null
-    if (-not $UpstreamRef) {
-        $detected = & $git `
-            -C $RepositoryPath rev-parse `
-            --abbrev-ref `
-            --symbolic-full-name '@{u}' 2>$null
-        if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($detected)) {
-            $UpstreamRef = $detected.Trim()
-            Write-Verbose "🔎 Detected upstream: $UpstreamRef"
-        }
-    }
-
-    $hadConfiguredUpstream = -not [string]::IsNullOrWhiteSpace($detected)
-    $UpstreamRef ??= "$Remote/$currentBranch"
-    if (-not $hadConfiguredUpstream) {
+    $hadConfiguredUpstream = $false
+    try {
+        $detected = Get-UpstreamRef -RepositoryPath $RepositoryPath -Git $git
+        $hadConfiguredUpstream = $true
+        $UpstreamRef = $detected
+        Write-Verbose "🔎 Detected upstream: $UpstreamRef"
+    } catch [System.InvalidOperationException] {
+        $UpstreamRef ??= "$Remote/$currentBranch"
         Write-Verbose "ℹ️ No upstream configured; falling back to '$UpstreamRef'."
     }
 

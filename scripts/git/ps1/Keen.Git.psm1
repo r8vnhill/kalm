@@ -1,52 +1,42 @@
-# Keen.Git.psm1 - Module Entry Point for Keen Git Utilities
-# 
-# This script dynamically loads all internal and public function scripts from the
-# 'internal/' and 'public/' directories.
-# It enables modular, extensible, and maintainable organization of the module's
-# functionality.
+#Requires -Version 7.0
+Set-StrictMode -Version Latest
+Write-Verbose "Initializing Keen.Git module..."
 
-# ────────────────────────────────────────────────────────────────────────────────────────
-# 🛠️ Load Internal (Private) Functions
-# These scripts contain helper logic or internal utilities that are NOT exposed
-# to users via exported functions or aliases.
-# Used internally by public commands.
-# ────────────────────────────────────────────────────────────────────────────────────────
+# Small helper that ONLY returns files to load. It does NOT dot‑source.
+function Get-ModuleScriptFiles {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet('internal', 'public')]
+        [string] $Subfolder
+    )
 
-$internalDir = Join-Path -Path $PSScriptRoot -ChildPath 'internal'
+    $root = Join-Path $PSScriptRoot $Subfolder
+    if (-not (Test-Path -LiteralPath $root -PathType Container)) {
+        Write-Verbose "No '$Subfolder' folder at $root (skipping)."
+        return @()  # keep callers simple
+    }
 
-# Check if the internal directory exists before attempting to load
-if (Test-Path $internalDir) {
-    $internalScripts = Get-ChildItem -Path $internalDir -Filter '*.ps1' -File
+    Get-ChildItem -Path $root -Recurse -File -Filter '*.ps1' |
+        Sort-Object FullName
+}
 
-    # Load internal scripts in alphabetical order to ensure predictable resolution
-    foreach ($script in $internalScripts | Sort-Object Name) {
-        try {
-            . $script.FullName
-            Write-Verbose "✅ Imported internal: $($script.Name)"
-        } catch {
-            Write-Warning "⚠️ Failed to import internal script $($script.Name): $_"
-        }
+# Load both trees with the same logic; keep dot‑sourcing in MODULE scope.
+foreach ($file in (Get-ModuleScriptFiles -Subfolder 'internal')) {
+    try {
+        Write-Verbose "Dot-sourcing (internal): $($file.FullName)"
+        $null = . $file.FullName
+    } catch {
+        throw "Error importing internal script '{0}': {1}" `
+            -f $($file.FullName), $($_.Exception.Message)
     }
 }
 
-# ────────────────────────────────────────────────────────────────────────────────────────
-# 📣 Load Public (Exported) Functions
-# These scripts define the public interface of the module.
-# Their functions should be explicitly listed in the module manifest
-# (`FunctionsToExport`) and may have corresponding aliases in `AliasesToExport`.
-# ────────────────────────────────────────────────────────────────────────────────────────
-
-$publicDir = Join-Path -Path $PSScriptRoot -ChildPath 'public'
-
-# Get all public script files and stop on error if directory is missing or unreadable
-$publicScripts = Get-ChildItem -Path $publicDir -Filter '*.ps1' -File -ErrorAction Stop
-
-# Load public scripts in alphabetical order for consistency
-foreach ($script in $publicScripts | Sort-Object Name) {
+foreach ($file in (Get-ModuleScriptFiles -Subfolder 'public')) {
     try {
-        . $script.FullName
-        Write-Verbose "✅ Imported public: $($script.Name)"
+        Write-Verbose "Dot-sourcing (public): $($file.FullName)"
+        $null = . $file.FullName
     } catch {
-        Write-Warning "⚠️ Failed to import public script $($script.Name): $_"
+        throw "Error importing public script '$($file.FullName)': $($_.Exception.Message)"
     }
 }
