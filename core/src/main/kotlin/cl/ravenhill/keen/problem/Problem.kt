@@ -52,12 +52,12 @@ import cl.ravenhill.keen.problem.constrained.Constraint
  * @property objectives The non-empty collection of objective functions to be optimized.
  * @property constraints The constraints that candidate solutions must satisfy.
  */
-interface Problem<T> {
+public interface Problem<T> {
 
-    val objectives: NonEmptyList<Objective<T>>
-    val constraints: Collection<Constraint<T>>
+    public val objectives: NonEmptyList<Objective<T>>
+    public val constraints: Collection<Constraint<T>>
 
-    companion object {
+    public companion object {
         /**
          * Creates a [Problem] from a non-empty collection of objectives.
          *
@@ -65,10 +65,10 @@ interface Problem<T> {
          * @param constraints Optional constraints that restrict the solution space.
          * @return A new [Problem] instance.
          */
-        operator fun <T> invoke(
+        public operator fun <T> invoke(
             objectives: NonEmptyList<Objective<T>>,
             constraints: Collection<Constraint<T>> = listOf()
-        ) = object : Problem<T> {
+        ): Problem<T> = object : Problem<T> {
             override val objectives = objectives
             override val constraints = constraints
         }
@@ -81,10 +81,10 @@ interface Problem<T> {
          * @param constraints Optional constraints to be applied to the problem.
          * @return A new [Problem] instance.
          */
-        operator fun <T> invoke(
+        public operator fun <T> invoke(
             objective: Objective<T>,
             vararg objectives: Objective<T>,
             constraints: Collection<Constraint<T>> = listOf()
-        ) = Problem(nonEmptyListOf(objective, *objectives), constraints)
+        ): Problem<T> = Problem(nonEmptyListOf(objective, *objectives), constraints)
     }
 }

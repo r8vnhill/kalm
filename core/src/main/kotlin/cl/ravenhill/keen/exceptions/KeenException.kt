@@ -8,4 +8,4 @@ package cl.ravenhill.keen.exceptions
 /**
  * Marker interface for all Keen exceptions.
  */
-interface KeenException
+public interface KeenException

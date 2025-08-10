@@ -24,7 +24,7 @@ import cl.ravenhill.keen.repr.Solution
  *
  * @param T The type of the representation stored in the [Solution].
  */
-fun interface Objective<T> : (Solution<T>) -> Double {
+public fun interface Objective<T> : (Solution<T>) -> Double {
 
     /**
      * Evaluates the given [solution] and returns its objective value.

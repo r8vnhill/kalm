@@ -5,5 +5,5 @@
 
 package cl.ravenhill.keen.exceptions
 
-class InvalidThresholdException(should: String, threshold: Double) :
+public class InvalidThresholdException(should: String, threshold: Double) :
     Exception("Threshold should $should, but was $threshold"), KeenException

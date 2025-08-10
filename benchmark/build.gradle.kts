@@ -16,11 +16,3 @@ dependencies {
     api(projects.core)
     testImplementation(libs.bundles.kotest)
 }
-
-/*
- * Enforce explicit API for a library (recommended when stabilizing the API).
- * This forces public/protected declarations to be explicitly marked (visibility, return types).
- */
-kotlin {
-    explicitApi()
-}

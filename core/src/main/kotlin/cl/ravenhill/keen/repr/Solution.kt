@@ -58,16 +58,16 @@ import cl.ravenhill.keen.problem.constrained.Constraint
  * @param T The type of values stored in the solution.
  * @see DelegatedSolution
  */
-interface Solution<T> : List<T> {
+public interface Solution<T> : List<T> {
 
-    companion object {
+    public companion object {
         /**
          * Creates a [Solution] from a list of values.
          *
          * @param values The list of values to wrap.
          * @return A [Solution] instance.
          */
-        operator fun <T> invoke(values: List<T>): Solution<T> = DelegatedSolution(values)
+        public operator fun <T> invoke(values: List<T>): Solution<T> = DelegatedSolution(values)
 
         /**
          * Creates a [Solution] from a variable number of values.
@@ -75,7 +75,7 @@ interface Solution<T> : List<T> {
          * @param values The values to wrap.
          * @return A [Solution] instance.
          */
-        operator fun <T> invoke(vararg values: T): Solution<T> = invoke(values.toList())
+        public operator fun <T> invoke(vararg values: T): Solution<T> = invoke(values.toList())
     }
 }
 

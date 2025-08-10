@@ -19,8 +19,10 @@
 
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.gradle.internal.impldep.org.junit.platform.launcher.TagFilter.excludeTags
-import org.gradle.internal.impldep.org.junit.platform.launcher.TagFilter.includeTags
+
+plugins {
+    id("keen.jvm") // JVM conventions (toolchain, compiler, etc.)
+}
 
 // === Property providers (lazy; evaluated only when needed) ===
 
@@ -81,8 +83,8 @@ tasks.withType<Test>().configureEach {
             .split(',')
             .map(String::trim)
             .filter(String::isNotEmpty)
-        if (include.isNotEmpty()) includeTags(include)
-        if (exclude.isNotEmpty()) excludeTags(exclude)
+        if (include.isNotEmpty()) includeTags(*include.toTypedArray())
+        if (exclude.isNotEmpty()) excludeTags(*exclude.toTypedArray())
     }
 
     // Logging: focused by default; opt‑in to stdout/stderr via property
@@ -94,4 +96,12 @@ tasks.withType<Test>().configureEach {
         showCauses = true
         showStackTraces = true
     }
+}
+
+/*
+ * Enforce explicit API for a library (recommended when stabilizing the API).
+ * This forces public/protected declarations to be explicitly marked (visibility, return types).
+ */
+kotlin {
+    explicitApi()
 }

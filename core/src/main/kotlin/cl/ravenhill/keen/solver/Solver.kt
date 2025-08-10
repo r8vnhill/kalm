@@ -8,4 +8,4 @@ package cl.ravenhill.keen.solver
 import cl.ravenhill.keen.problem.Problem
 import cl.ravenhill.keen.repr.Solution
 
-fun interface Solver<T> : (Problem<T>) -> Solution<T>
+public fun interface Solver<T> : (Problem<T>) -> Solution<T>

@@ -19,7 +19,7 @@ import cl.ravenhill.keen.problem.constrained.InequalityConstraint
  * println(type.symbol) // prints "<"
  * ```
  */
-enum class InequalityType {
+public enum class InequalityType {
     /** Represents the `<` relation. */
     LESS_THAN,
 
@@ -33,7 +33,7 @@ enum class InequalityType {
     GREATER_THAN_OR_EQUAL;
 
     /** A symbolic representation of the inequality type (e.g., "<="). */
-    val symbol: String
+    public val symbol: String
         get() = when (this) {
             LESS_THAN -> "<"
             GREATER_THAN -> ">"

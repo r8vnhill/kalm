@@ -21,7 +21,7 @@ import cl.ravenhill.keen.repr.Solution
  * @property right The right-hand side expression of the constraint, evaluated per [Solution].
  * @param T The type of the solution being constrained.
  */
-sealed interface Constraint<T> : (Solution<T>) -> Boolean {
-    val left: (Solution<T>) -> Double
-    val right: (Solution<T>) -> Double
+public sealed interface Constraint<T> : (Solution<T>) -> Boolean {
+    public val left: (Solution<T>) -> Double
+    public val right: (Solution<T>) -> Double
 }

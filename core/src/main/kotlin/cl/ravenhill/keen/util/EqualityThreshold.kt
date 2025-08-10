@@ -34,32 +34,32 @@ import cl.ravenhill.keen.util.EqualityThreshold.Companion.STRICT
  * @property value The absolute difference tolerance. Must be non-negative, finite, and not NaN.
  */
 @JvmInline
-value class EqualityThreshold private constructor(val value: Double) {
+public value class EqualityThreshold private constructor(public val value: Double) {
 
-    companion object {
+    public companion object {
         /** A very strict threshold for high-precision comparisons (e.g., default for constraint solvers). */
-        const val STRICT = 1e-9
+        public const val STRICT: Double = 1e-9
 
         /** A more relaxed threshold suitable for lenient evaluations. */
-        const val RELAXED = 1e-6
+        public const val RELAXED: Double = 1e-6
 
         /** Disables tolerance: values must be exactly equal (not recommended for floating-point). */
-        const val EXACT = 0.0
+        public const val EXACT: Double = 0.0
 
         /** Default threshold used throughout the framework (alias for [STRICT]). */
-        const val DEFAULT = STRICT
+        public const val DEFAULT: Double = STRICT
 
         /** Predefined validated instance with [STRICT] threshold. */
-        val strict = invoke(STRICT)
+        public val strict: Either<InvalidThresholdException, EqualityThreshold> = invoke(STRICT)
 
         /** Predefined validated instance with [RELAXED] threshold. */
-        val relaxed = invoke(RELAXED)
+        public val relaxed: Either<InvalidThresholdException, EqualityThreshold> = invoke(RELAXED)
 
         /** Predefined validated instance with [EXACT] threshold (zero tolerance). */
-        val exact = invoke(EXACT)
+        public val exact: Either<InvalidThresholdException, EqualityThreshold> = invoke(EXACT)
 
         /** Predefined validated instance with [DEFAULT] threshold. */
-        val default = invoke(DEFAULT)
+        public val default: Either<InvalidThresholdException, EqualityThreshold> = invoke(DEFAULT)
 
         /**
          * Constructs a validated [EqualityThreshold] from the given [value].
@@ -73,7 +73,7 @@ value class EqualityThreshold private constructor(val value: Double) {
          * @return A [Right] containing the [EqualityThreshold] if valid, or a [Left] with an
          *   [InvalidThresholdException].
          */
-        operator fun invoke(value: Double): Either<InvalidThresholdException, EqualityThreshold> = either {
+        public operator fun invoke(value: Double): Either<InvalidThresholdException, EqualityThreshold> = either {
             ensure(!value.isNaN()) { InvalidThresholdException(should = "not be NaN", Double.NaN) }
             ensure(value.isFinite()) { InvalidThresholdException(should = "be finite", value) }
             ensure(value >= 0.0) { InvalidThresholdException(should = "be non-negative", value) }

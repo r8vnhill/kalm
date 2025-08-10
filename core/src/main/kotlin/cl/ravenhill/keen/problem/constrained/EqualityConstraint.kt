@@ -76,12 +76,12 @@ import kotlin.math.abs
  * @property threshold The tolerance to use when comparing the left and right expressions.
  *   The constraint is satisfied if `abs(left - right) <= threshold`.
  */
-interface EqualityConstraint<T> : Constraint<T> {
+public interface EqualityConstraint<T> : Constraint<T> {
 
     /** The allowed deviation between [left] and [right] for the constraint to be satisfied. */
-    val threshold: EqualityThreshold
+    public val threshold: EqualityThreshold
 
-    override fun invoke(solution: Solution<T>) =
+    override fun invoke(solution: Solution<T>): Boolean =
         abs(left(solution) - right(solution)) <= threshold
 
     /**
@@ -93,7 +93,7 @@ interface EqualityConstraint<T> : Constraint<T> {
         else -> 0
     }
 
-    companion object {
+    public companion object {
         /**
          * Creates a new [EqualityConstraint] using the provided [left] and [right] expressions, within the context of a
          * validated [EqualityThreshold].
@@ -105,7 +105,7 @@ interface EqualityConstraint<T> : Constraint<T> {
          * @return An [EqualityConstraint] if the threshold is valid; otherwise an [InvalidThresholdException].
          */
         context(threshold: Either<InvalidThresholdException, EqualityThreshold>)
-        operator fun <T> invoke(
+        public operator fun <T> invoke(
             left: (Solution<T>) -> Double,
             right: (Solution<T>) -> Double
         ): Either<InvalidThresholdException, EqualityConstraint<T>> = either {
@@ -130,7 +130,7 @@ interface EqualityConstraint<T> : Constraint<T> {
          *   Defaults to [EqualityThreshold.DEFAULT].
          * @return An [EqualityConstraint] if the threshold is valid; otherwise an [InvalidThresholdException].
          */
-        fun <T> withDefaultThreshold(
+        public fun <T> withDefaultThreshold(
             left: (Solution<T>) -> Double,
             right: (Solution<T>) -> Double,
             threshold: Double = EqualityThreshold.DEFAULT

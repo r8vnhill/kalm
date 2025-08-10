@@ -42,18 +42,18 @@ import cl.ravenhill.keen.util.InequalityType
  * @param T The type of values in the evaluated [Solution].
  * @property type The relational operator used to compare [left] and [right].
  */
-interface InequalityConstraint<T> : Constraint<T> {
+public interface InequalityConstraint<T> : Constraint<T> {
 
-    val type: InequalityType
+    public val type: InequalityType
 
-    override fun invoke(solution: Solution<T>) = when (type) {
+    override fun invoke(solution: Solution<T>): Boolean = when (type) {
         InequalityType.LESS_THAN -> left(solution) < right(solution)
         InequalityType.GREATER_THAN -> left(solution) > right(solution)
         InequalityType.LESS_THAN_OR_EQUAL -> left(solution) <= right(solution)
         InequalityType.GREATER_THAN_OR_EQUAL -> left(solution) >= right(solution)
     }
 
-    companion object {
+    public companion object {
         /**
          * Creates an [InequalityConstraint] with the specified expressions and operator.
          *
@@ -62,7 +62,7 @@ interface InequalityConstraint<T> : Constraint<T> {
          * @param operator The relational operator used to compare both expressions.
          * @return A new [InequalityConstraint] instance.
          */
-        operator fun <T> invoke(
+        public operator fun <T> invoke(
             left: (Solution<T>) -> Double,
             right: (Solution<T>) -> Double,
             operator: InequalityType,
