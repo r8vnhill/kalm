@@ -36,5 +36,5 @@ dependencies {
     api(libs.bundles.arrow)
 
     // Kotest test dependencies (bundle).
-    testImplementation(libs.bundles.kotest)
+    testImplementation(libs.bundles.testing)
 }

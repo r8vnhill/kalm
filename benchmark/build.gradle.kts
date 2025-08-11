@@ -14,5 +14,5 @@ plugins {
 dependencies {
     implementation(platform(projects.dependencyConstraints))
     api(projects.core)
-    testImplementation(libs.bundles.kotest)
+    testImplementation(libs.bundles.testing)
 }

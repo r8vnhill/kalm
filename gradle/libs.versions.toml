@@ -8,16 +8,19 @@ kotest-arrow = "2.0.0"
 kotlin = "2.2.20-Beta2"
 kotlin-bin-compatibility-validator = "0.18.1"
 version-catalog-update = "1.0.0"
+mockk = "1.14.5"
 
 [libraries]
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 kotest-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version.ref = "kotest-arrow" }
+kotest-arrow-property = { module = "io.kotest.extensions:kotest-property-arrow", version.ref = "kotest-arrow" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [plugins]
 ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
@@ -30,10 +33,12 @@ version-catalog-update = { id = "nl.littlerobots.version-catalog-update", versio
 arrow = [
     "arrow-core",
 ]
-kotest = [
+testing = [
     "kotest-arrow",
+    "kotest-arrow-property",
     "kotest-assertions-core",
     "kotest-framework-engine",
     "kotest-property",
     "kotest-runner-junit5",
+    "mockk",
 ]
