@@ -5,13 +5,12 @@
 
 package cl.ravenhill.keen.problem
 
+import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
-import cl.ravenhill.keen.problem.Problem.Companion.invoke
 import cl.ravenhill.keen.problem.constrained.Constraint
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.bind
@@ -19,8 +18,8 @@ import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
-import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.withEdgecases
+import io.kotest.property.arbitrary.zip
 import io.kotest.property.arrow.core.nel
 import io.kotest.property.checkAll
 import io.mockk.mockk
@@ -31,14 +30,14 @@ class ProblemFreeSpecTest : FreeSpec({
     "Problem companion factories" - {
         val arbObjective = Arb.mixedObjective<Int>()
         val nelObjectives = Arb.nel(arbObjective)
-        val arbConstraints = Arb.list(Arb.mockConstraint<Int>(), 0..3)
+        val arbConstraints = Arb.mockConstraint<Int>().asList()
 
         "when a Problem is created from the NonEmptyList" - {
             "then objectives preserve order and constraints default to empty" {
                 checkAll(nelObjectives) { objectives ->
                     val problem = Problem(objectives)
 
-                    problem.objectives.shouldContainExactly(objectives)
+                    problem.objectives shouldContainExactly objectives
                     problem.constraints.shouldBeEmpty()
                 }
             }
@@ -49,7 +48,7 @@ class ProblemFreeSpecTest : FreeSpec({
                 checkAll(arbObjective, Arb.list(arbObjective, 0..4)) { f, others ->
                     val problem = Problem(f, *others.toTypedArray())
 
-                    problem.objectives.shouldContainExactly(listOf(f) + others)
+                    problem.objectives shouldContainExactly listOf(f) + others
                     problem.constraints.shouldBeEmpty()
                 }
             }
@@ -62,7 +61,7 @@ class ProblemFreeSpecTest : FreeSpec({
                         val p = Problem(f, constraints = constraints)
 
                         p.objectives.shouldContainExactly(f)
-                        p.constraints.shouldContainExactly(constraints)
+                        p.constraints shouldContainExactly constraints
                     }
                 }
             }
@@ -74,13 +73,11 @@ class ProblemFreeSpecTest : FreeSpec({
             data class Gene(val value: Int)
 
             "when a Problem is created" - {
-                "then it keeps one objective and no constraints" {
-                    context(Arb.objective<Gene>()) {
-                        checkAll(Arb.problem()) { p ->
-                            p.objectives
-                                .shouldHaveSize(1)  // throws on size != 1
-                                .shouldContainExactly(TODO())
-                            p.constraints.shouldHaveSize(0)
+                "then it preserves objectives and constraints" {
+                    context(Arb.objective<Gene>().asNel(), Arb.mockConstraint<Gene>().asList()) {
+                        checkAll(Arb.problemFixture<Gene>()) { (objectives, constraints, problem) ->
+                            problem.objectives.shouldContainExactly(objectives)
+                            problem.constraints.shouldContainExactly(constraints)
                         }
                     }
                 }
@@ -109,7 +106,7 @@ class ProblemFreeSpecTest : FreeSpec({
                 val p = Problem(f, constraints = emptyList())
 
                 "then constraints are empty" {
-                    p.constraints.shouldHaveSize(0)
+                    p.constraints.shouldBeEmpty()
                 }
             }
         }
@@ -189,6 +186,35 @@ private inline fun <reified T> Arb.Companion.mockConstraint(
     ).apply { stub(this) }
 }
 
-context(objectiveCtx: Arb<Objective<T>>)
-private fun <T> Arb.Companion.problem(): Arb<Problem<T>> =
-    objectiveCtx.map { objective -> Problem(objective) }
+/**
+ * Transforms an [Arb] instance for [Constraint] into an [Arb] instance for lists of [Constraint].
+ */
+private fun <T> Arb<Constraint<T>>.asList(): Arb<List<Constraint<T>>> =
+    Arb.list(this, 0..3)
+
+/**
+ * Transforms an [Arb] of [Objective] instances into an [Arb] of [NonEmptyList] containing [Objective] instances.
+ */
+private fun <T> Arb<Objective<T>>.asNel(): Arb<NonEmptyList<Objective<T>>> =
+    Arb.nel(this, 1..5)
+
+/**
+ * A small bundle used in tests to carry objectives, constraints and the constructed [Problem].
+ */
+private data class ProblemFixture<T>(
+    val objectives: NonEmptyList<Objective<T>>,
+    val constraints: Collection<Constraint<T>>,
+    val problem: Problem<T>
+)
+
+/**
+ * Generates an arbitrary [ProblemFixture] for testing by combining random objectives and constraints.
+ */
+context(
+    objectivesCtx: Arb<NonEmptyList<Objective<T>>>,
+    constraintsCtx: Arb<Collection<Constraint<T>>>
+)
+private fun <T> Arb.Companion.problemFixture(): Arb<ProblemFixture<T>> =
+    Arb.zip(objectivesCtx, constraintsCtx) { objectives, constraints ->
+        ProblemFixture(objectives, constraints, Problem(objectives, constraints))
+    }
