@@ -56,7 +56,9 @@ kotlin {
         // Fallback to JVM_1_8 if below 17 to ensure compatibility
         val requestedTarget = defaultJava.map { v ->
             when {
-                v >= 22 -> JvmTarget.JVM_22
+                v >= 24 -> JvmTarget.JVM_24
+                v == 23 -> JvmTarget.JVM_23
+                v == 22 -> JvmTarget.JVM_22
                 v == 21 -> JvmTarget.JVM_21
                 v == 20 -> JvmTarget.JVM_20
                 v == 19 -> JvmTarget.JVM_19

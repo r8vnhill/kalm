@@ -9,6 +9,7 @@ kotlin = "2.2.20-Beta2"
 kotlin-bin-compatibility-validator = "0.18.1"
 version-catalog-update = "1.0.0"
 mockk = "1.14.5"
+kotlin-compile-testing = "1.6.0"
 
 [libraries]
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
@@ -21,6 +22,7 @@ kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest"
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+kotlin-compile-testing = { module = "com.github.tschuchortdev:kotlin-compile-testing", version.ref = "kotlin-compile-testing" }
 
 [plugins]
 ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
@@ -41,4 +43,5 @@ testing = [
     "kotest-property",
     "kotest-runner-junit5",
     "mockk",
+    "kotlin-compile-testing",
 ]
