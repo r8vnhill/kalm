@@ -1,8 +1,8 @@
 # Documentation Guidelines
 
-### 1. Markdown Formatting for Code Snippets
+## 1. Markdown Formatting for Code Snippets
 
-When writing code snippets in documentation, **ALWAYS** use proper Markdown syntax. Enclose all code blocks with:
+When writing code snippets in documentation, **always** use proper Markdown syntax. Enclose all code blocks with:
 
 ````markdown
 ```kotlin
@@ -10,19 +10,27 @@ When writing code snippets in documentation, **ALWAYS** use proper Markdown synt
 ```
 ````
 
-This ensures consistent syntax highlighting and improves readability.
+This ensures consistent syntax highlighting and improves readability across all documentation platforms.
 
-### 2. Use of `@property` for Public Variables
+---
 
-When documenting classes, **PREFER** using the `@property` tag to describe public variables instead of documenting them inline within the class body.
+## 2. Use of `@property` for Public Variables
 
-### 3. Preferred Use of Reference Links
+When documenting classes, **prefer** using the `@property` tag to describe public variables, rather than documenting them inline within the class body.
+This improves discoverability in generated documentation and keeps property metadata centralized.
 
-**PREFER** using reference-style links (e.g., `[String]`) over monospace formatting (e.g., `` `String` ``) when referring to types or other significant elements.
+---
 
-### 4. Usage Examples
+## 3. Preferred Use of Reference Links
 
-When providing usage examples in docstring comments, follow this structure:
+When referring to types or other significant elements, **prefer** reference-style links (e.g., `[String]`) over monospace formatting (e.g., `` `String` ``).
+This allows generated documentation to provide navigable links to type definitions.
+
+---
+
+## 4. Usage Examples
+
+When providing usage examples in KDoc, follow this structure:
 
 ````kotlin
 /**
@@ -47,4 +55,21 @@ fun foo(params) = elements.forEach(action)
 ````
 
 > [!important]
-> **Place examples before the `@tags` section.** Common tags include `@param`, `@return`, `@throws`, etc.
+> **Place examples before the `@tags` section.**
+> Common tags include `@param`, `@return`, `@throws`, and `@receiver`.
+
+---
+
+## 5. Context Parameters
+
+KDoc does not currently have an official syntax for context parameters.
+Until a standard emerges, **use** the `@param` tag to document them.
+
+```kotlin
+/**
+ * ...
+ * @param ctx Scope in which the operation runs.
+ */
+context(ctx: CoroutineScope)
+fun fetchData() { /* ... */ }
+```

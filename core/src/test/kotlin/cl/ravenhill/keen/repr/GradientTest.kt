@@ -6,167 +6,261 @@
 package cl.ravenhill.keen.repr
 
 import arrow.core.Either
-import arrow.core.left
-import arrow.core.right
-import cl.ravenhill.keen.util.size.SizeError
+import cl.ravenhill.keen.gen.finiteDouble
+import cl.ravenhill.keen.repr.gen.pairedWithAliasedGradient
+import cl.ravenhill.keen.repr.gen.pairedWithGradient
+import cl.ravenhill.keen.repr.gen.sizedDoubleArrayEither
+import cl.ravenhill.keen.repr.gen.withGradient
+import cl.ravenhill.keen.repr.gen.withIndex
+import cl.ravenhill.keen.repr.gen.withOutOfBoundsIndex
+import cl.ravenhill.keen.repr.gen.withValidIndex
 import cl.ravenhill.keen.util.size.Size
+import cl.ravenhill.keen.util.size.SizeError
 import cl.ravenhill.keen.util.size.UnsafeSizeCreation
+import cl.ravenhill.keen.util.size.gen.size
+import cl.ravenhill.keen.util.size.gen.validSize
+import cl.ravenhill.keen.util.size.matchers.shouldHaveSize
+import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.constant
-import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.doubleArray
-import io.kotest.property.arbitrary.flatMap
-import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
 import io.kotest.property.arrow.core.nonEmptyList
 import io.kotest.property.checkAll
 
 @OptIn(UnsafeSizeCreation::class)
 class GradientFreeSpec : FreeSpec({
-    "Given Gradient factories" - {
-        "when creating from a non-empty list" - {
-            "then it should create a valid Gradient" {
-                checkAll(Arb.nonEmptyList(Arb.finiteDouble())) { list ->
-                    Gradient(list) shouldContainExactly list
+
+    context(Arb.finiteDouble()) {
+        val nonEmptyList = Arb.nonEmptyList(contextOf<Arb<Double>>())
+
+        "Given Gradient factories" - {
+            val strictlyPositiveExpected = SizeError.StrictlyPositiveExpected(0)
+            val positiveSizeRight = Arb.size(min = 1)
+            val positiveValidSize = Arb.validSize(min = 1)
+
+            "when creating from a non-empty list" - {
+                "then it should create a valid Gradient" {
+                    checkAll(nonEmptyList) { list ->
+                        Gradient(list) shouldContainExactly list
+                    }
                 }
             }
-        }
 
-        "when creating from a vararg of doubles" - {
-            "then it should create a valid Gradient" {
-                checkAll(Arb.nonEmptyList(Arb.finiteDouble())) { list ->
-                    Gradient.of(list.first(), *list.tail.toDoubleArray())
+            "when creating from a vararg of doubles" - {
+                "then it should create a valid Gradient" {
+                    checkAll(nonEmptyList) { list ->
+                        Gradient.of(list.first(), *list.tail.toDoubleArray())
+                    }
                 }
             }
-        }
 
-        "when safely creating from a DoubleArray" - {
-            "that is not empty" - {
+            "when safely creating from a DoubleArray" - {
+                "that is not empty" - {
 
-                // Contexts ensure strictly-positive sizes and finite doubles
-                context(Arb.size(), Arb.finiteDouble()) {
+                    context(positiveSizeRight) {
+                        val pairedArrayWithGradient = Arb.sizedDoubleArrayEither().pairedWithGradient()
 
+                        "then it should create a valid Gradient" {
+                            checkAll(pairedArrayWithGradient) { e ->
+                                val (arr, g) = e.shouldBeRight(failureMessage = { it.message.toString() })
+                                g shouldHaveSize arr.size
+                                g shouldContainExactly arr.toList()
+                            }
+                        }
+
+                        "and the resulting Gradient should be immune to external mutations (defensive copy)" {
+                            checkAll(
+                                pairedArrayWithGradient.withIndex(),
+                                contextOf<Arb<Double>>()
+                            ) { e, newValue ->
+                                val (index, arr, g) = e.shouldBeRight(failureMessage = { it.message.toString() })
+                                val before = g[index]
+                                arr[index] = newValue
+
+                                g[index] shouldBe before
+                            }
+                        }
+                    }
+                }
+
+                "that is empty" - {
+                    "then it should return a SizeError" {
+                        Gradient.fromArray(doubleArrayOf())
+                            .shouldBeLeft(strictlyPositiveExpected)
+                    }
+                }
+            }
+
+            "when unsafely creating from a DoubleArray" - {
+                context(_: Arb<Either<SizeError, Size>>)
+                fun pairedWithAliasedGradient() = Arb
+                    .sizedDoubleArrayEither()
+                    .pairedWithAliasedGradient()
+
+                "then it should create a Gradient without validation" {
+                    context(Arb.size()) { // Allow empty arrays for this test
+                        checkAll(pairedWithAliasedGradient()) { e ->
+                            val (array, gradient) = e.shouldBeRight(failureMessage = { it.message.toString() })
+                            gradient shouldContainExactly array.toList()
+                        }
+                    }
+                }
+
+                "then modifications to the array should reflect in the Gradient" {
+                    context(positiveSizeRight) { // A non-empty size is required for the array
+                        checkAll(
+                            pairedWithAliasedGradient().withIndex(),
+                            contextOf<Arb<Double>>()
+                        ) { e, newValue ->
+                            val (index, array, gradient) = e.shouldBeRight(failureMessage = { it.message.toString() })
+                            array[index] = newValue
+                            gradient[index] shouldBe newValue
+                        }
+                    }
+                }
+            }
+
+            "when creating a zero-filled Gradient" - {
+                "with a valid size" - {
                     "then it should create a valid Gradient" {
-                        checkAll(Arb.sizedDoubleArrayEither()) { e ->
-                            val arr = e.shouldBeRight() // unwrap Either
-                            val g = Gradient.fromArray(arr) // copies storage
+                        checkAll(positiveValidSize) { size ->
+                            Gradient.zeros(size)
                                 .shouldBeRight()
-                            g.size.toInt() shouldBe arr.size
-                            g shouldContainExactly arr.toList()
+                                .shouldContainExactly(List(size.value) { 0.0 })
+                        }
+                    }
+                }
+
+                "with an invalid size" - {
+                    "then it should return a SizeError" {
+                        Gradient.zeros(Size.zero)
+                            .shouldBeLeft(strictlyPositiveExpected)
+                    }
+                }
+            }
+
+            "when creating a filled Gradient" - {
+                "with a valid size" - {
+                    "then it should create a valid Gradient" {
+                        checkAll(positiveValidSize, contextOf<Arb<Double>>()) { size, value ->
+                            Gradient.fill(size, value)
+                                .shouldBeRight()
+                                .shouldContainExactly(List(size.value) { value })
+                        }
+                    }
+                }
+
+                "with an invalid size" - {
+                    "then it should return a SizeError" {
+                        checkAll(contextOf<Arb<Double>>()) { value ->
+                            Gradient.fill(Size.zero, value)
+                                .shouldBeLeft(strictlyPositiveExpected)
+                        }
+                    }
+                }
+            }
+        }
+
+        "Given a Gradient" - {
+            val componentsWithGradient = nonEmptyList.withGradient()
+
+            "when accessing its size" - {
+                "then it should return the size of the contained array" {
+                    checkAll(componentsWithGradient) { (components, gradient) ->
+                        gradient shouldHaveSize components.size
+                    }
+                }
+            }
+
+            "when accessing its components" - {
+                val validGradientWithIndex = componentsWithGradient.withValidIndex()
+                val invalidGradientWithIndex = componentsWithGradient.withOutOfBoundsIndex()
+
+                "with get" - {
+
+                    "should return the value at a valid index" {
+                        checkAll(validGradientWithIndex) { (components, gradient, i) ->
+                            gradient[i] shouldBe components[i]
                         }
                     }
 
-//                    "and the resulting Gradient should be immune to external mutations (defensive copy)" {
-//                        checkAll(Arb.sizedDoubleArrayEither(), Arb.double().filter(Double::isFinite)) { e, newValue ->
-//                            val arr = e.shouldBeRight()
-//                            val g = Gradient.fromArray(arr)
-//
-//                            val before = g[0]
-//                            arr[0] = newValue
-//
-//                            g[0] shouldBe before
-//                        }
-//                    }
+                    "then it throws IndexOutOfBoundsException for an invalid index" {
+                        checkAll(invalidGradientWithIndex) { (_, gradient, i) ->
+                            withClue("i=$i ${gradient.size}") {
+                                shouldThrow<IndexOutOfBoundsException> { gradient[i] }
+                            }
+                        }
+                    }
+                }
+
+                "with getOrNull" - {
+                    "should return the value at a valid index" {
+                        checkAll(validGradientWithIndex) { (components, gradient, i) ->
+                            gradient.getOrNull(i)
+                                .shouldNotBeNull()
+                                .shouldBe(components[i])
+                        }
+                    }
+
+                    "should return null for an invalid index" {
+                        checkAll(invalidGradientWithIndex) { (_, gradient, i) ->
+                            withClue("i=$i ${gradient.size}") {
+                                gradient.getOrNull(i).shouldBeNull()
+                            }
+                        }
+                    }
+                }
+
+                "with getOrElse" - {
+                    "should return the value at a valid index" {
+                        checkAll(validGradientWithIndex) { (components, gradient, i) ->
+                            val fallback = { _: Int -> Double.NaN }
+                            withClue("i=$i size=${components.size}") {
+                                gradient.getOrElse(i, fallback) shouldBe components[i]
+                            }
+                        }
+                    }
+
+                    "should return the default for an invalid index (and passes the index)" {
+                        checkAll(invalidGradientWithIndex) { (_, gradient, i) ->
+                            val fallback = { j: Int -> j.toDouble() + 1.0 }
+                            withClue("i=$i size=${gradient.size}") {
+                                gradient.getOrElse(i, fallback) shouldBe fallback(i)
+                            }
+                        }
+                    }
                 }
             }
 
-//            "that is empty" - {
-//                "then it should return a SizeError" {
-//                    Gradient.fromArray(doubleArrayOf())
-//                        .shouldBeLeft(SizeError.StrictlyPositiveExpected(0))
-//                }
-//            }
-//        }
-//
-//        "when unsafely creating from a DoubleArray" - {
-//            "then it should create a Gradient without validation" {
-//                context(Arb.size(), Arb.finiteDouble()) {
-//                    checkAll(
-//                        Arb.doubleArray()
-//                            .withEdgecases(doubleArrayOf())
-//                    ) { array ->
-//                        Gradient.unsafeFromOwnedArray(array)
-//                            .shouldContainExactly(array.toList())
-//                    }
-//                }
-//            }
-//
-//            "then modifications to the array should reflect in the Gradient" {
-//                context(Arb.size(), Arb.finiteDouble()) {
-//                    checkAll(Arb.doubleArray(), contextOf<Arb<Double>>()) { array, newValue ->
-//                        val gradient = Gradient.unsafeFromOwnedArray(array)
-//                        array[0] = newValue
-//                        gradient[0] shouldBe newValue
-//                    }
-//                }
-//            }
-//        }
-//
-//        "when creating a zero-filled Gradient" - {
-//            "with a valid size" - {
-//                "then it should create a valid Gradient" {
-//                    checkAll(Arb.size()) { size ->
-//                        Gradient.zeros(size)
-//                            .shouldBeRight()
-//                            .shouldContainExactly(DoubleArray(size.value) { 0.0 }.toList())
-//                    }
-//                }
-//            }
+            "conversions" - {
+                TODO()
+            }
 
-//            "with an invalid size" - {
-//                "then it should return a SizeError" {
-//                    Gradient.zeros(Size(0)).shouldBeLeft(SizeError.StrictlyPositiveExpected(0))
-//                }
-//            }
+            "metrics" - {
+                TODO()
+            }
+
+            "algebraic ops" - {
+                TODO()
+            }
+
+            "higher-order ops" - {
+                TODO()
+            }
+
+            "std overrides" - {
+                TODO()
+            }
+        }
+
+        "Double.times(g: Gradient)" - {
+            TODO()
         }
     }
 })
-
-private fun Arb.Companion.finiteDouble(): Arb<Double> = Arb
-    .double(
-        min = -1e6, max = 1e6,
-        includeNonFiniteEdgeCases = false
-    )
-
-private fun Arb.Companion.size(range: IntRange = 1..10): Arb<Either<SizeError, Size>> = Arb
-    .int(range)
-    .map { size -> Size(size) }
-
-context(sizeCtx: Arb<Either<SizeError, Size>>, contentCtx: Arb<Double>)
-private fun Arb.Companion.doubleArray() = sizeCtx.flatMap { size ->
-    size.fold(
-        ifLeft = { Arb.constant(it.left()) },
-        ifRight = { Arb.doubleArray(Arb.constant(it.value), contentCtx).map { arr -> arr.right() } }
-    )
-}
-
-/**
- * Builds an [Arb] that yields `Either<SizeError, DoubleArray>` using context-provided generators.
- *
- * @receiver [Arb.Companion]
- * @return An [Arb] of `Either<SizeError, DoubleArray>`.
- */
-context(sizeCtx: Arb<Either<SizeError, Size>>, contentCtx: Arb<Double>)
-fun Arb.Companion.sizedDoubleArrayEither(): Arb<Either<SizeError, DoubleArray>> =
-    sizeCtx.flatMap { eitherSize ->
-        eitherSize.traverseArb { sz ->
-            Arb.doubleArray(length = Arb.constant(sz.toInt()), content = contentCtx)
-        }
-    }
-
-/**
- * Transforms the right-hand side (`A`) of an `Either` into another `Either` within the context of an [Arb], using the
- * provided transformation function, while preserving any left-hand side (`E`) value.
- *
- * @param f A function that maps a value of type `A` to an [Arb] of type `B`.
- * @return An [Arb] containing an `Either` where the right-hand side (`A`) has been transformed to `B` using the
- *   supplied function, or the left-hand side (`E`) remains unchanged.
- */
-private fun <E, A, B> Either<E, A>.traverseArb(f: (A) -> Arb<B>): Arb<Either<E, B>> = fold(
-    ifLeft = { e -> Arb.constant(e.left()) },
-    ifRight = { a -> f(a).map { it.right() } }
-)
