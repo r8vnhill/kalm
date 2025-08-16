@@ -3,9 +3,9 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.platform
+package cl.ravenhill.keen.jvm
 
-import cl.ravenhill.keen.gen.finiteDouble
+import cl.ravenhill.keen.generators.finiteDouble
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.datatest.withData

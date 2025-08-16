@@ -82,3 +82,7 @@ kotlin {
         allWarningsAsErrors.set(wError)
     }
 }
+
+tasks.withType<Test>().configureEach {
+    jvmArgs("--add-modules", "jdk.incubator.vector")
+}

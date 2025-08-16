@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.platform
+package cl.ravenhill.keen.jvm
 
 /**
  * Platform-specific math utilities.

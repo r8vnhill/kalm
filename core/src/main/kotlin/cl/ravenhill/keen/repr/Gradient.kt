@@ -10,9 +10,11 @@ import arrow.core.NonEmptyList
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import cl.ravenhill.keen.exceptions.GradientError
-import cl.ravenhill.keen.platform.JvmSpecific
-import cl.ravenhill.keen.platform.MathCompat
-import cl.ravenhill.keen.platform.VectorOps
+import cl.ravenhill.keen.jvm.VectorOps
+import cl.ravenhill.keen.repr.Gradient.Companion.fill
+import cl.ravenhill.keen.repr.Gradient.Companion.fromArray
+import cl.ravenhill.keen.repr.Gradient.Companion.unsafeFromOwnedArray
+import cl.ravenhill.keen.repr.Gradient.Companion.zeros
 import cl.ravenhill.keen.util.size.HasSize
 import cl.ravenhill.keen.util.size.Size
 import cl.ravenhill.keen.util.size.SizeError
@@ -63,13 +65,15 @@ public class Gradient private constructor(private val components: DoubleArray) :
     //#region algebraic ops
 
     public infix fun dot(other: Gradient): Either<GradientError.InvalidOperation, Double> =
+        computeDotProduct(other) { components dotProduct other.components }
+
+    public infix fun dotKahan(other: Gradient): Either<GradientError.InvalidOperation, Double> =
+        computeDotProduct(other) { components dotProduct other.components }
+
+    private fun computeDotProduct(other: Gradient, op: VectorOps.() -> Double) =
         requireSameSize(other)
-            .mapLeft { GradientError.InvalidOperation("dot", this@Gradient, other, it) }
-            .map {
-                VectorOps.run {
-                    components dotProduct other.components
-                }
-            }
+            .mapLeft { GradientError.InvalidOperation("dot", this@Gradient, other, cause = it) }
+            .map { VectorOps.run(op) }
 
     public operator fun times(alpha: Double): Gradient =
         Gradient(DoubleArray(size.toInt()) { alpha * components[it] })

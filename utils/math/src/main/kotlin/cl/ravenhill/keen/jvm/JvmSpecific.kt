@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.platform
+package cl.ravenhill.keen.jvm
 
 /**
  * Marks an API as **JVM-specific**.
