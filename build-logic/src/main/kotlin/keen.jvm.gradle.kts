@@ -72,8 +72,8 @@ kotlin {
         // Opt into experimental Kotlin APIs
         optIn.add("kotlin.RequiresOptIn")
 
-        // Enable context parameters (still requires X-flag as of Kotlin 2.2.x)
-        freeCompilerArgs.add("-Xcontext-parameters")
+        // Enable context parameters and nested type aliases (still requires X-flag as of Kotlin 2.2.x)
+        freeCompilerArgs.addAll("-Xcontext-parameters", "-Xnested-type-aliases")
 
         // Configure warnings-as-errors via a Gradle property (-Pkotlin.warningsAsErrors)
         val wError = providers.gradleProperty("kotlin.warningsAsErrors")

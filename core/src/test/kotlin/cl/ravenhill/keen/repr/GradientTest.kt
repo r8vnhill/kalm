@@ -6,10 +6,11 @@
 package cl.ravenhill.keen.repr
 
 import arrow.core.Either
-import cl.ravenhill.keen.gen.finiteDouble
+import cl.ravenhill.keen.generators.finiteDouble
 import cl.ravenhill.keen.repr.gen.pairedWithAliasedGradient
 import cl.ravenhill.keen.repr.gen.pairedWithGradient
 import cl.ravenhill.keen.repr.gen.sizedDoubleArrayEither
+import cl.ravenhill.keen.repr.gen.withAliasedGradient
 import cl.ravenhill.keen.repr.gen.withGradient
 import cl.ravenhill.keen.repr.gen.withIndex
 import cl.ravenhill.keen.repr.gen.withOutOfBoundsIndex
@@ -26,6 +27,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -38,11 +40,11 @@ class GradientFreeSpec : FreeSpec({
 
     context(Arb.finiteDouble()) {
         val nonEmptyList = Arb.nonEmptyList(contextOf<Arb<Double>>())
+        val positiveSizeRight = Arb.size(min = 1)
+        val positiveValidSize = Arb.validSize(min = 1)
 
         "Given Gradient factories" - {
             val strictlyPositiveExpected = SizeError.StrictlyPositiveExpected(0)
-            val positiveSizeRight = Arb.size(min = 1)
-            val positiveValidSize = Arb.validSize(min = 1)
 
             "when creating from a non-empty list" - {
                 "then it should create a valid Gradient" {
@@ -168,19 +170,20 @@ class GradientFreeSpec : FreeSpec({
         }
 
         "Given a Gradient" - {
-            val componentsWithGradient = nonEmptyList.withGradient()
+            val nelGradient = nonEmptyList.withGradient()
+            val aliasedArrayGradient = nonEmptyList.withAliasedGradient()
 
             "when accessing its size" - {
                 "then it should return the size of the contained array" {
-                    checkAll(componentsWithGradient) { (components, gradient) ->
+                    checkAll(nelGradient) { (components, gradient) ->
                         gradient shouldHaveSize components.size
                     }
                 }
             }
 
             "when accessing its components" - {
-                val validGradientWithIndex = componentsWithGradient.withValidIndex()
-                val invalidGradientWithIndex = componentsWithGradient.withOutOfBoundsIndex()
+                val validGradientWithIndex = nelGradient.withValidIndex()
+                val invalidGradientWithIndex = nelGradient.withOutOfBoundsIndex()
 
                 "with get" - {
 
@@ -238,8 +241,55 @@ class GradientFreeSpec : FreeSpec({
                 }
             }
 
-            "conversions" - {
-                TODO()
+            "when converting" - {
+
+                "to a DoubleArray" - {
+
+                    "then it returns a defensive copy with identical contents" {
+                        checkAll(nonEmptyList.withGradient().withValidIndex()) { (components, gradient, i) ->
+                            val arr = gradient.toDoubleArray()
+                            arr.shouldHaveSize(components.size)
+                                .toList()
+                                .shouldContainExactly(components)
+
+                            // Mutating the returned array must NOT affect the gradient
+                            val before = gradient[i]
+                            arr[i] = arr[i] + 1.0
+                            gradient[i] shouldBe before
+                        }
+                    }
+                }
+
+                "to a List<Double>" - {
+                    "then it returns a list with the same contents" {
+                        checkAll(nonEmptyList.withGradient()) { (components, gradient) ->
+                            gradient.toList() shouldContainExactly components
+                        }
+                    }
+
+                    "then, for an aliased gradient, the list view reflects backing-array changes" {
+                        // Build gradients that ALIAS their backing arrays (unsafe constructor through gen)
+                        checkAll(
+                            aliasedArrayGradient.withValidIndex(),
+                            contextOf<Arb<Double>>()
+                        ) { gradientData, newValue ->
+                            val (backing, g, i) = gradientData
+
+                            val list = g.toList()
+
+                            // Mutate array; the list should reflect change (same storage)
+                            backing[i] = newValue
+
+                            // Ensure the view shows the updated value
+                            list[i] shouldBe newValue
+                            // And the gradient reflects the same (aliased)
+                            g[i] shouldBe newValue
+
+                            // Sanity: if you recompute a fresh list, it must also match
+                            g.toList()[i] shouldBe newValue
+                        }
+                    }
+                }
             }
 
             "metrics" - {

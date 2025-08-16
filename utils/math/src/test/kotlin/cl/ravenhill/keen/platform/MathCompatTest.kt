@@ -18,7 +18,7 @@ import io.kotest.property.checkAll
 class MathCompatTest : FreeSpec({
 
     "fma delegates to java.lang.Math.fma (PBT over finite doubles)" {
-        val finite = Arb.finiteDouble()
+        val finite = Arb.Companion.finiteDouble()
         checkAll(finite, finite, finite) { a: Double, b: Double, c: Double ->
             val expected = Math.fma(a, b, c)
             val actual = MathCompat.fma(a, b, c)

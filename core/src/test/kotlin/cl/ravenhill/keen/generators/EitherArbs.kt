@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.gen
+package cl.ravenhill.keen.generators
 
 import arrow.core.Either
 import arrow.core.left

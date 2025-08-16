@@ -9,12 +9,13 @@ package cl.ravenhill.keen.platform
  * Platform-specific math utilities.
  *
  * This object abstracts mathematical operations that may require platform-specific implementations, such as [fma],
- * which uses [java.lang.Math.fma] on the JVM.
+ * which uses [Math.fma] on the JVM.
  *
  * On non-JVM platforms, these functions should be reimplemented to use the appropriate native or emulated equivalent.
  */
 @JvmSpecific
 public object MathCompat {
+
     /**
      * Returns `(a * b) + c`, computed with only one rounding error.
      *

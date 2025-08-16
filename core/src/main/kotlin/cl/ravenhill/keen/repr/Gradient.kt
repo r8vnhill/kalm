@@ -12,6 +12,7 @@ import arrow.core.raise.ensure
 import cl.ravenhill.keen.exceptions.GradientError
 import cl.ravenhill.keen.platform.JvmSpecific
 import cl.ravenhill.keen.platform.MathCompat
+import cl.ravenhill.keen.platform.VectorOps
 import cl.ravenhill.keen.util.size.HasSize
 import cl.ravenhill.keen.util.size.Size
 import cl.ravenhill.keen.util.size.SizeError
@@ -61,26 +62,13 @@ public class Gradient private constructor(private val components: DoubleArray) :
 
     //#region algebraic ops
 
-    /**
-     * TODO: document this
-     *
-     * ## Implementation notes
-     *
-     * JVM-specific numeric primitive: uses [MathCompat.fma]. If you port the framework, reimplement
-     * [MathCompat.fma] for the target platform (e.g., `a * b + c` on JS/Native).
-     */
-    @JvmSpecific
     public infix fun dot(other: Gradient): Either<GradientError.InvalidOperation, Double> =
         requireSameSize(other)
             .mapLeft { GradientError.InvalidOperation("dot", this@Gradient, other, it) }
             .map {
-                val a = components
-                val b = other.components
-                var s = 0.0
-                for (i in a.indices) {
-                    s = MathCompat.fma(a[i], b[i], s)
+                VectorOps.run {
+                    components dotProduct other.components
                 }
-                s
             }
 
     public operator fun times(alpha: Double): Gradient =

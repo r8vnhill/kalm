@@ -65,4 +65,15 @@ buildCache {
     }
 }
 
-include(":dependency-constraints", ":core", ":examples", ":benchmark")
+include(
+    ":dependency-constraints",  // BOM for consistent versions across modules
+
+    ":utils:test-commons",      // Common test utilities for Keen modules
+    ":utils:math",              // Efficient math utilities (JVM-only, uses Math.fma, Vector API)
+
+    ":core",                    // Core Keen library; contains the main Problem-solving API
+
+    ":benchmark",               // Benchmarking utilities for Keen
+
+    ":examples"                 // Example applications using Keen
+)

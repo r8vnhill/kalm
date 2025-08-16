@@ -28,9 +28,13 @@ javaPlatform {
 }
 
 dependencies {
+    // This pins the set of modules to the catalog versions for all importers.
     constraints {
         // Export Arrow constraints defined in your version catalog bundle.
-        // This pins the set of Arrow modules to the catalog versions for all importers.
         api(libs.bundles.arrow)
+
+        // Export Kotest constraints defined in your version catalog bundle.
+        // This pins the set of Kotest modules to the catalog versions for all importers.
+        api(libs.bundles.testing)
     }
 }

@@ -4,17 +4,19 @@
  * ---------
  * Key ideas
  * ---------
- *  - Conventions live in your precompiled plugins (`keen.library`, `keen.jvm`).
+ *  - Conventions live in the precompiled plugins (`keen.library`, `keen.jvm`).
  *  - A central constraints/BOM project (`:dependency-constraints`) defines versions.
  *  - Detekt runs with an extra ruleset (formatting).
+ *  - Some modules (e.g., `:util:math`) are JVM-exclusive by design, since they rely on efficient JVM numeric APIs
+ *    (e.g., Math.fma, Vector API). These cannot be shared across multiplatform builds without re-implementation.
  *
  * --------------------
  * Tips for maintainers
  * --------------------
- *  - Use `api` only if the types leak into this module’s public API (e.g., Arrow's Either); otherwise prefer
+ *  - Use `api` only if the types leak into this module’s public API (e.g., Arrow's `Either`); otherwise prefer
  *    `implementation`.
- *  - If you want to *force* (strictly enforce) versions from the BOM, replace `platform(...)` with
- *    `enforcedPlatform(...)` below.
+ *  - When adding math-intensive functionality, prefer depending on `:util:math` instead of duplicating numeric kernels
+ *    locally.
  */
 
 plugins {
@@ -24,10 +26,12 @@ plugins {
 }
 
 dependencies {
-    // Import the project-local platform/BOM that pins versions for your house stack (e.g., Arrow).
+    // Import the project-local platform/BOM that pins versions for your house stack (e.g., Arrow, Kotest).
     // This does not add classes to the classpath; it only contributes *version constraints* to resolution.
-    // Use `api(platform(...))` if you publish this module and want consumers to inherit the same constraints.
     implementation(platform(projects.dependencyConstraints))
+
+    // JVM-specific math utilities (vectorized ops, numeric kernels).
+    implementation(projects.utils.math)
 
     // Attach Detekt’s formatting ruleset (ktlint rules packaged for Detekt).
     detektPlugins(libs.detekt.formatting.get().apply { "$group:$module:$version" })
@@ -35,6 +39,6 @@ dependencies {
     // Arrow libraries (bundle from the catalog).
     api(libs.bundles.arrow)
 
-    // Kotest test dependencies (bundle).
-    testImplementation(libs.bundles.testing)
+    // Test dependencies
+    testImplementation(projects.utils.testCommons)
 }
