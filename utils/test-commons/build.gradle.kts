@@ -34,7 +34,10 @@ dependencies {
 
     // Test: Kotest (core, assertions, property)
     api(libs.bundles.testing)
-    testImplementation(libs.bundles.testing)
     // Detekt formatting (ktlint rules packaged for Detekt)
     detektPlugins(libs.detekt.formatting)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }

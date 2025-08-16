@@ -7,6 +7,7 @@ package cl.ravenhill.keen.jvm.vector
 
 import cl.ravenhill.keen.jvm.VectorOps
 import io.kotest.core.spec.style.FreeSpec
+import io.kotest.matchers.doubles.shouldBeGreaterThanOrEqual
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
@@ -42,7 +43,8 @@ class DotProductImplTest : FreeSpec({
 
                     // relative tolerance: few ulps scaled by magnitude
                     val tol = Math.ulp(exp).coerceAtLeast(1e-15 * (1.0 + abs(exp)))
-                    abs(got - exp) <= 8.0 * tol
+
+                    abs(got - exp) shouldBeGreaterThanOrEqual 8.0 * tol
                 }
             }
         }

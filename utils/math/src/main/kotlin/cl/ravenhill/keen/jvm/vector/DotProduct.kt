@@ -5,6 +5,7 @@
 
 package cl.ravenhill.keen.jvm.vector
 
+import cl.ravenhill.keen.jvm.JvmSpecific
 import jdk.incubator.vector.DoubleVector
 import jdk.incubator.vector.VectorOperators
 import jdk.incubator.vector.VectorSpecies
@@ -108,10 +109,13 @@ internal interface DotProduct {
  *     3. `comp' = (t - sum) - y`
  *     4. `sum'  = t`
  *   Finally, lanes are merged with a **scalar Kahan** to preserve compensation across lanes.
+ *
+ * @property species Chosen SIMD species for `double`.
+ * @property lanes Number of lanes for the chosen species (SIMD width).
  */
+@JvmSpecific
 internal class DotProductImpl(
     private val species: VectorSpecies<Double>,
-    /** Number of lanes for the chosen species (SIMD width). */
     private val lanes: Int
 ) : DotProduct {
 

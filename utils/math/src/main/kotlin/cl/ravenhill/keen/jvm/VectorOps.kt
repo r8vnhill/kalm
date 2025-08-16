@@ -7,6 +7,8 @@ package cl.ravenhill.keen.jvm
 
 import cl.ravenhill.keen.jvm.vector.DotProduct
 import cl.ravenhill.keen.jvm.vector.DotProductImpl
+import cl.ravenhill.keen.jvm.vector.L2Norm
+import cl.ravenhill.keen.jvm.vector.L2NormImpl
 import jdk.incubator.vector.DoubleVector
 
 // A preferred species is a species of maximal bit-size for the platform.
@@ -55,4 +57,4 @@ private val lanes = species.length()
  * @see jdk.incubator.vector.DoubleVector
  */
 @JvmSpecific
-public object VectorOps : DotProduct by DotProductImpl(species, lanes)
+public object VectorOps : DotProduct by DotProductImpl(species, lanes), L2Norm by L2NormImpl(species, lanes)
