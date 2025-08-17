@@ -20,6 +20,11 @@ pluginManagement {
     val foojayResolverVersion: String = providers
         .gradleProperty("version.foojay.resolver")
         .orElse("1.0.0")
+        .apply {
+            if (!isPresent) {
+               logger.warn("No 'version.foojay.resolver' property found. Using default.")
+            }
+        }
         .get()
 
     // Declare the settings plugin and its version here

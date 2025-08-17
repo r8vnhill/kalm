@@ -6,10 +6,10 @@
  * This build script configures the *build-logic* included build that contains your precompiled / convention plugins.
  * Build logic runs **inside the Gradle daemon’s JVM**, so we:
  *
- * 1) Resolve a single “default Java” version from a Gradle property (`java.lts`) with a safe fallback to the
+ * 1) Resolve a single “default Java” version from a Gradle property (`keen.java.default`) with a safe fallback to the
  *    **current Gradle JVM** major version.
  * 2) Provide tiny helpers to apply that version to both Java and Kotlin *toolchains*.
- * 3) Pin Kotlin bytecode (`jvmTarget`) to **21** for broader IDE/daemon compatibility, regardless of which JDK compiles
+ * 3) Pin Kotlin bytecode (`jvmTarget`) to **22** for broader IDE/daemon compatibility, regardless of which JDK compiles
  *    the build logic.
  *
  * === Notes ===
@@ -32,17 +32,31 @@ dependencies {
     implementation(libs.kotlin.gradle.plugin)
 }
 
-// === Default Java Version ===
-// Resolve the default Java version for toolchains used by *build-logic*:
-// - Prefer a Gradle property `java.lts` (e.g., 21 or 22)
-// - Fall back to the current Gradle JVM's major version if not provided
-//
-// Rationale: Matching the Gradle JVM by default keeps build-logic loadable in IDEs running Gradle with 21, while still
-// allowing explicit override when needed.
-val defaultJava: Provider<Int> = providers
-    .gradleProperty("java.lts")
+//#region Default Java Version
+val defaultJavaProp = providers.gradleProperty("keen.java.default")
+val runtimeJavaVersion = JavaVersion.current().majorVersion
+
+if (!defaultJavaProp.isPresent) {
+    logger.lifecycle(
+        """
+        ⚠️  No 'keen.java.default' property found.
+        
+        Steps to fix:
+          • Add to root gradle.properties:
+                keen.java.default=22
+          • OR set globally in ~/.gradle/gradle.properties
+          • OR pass via CLI:
+                ./gradlew build -Pkeen.java.default=22
+
+        Falling back to current Gradle JVM: $runtimeJavaVersion
+        """.trimIndent()
+    )
+}
+
+val defaultJava: Provider<Int> = defaultJavaProp
     .map(String::toInt)
-    .orElse(JavaVersion.current().majorVersion.toInt())
+    .orElse(runtimeJavaVersion.toInt())
+//#endregion
 
 // === Helper extensions to apply the resolved Java version to both Java and Kotlin toolchains. ===
 
@@ -70,13 +84,11 @@ kotlin {
     setDefaultJavaVersion(defaultJava)
 
     compilerOptions {
-        // Ensure bytecode target is JVM 21 for broader compatibility with Gradle/IDEs, regardless of the actual JDK
-        // used to compile the build-logic.
-        jvmTarget.set(JvmTarget.JVM_21)
+        jvmTarget.set(JvmTarget.valueOf("JVM_${defaultJava.get()}"))
     }
 }
 
 // Warn on incompatible versions
-if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
-    logger.warn("Build-logic is optimized for Gradle JVM 21+. Current: ${JavaVersion.current()}")
+if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_22)) {
+    logger.warn("Build-logic is optimized for Gradle JVM 22+. Current: ${JavaVersion.current()}")
 }

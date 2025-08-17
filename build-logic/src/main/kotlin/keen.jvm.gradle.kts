@@ -24,10 +24,9 @@
  *  - Example: `./gradlew build -Pkeen.java.default=21`
  */
 
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import utils.jvmTargetFor
 import utils.resolveDefaultJavaVersion
-import utils.setDefaultJavaVersion
+import utils.setLanguageVersion
 
 plugins {
     kotlin("jvm") // Apply the Kotlin JVM plugin to enable JVM compilation
@@ -36,80 +35,40 @@ plugins {
 // Lazily resolve the default Java version as a Provider<Int> (e.g., 17, 21, 22)
 val defaultJava: Provider<Int> = providers.resolveDefaultJavaVersion()
 
+val moduleAdditionFlag = "--add-modules"
+val vectorModule = "jdk.incubator.vector"
+
 // ------------------------
 // Configure Java toolchain
 // ------------------------
 java.toolchain {
-    // Apply the default Java version to the Java toolchain
-    // Using providers allows lazy evaluation and configuration-cache safety
-    setDefaultJavaVersion(providers)
+    setLanguageVersion(defaultJava)
 }
 
 // ---------------------------------------
 // Configure Kotlin toolchain and compiler
 // ---------------------------------------
 kotlin {
-    // Apply the same default Java version to the Kotlin JVM toolchain
-    setDefaultJavaVersion(providers)
+    setLanguageVersion(defaultJava)
 
     compilerOptions {
-        // Map the requested Java version to a supported Kotlin JVM target
-        // Fallback to JVM_1_8 if below 17 to ensure compatibility
-        val requestedTarget = defaultJava.map { v ->
-            when {
-                v >= 24 -> JvmTarget.JVM_24
-                v == 23 -> JvmTarget.JVM_23
-                v == 22 -> JvmTarget.JVM_22
-                v == 21 -> JvmTarget.JVM_21
-                v == 20 -> JvmTarget.JVM_20
-                v == 19 -> JvmTarget.JVM_19
-                v == 18 -> JvmTarget.JVM_18
-                v == 17 -> JvmTarget.JVM_17
-                else    -> JvmTarget.JVM_1_8
-            }
-        }
-        jvmTarget.set(requestedTarget)
+        jvmTarget.set(defaultJava.map(::jvmTargetFor))
 
-        // Opt into experimental Kotlin APIs
         optIn.add("kotlin.RequiresOptIn")
+        freeCompilerArgs.addAll(
+            "-Xcontext-parameters",
+            "-Xnested-type-aliases",
+            "-Xjavac-arguments='$moduleAdditionFlag=$vectorModule'"
+        )
 
-        // Enable context parameters and nested type aliases (still requires X-flag as of Kotlin 2.2.x)
-        freeCompilerArgs.addAll("-Xcontext-parameters", "-Xnested-type-aliases")
-
-        // Configure warnings-as-errors via a Gradle property (-Pkotlin.warningsAsErrors)
         val wError = providers.gradleProperty("kotlin.warningsAsErrors")
-            .map(String::toBoolean)
-            .orElse(false)
+            .map(String::toBoolean).orElse(false)
         allWarningsAsErrors.set(wError)
     }
 }
 
-
-// compute a JavaLanguageVersion from property
-val defaultJavaLang: Provider<JavaLanguageVersion> = defaultJava.map(JavaLanguageVersion::of)
-
-// get a launcher for the chosen toolchain
-val toolchains = project.extensions.getByType(JavaToolchainService::class.java)
-val testLauncher = toolchains.launcherFor {
-    languageVersion.set(defaultJavaLang)
-}
-
-tasks.withType<Test>().configureEach {
-    // run tests on the same toolchain JDK, not the Gradle daemon JDK
-    javaLauncher.set(testLauncher)
-
-    useJUnitPlatform()
-
-    // add the incubator module at runtime
-    jvmArgs("--add-modules=jdk.incubator.vector")
-}
-
 tasks.withType<JavaCompile>().configureEach {
+    options.release.set(defaultJava.map { it })
     // allow referencing the incubator module at compile time
-    options.compilerArgs.addAll(listOf("--add-modules", "jdk.incubator.vector"))
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    // forward to javac for Kotlin sources that touch JDK modules
-    compilerOptions.freeCompilerArgs.add("-Xjavac-arguments=--add-modules=jdk.incubator.vector")
+    options.compilerArgs.addAll(listOf(moduleAdditionFlag, vectorModule))
 }

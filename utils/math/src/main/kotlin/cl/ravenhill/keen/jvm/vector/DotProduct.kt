@@ -114,7 +114,7 @@ internal interface DotProduct {
  * @property lanes Number of lanes for the chosen species (SIMD width).
  */
 @JvmSpecific
-internal class DotProductImpl(
+internal class VectorizedDotProduct(
     private val species: VectorSpecies<Double>,
     private val lanes: Int
 ) : DotProduct {

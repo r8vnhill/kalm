@@ -142,3 +142,78 @@ kover {
         }
     }
 }
+
+//#region Default Java version checks
+// opt-out switch: -PskipJavaDefaultCheck=true
+val skipCheck = providers.gradleProperty("skipJavaDefaultCheck")
+    .map(String::toBoolean).orElse(false)
+
+val verifyKeenJavaDefault by tasks.registering {
+    group = "verification"
+    description = "Ensures keen.java.default is present in root and build-logic gradle.properties and that both match."
+
+    // Track the two properties files
+    val rootPropsFile = layout.projectDirectory.file("gradle.properties")
+    val buildLogicPropsFile = layout.projectDirectory.file("build-logic/gradle.properties")
+
+    inputs.files(rootPropsFile, buildLogicPropsFile)
+    outputs.upToDateWhen { false } // always re-run to catch edits
+
+    doLast {
+        if (skipCheck.get()) {
+            logger.lifecycle("Skipping keen.java.default consistency check (-PskipJavaDefaultCheck=true).")
+            return@doLast
+        }
+
+        fun readProp(file: File, key: String): String? = file.takeIf { it.isFile }?.let {
+            Properties().apply { it.inputStream().use(::load) }.getProperty(key)
+        }?.trim()?.takeIf { it.isNotEmpty() }
+
+        val key = "keen.java.default"
+        val rootVal = readProp(rootPropsFile.asFile, key)
+        val logicVal = readProp(buildLogicPropsFile.asFile, key)
+
+        fun guidance(): String = """
+            Define the property in BOTH files with the same value. Examples:
+              • Root:        ${rootPropsFile.asFile}
+                    $key=22
+              • Build-logic: ${buildLogicPropsFile.asFile}
+                    $key=22
+
+            You can also set it per-invocation:
+              ./gradlew assemble -P$key=22
+        """.trimIndent()
+
+        requireNotNull(rootVal) {
+            "Missing '$key' in ${rootPropsFile.asFile}. \n\n${guidance()}"
+        }
+        requireNotNull(logicVal) {
+            "Missing '$key' in ${buildLogicPropsFile.asFile}. \n\n${guidance()}"
+        }
+
+        // basic sanity
+        val asInt = { s: String ->
+            s.toIntOrNull() ?: throw GradleException(
+                "Invalid $key value '$s' (must be an integer, e.g. 17, 21, 22).\n\n${guidance()}"
+            )
+        }
+        val rootInt = asInt(rootVal)
+        val logicInt = asInt(logicVal)
+
+        if (rootInt != logicInt) {
+            throw GradleException(
+                "Inconsistent '$key': root=$rootInt, build-logic=$logicInt.\n\n${guidance()}"
+            )
+        }
+
+        logger.lifecycle("✔ '$key' = $rootInt (root & build-logic match).")
+    }
+}
+
+// Make every `assemble` in the build depend on the check
+allprojects {
+    tasks.matching { it.name == "assemble" }.configureEach {
+        dependsOn(rootProject.tasks.named("verifyKeenJavaDefault"))
+    }
+}
+//#region

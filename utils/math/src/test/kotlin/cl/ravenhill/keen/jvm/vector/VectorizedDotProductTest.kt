@@ -5,11 +5,14 @@
 
 package cl.ravenhill.keen.jvm.vector
 
+import cl.ravenhill.keen.jvm.VectorOps
+import cl.ravenhill.keen.matchers.shouldBeCloseTo
+import cl.ravenhill.keen.matchers.shouldBeFinite
 import io.kotest.core.spec.style.FreeSpec
 import java.math.BigDecimal
 import java.math.MathContext
 
-class DotProductImplTest : FreeSpec({
+class VectorizedDotProductTest : FreeSpec({
 
     val ref = ScalarDotProduct
     val oracle = BigDecimalDotProduct()
@@ -17,21 +20,18 @@ class DotProductImplTest : FreeSpec({
     fun makeArray(total: Int, off: Int, init: (Int) -> Double): DoubleArray =
         DoubleArray(total) { i -> init(i) }
 
-    "a dot product kernel" - {
-        "when length is zero" - {
-            "should return 0.0" {
-                TODO()
-//                val a = DoubleArray(0)
-//                val b = DoubleArray(0)
-//
-//                val got = with(VectorOps) { a dotProduct b }
-//                got.shouldBeFinite()
-//                got.shouldBeCloseTo(0.0, absoluteTolerance = 0.0, relativeTolerance = 0.0)
+    with(VectorOps) {
+        "a dot product kernel" - {
+            "when length is zero" - {
+                "should return 0.0" {
+                    (doubleArrayOf() dotProduct doubleArrayOf())
+                        .shouldBeFinite()
+                        .shouldBeCloseTo(0.0, absoluteTolerance = 0.0, relativeTolerance = 0.0)
+                }
             }
-        }
 
-        "when compared to scalar reference" - {
-            TODO()
+            "when compared to scalar reference" - {
+                TODO()
 //            "should agree within a few ulps on random slices" {
 //                checkAll(
 //                    Arb.int(0..256), // n
@@ -79,10 +79,10 @@ class DotProductImplTest : FreeSpec({
 //                    got.shouldBeCloseTo(exp, absoluteTolerance = absTol, relativeTolerance = relTol)
 //                }
 //            }
-        }
+            }
 
-        "when validated against high-precision oracle (small n)" - {
-            TODO()
+            "when validated against high-precision oracle (small n)" - {
+                TODO()
 //            "should be close on adversarial cancellation inputs" {
 //                checkAll(Arb.int(1..32)) { n ->
 //                    // Alternan magnitudes grandes para inducir cancelación
@@ -100,10 +100,10 @@ class DotProductImplTest : FreeSpec({
 //                    got.shouldBeCloseTo(exp, absoluteTolerance = absTol, relativeTolerance = relTol)
 //                }
 //            }
-        }
+            }
 
-        "when stress-tested with sign/magnitude mixtures" - {
-            TODO()
+            "when stress-tested with sign/magnitude mixtures" - {
+                TODO()
 //            "should keep relative error bounded" {
 //                checkAll(Arb.int(16..128)) { n ->
 //                    val a = DoubleArray(n) { k ->
@@ -129,6 +129,7 @@ class DotProductImplTest : FreeSpec({
 //                    (abs(got - exp) <= absTol || abs(got - exp) <= relTol * (1.0 + abs(exp))).shouldBeTrue()
 //                }
 //            }
+            }
         }
     }
 })

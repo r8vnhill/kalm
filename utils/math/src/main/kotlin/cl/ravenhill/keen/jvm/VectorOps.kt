@@ -6,7 +6,7 @@
 package cl.ravenhill.keen.jvm
 
 import cl.ravenhill.keen.jvm.vector.DotProduct
-import cl.ravenhill.keen.jvm.vector.DotProductImpl
+import cl.ravenhill.keen.jvm.vector.VectorizedDotProduct
 import cl.ravenhill.keen.jvm.vector.L2Norm
 import cl.ravenhill.keen.jvm.vector.VectorizedL2Norm
 import jdk.incubator.vector.DoubleVector
@@ -18,7 +18,7 @@ private val lanes = species.length()
 /**
  * JVM-specific façade for vectorized dot products.
  *
- * This object implements [DotProduct] by **delegating** to a [DotProductImpl] that is configured with the platform’s
+ * This object implements [DotProduct] by **delegating** to a [VectorizedDotProduct] that is configured with the platform’s
  * **preferred SIMD shape** (`SPECIES_PREFERRED`) and its lane count.
  * The delegation means all methods in [DotProduct] are available directly on `VectorOps` without boilerplate.
  *
@@ -57,4 +57,4 @@ private val lanes = species.length()
  * @see jdk.incubator.vector.DoubleVector
  */
 @JvmSpecific
-public object VectorOps : DotProduct by DotProductImpl(species, lanes), L2Norm by VectorizedL2Norm(species, lanes)
+public object VectorOps : DotProduct by VectorizedDotProduct(species, lanes), L2Norm by VectorizedL2Norm(species, lanes)
