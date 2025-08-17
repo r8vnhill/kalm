@@ -25,6 +25,7 @@
  */
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import utils.resolveDefaultJavaVersion
 import utils.setDefaultJavaVersion
 
@@ -83,6 +84,32 @@ kotlin {
     }
 }
 
+
+// compute a JavaLanguageVersion from property
+val defaultJavaLang: Provider<JavaLanguageVersion> = defaultJava.map(JavaLanguageVersion::of)
+
+// get a launcher for the chosen toolchain
+val toolchains = project.extensions.getByType(JavaToolchainService::class.java)
+val testLauncher = toolchains.launcherFor {
+    languageVersion.set(defaultJavaLang)
+}
+
 tasks.withType<Test>().configureEach {
-    jvmArgs("--add-modules", "jdk.incubator.vector")
+    // run tests on the same toolchain JDK, not the Gradle daemon JDK
+    javaLauncher.set(testLauncher)
+
+    useJUnitPlatform()
+
+    // add the incubator module at runtime
+    jvmArgs("--add-modules=jdk.incubator.vector")
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    // allow referencing the incubator module at compile time
+    options.compilerArgs.addAll(listOf("--add-modules", "jdk.incubator.vector"))
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    // forward to javac for Kotlin sources that touch JDK modules
+    compilerOptions.freeCompilerArgs.add("-Xjavac-arguments=--add-modules=jdk.incubator.vector")
 }

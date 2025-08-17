@@ -82,7 +82,7 @@ private fun shiftByUlpsExact(x: Double, ulps: Long): Double {
     return longBitsToDouble(targetBits)
 }
 
-class FloatingPointComparisonTest : FreeSpec({
+class CloseToMatchersTest : FreeSpec({
 
     // ---------- beCloseTo (mixed absolute/relative) ----------
 

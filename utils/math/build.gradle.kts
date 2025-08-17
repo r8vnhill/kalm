@@ -18,6 +18,7 @@ plugins {
     id("keen.library")
     id("keen.jvm")
     alias(libs.plugins.detekt)
+    alias(libs.plugins.kover)
 }
 
 dependencies {

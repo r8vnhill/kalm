@@ -49,7 +49,7 @@ interface ProviderFactoryRef {
 
     companion object {
         /** A constant representing the name of the Gradle property used to configure the default Java version. */
-        private const val PROP_JAVA_DEFAULT: String = "keen.java.default"
+        private const val PROP_JAVA_DEFAULT: String = "java.lts"
 
         /** Framework default when the property is absent. */
         const val DEFAULT_JAVA_VERSION: Int = 22

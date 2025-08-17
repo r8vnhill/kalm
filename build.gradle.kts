@@ -26,6 +26,7 @@ plugins {
 
     alias(libs.plugins.version.catalog.update)
     alias(libs.plugins.ben.manes.versions)
+    alias(libs.plugins.kover)
 }
 
 // === Kotlin binary compatibility validation ===
@@ -62,6 +63,11 @@ subprojects {
             config.setFrom(rootProject.files("config/detekt/detekt.yml"))
             parallel = true
         }
+    }
+
+    // Apply Kover where you want coverage (typically all JVM modules with tests)
+    plugins.withId("org.jetbrains.kotlin.jvm") {
+        apply(plugin = "org.jetbrains.kotlinx.kover")
     }
 }
 
@@ -109,4 +115,30 @@ tasks.register("dependencyMaintenance") {
     description = "Runs version catalog updates and dependency update reports."
     dependsOn("versionCatalogUpdate")
     dependsOn("dependencyUpdates")
+}
+
+kover {
+    // Global defaults for all projects (you can override per project if needed)
+    reports {
+        // Exclude things that skew coverage
+        filters {
+            excludes {
+                // Packages, classes, annotations
+                packages(
+                    ".*generated.*",
+                    ".*build.*"
+                )
+                classes(
+                    ".*Dagger.*",
+                    ".*Hilt.*",
+                    ".*Module.*",
+                    ".*Factory.*"
+                )
+                annotatedBy(
+                    "javax.annotation.Generated",
+                    "kotlinx.serialization.Serializable"
+                )
+            }
+        }
+    }
 }

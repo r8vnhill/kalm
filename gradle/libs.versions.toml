@@ -9,6 +9,7 @@ kotlin = "2.2.20-Beta2"
 kotlin-bin-compatibility-validator = "0.18.1"
 mockk = "1.14.5"
 version-catalog-update = "1.0.0"
+kover = "0.9.1"
 
 [libraries]
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
@@ -28,6 +29,7 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-bin-compatibility-validator" }
 version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "version-catalog-update" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 [bundles]
 arrow = [

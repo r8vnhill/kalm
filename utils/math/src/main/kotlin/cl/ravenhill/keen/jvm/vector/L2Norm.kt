@@ -15,7 +15,7 @@ public interface L2Norm {
     public fun DoubleArray.l2Norm(): Double
 }
 
-internal class L2NormImpl(
+internal class VectorizedL2Norm(
     private val species: VectorSpecies<Double>,
     private val lanes: Int
 ) : L2Norm {
