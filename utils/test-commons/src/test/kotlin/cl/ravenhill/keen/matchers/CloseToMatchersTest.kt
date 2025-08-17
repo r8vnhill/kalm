@@ -18,9 +18,7 @@ import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.longs
-import java.lang.Double.doubleToRawLongBits
-import java.lang.Double.longBitsToDouble
-import java.lang.Double.max
+import java.lang.Double.*
 import kotlin.math.abs
 import kotlin.math.nextDown
 import kotlin.math.nextUp
@@ -71,9 +69,9 @@ private fun unordered(ord: Long): Long =
     if (ord < 0) ord and Long.MAX_VALUE else ord.inv()
 
 private fun shiftByUlpsExact(x: Double, ulps: Long): Double {
-    val xn   = normalizeZero(x)
+    val xn = normalizeZero(x)
     val bits = doubleToRawLongBits(xn)
-    val o    = ordered(bits)
+    val o = ordered(bits)
 
     // Small shifts (<= 10) in your tests won’t overflow |o + ulps|.
     val targetO = o + ulps
@@ -198,7 +196,7 @@ class CloseToMatchersTest : FreeSpec({
 
         "should pass if maxUlps covers the distance (no zero-cross)" {
             checkAll(Exhaustive.longs(0L..10L), Arb.finiteDouble()) { maxUlps, raw ->
-                val base = if (raw < 0.0) -raw else raw  // avoid crossing zero
+                val base = if (raw < 0.0) -raw else raw // avoid crossing zero
                 val moved = generateSequence(base) { it.nextUp() }.drop(maxUlps.toInt()).first()
                 moved.shouldBeCloseToUlps(base, maxUlps)
             }

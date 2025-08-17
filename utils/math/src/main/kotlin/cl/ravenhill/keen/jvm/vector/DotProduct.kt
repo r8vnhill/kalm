@@ -119,6 +119,11 @@ internal class VectorizedDotProduct(
     private val lanes: Int
 ) : DotProduct {
 
+    /**
+     * Represents a pair of subarray views that are processed together in vectorized operations.
+     */
+    private typealias Views = Pair<SubArrayView, SubArrayView>
+
     override infix fun DoubleArray.dotProduct(that: DoubleArray): Double =
         dotProduct(this, 0, minOf(this.size, that.size), that, 0)
 
@@ -130,15 +135,19 @@ internal class VectorizedDotProduct(
         checkBounds(a.size, aOff, len)
         checkBounds(b.size, bOff, len)
 
+        val viewA = SubArrayView(a, aOff)
+        val viewB = SubArrayView(b, bOff)
+
         // Vectorized accumulation over full-width blocks.
         val (next, acc0) = blockReduce(
-            a, aOff, b, bOff,
+            a = viewA,
+            b = viewB,
             len = len,
             acc0 = DoubleVector.zero(species)
         ) { va, vb, acc -> va.fma(vb, acc) }
 
         // Process the (possibly partial) masked tail, then horizontally sum SIMD lanes.
-        return accumulateMaskedTail(a, aOff, b, bOff, next, len, acc0)
+        return accumulateMaskedTail(viewA, viewB, next, len, acc0)
             .reduceLanes(VectorOperators.ADD)
     }
 
@@ -156,15 +165,14 @@ internal class VectorizedDotProduct(
         val zero = DoubleVector.zero(species)
         val state0 = KahanState(sum = zero, comp = zero)
 
+        val viewA = SubArrayView(a, aOff)
+        val viewB = SubArrayView(b, bOff)
+
         // Vectorized Kahan over full-width blocks.
-        val (next, state1) = kahanBlockReduce(
-            a, aOff, b, bOff,
-            len = len,
-            state0 = state0
-        )
+        val (next, state1) = kahanBlockReduce(viewA, viewB, len, state0)
 
         // Apply one masked Kahan step to the tail (if any), then horizontally reduce with scalar Kahan.
-        val state2 = kahanMaskedTail(a, aOff, b, bOff, next = next, len = len, state = state1)
+        val state2 = kahanMaskedTail(viewA, SubArrayView(b, bOff), next, len, state = state1)
         return horizontalKahan(state2.sum, state2.comp)
     }
 
@@ -175,28 +183,24 @@ internal class VectorizedDotProduct(
      * `len` is the total range length from the current start (i.e., we index `[0, len)`).
      */
     private fun kahanMaskedTail(
-        a: DoubleArray, aOff: Int,
-        b: DoubleArray, bOff: Int,
-        next: Int, len: Int,
+        a: SubArrayView,
+        b: SubArrayView,
+        next: Int,
+        len: Int,
         state: KahanState
-    ): KahanState {
-        require(next in 0..len)
-        if (next >= len) return state
-
-        val m = species.indexInRange(next, len)
-        val va = DoubleVector.fromArray(species, a, aOff + next, m)
-        val vb = DoubleVector.fromArray(species, b, bOff + next, m)
-        val prod = va.mul(vb)
-        return kahanUpdate(state.sum, state.comp, prod) // consistent (sum, comp) ordering
-    }
+    ): KahanState =
+        (a to b).maskedTail(next, len, onEmpty = { state }) { va, vb ->
+            val prod = va.mul(vb)
+            kahanUpdate(state.sum, state.comp, prod)
+        }
 
     /**
      * Vectorized Kahan over full-width blocks (no mask), returning the next index and state.
      * Complexity: `O(len)`. No heap allocations on the hot path; JIT typically scalarizes `KahanState`.
      */
     private fun kahanBlockReduce(
-        a: DoubleArray, aOff: Int,
-        b: DoubleArray, bOff: Int,
+        a: SubArrayView,
+        b: SubArrayView,
         len: Int,
         state0: KahanState
     ): Pair<Int, KahanState> {
@@ -206,8 +210,8 @@ internal class VectorizedDotProduct(
         val limit = len - (len % lanes)
 
         while (i < limit) {
-            val va = DoubleVector.fromArray(species, a, aOff + i)
-            val vb = DoubleVector.fromArray(species, b, bOff + i)
+            val va = DoubleVector.fromArray(species, a.arr, a.offset + i)
+            val vb = DoubleVector.fromArray(species, b.arr, b.offset + i)
             val prod = va.mul(vb)
             val (s, c) = kahanUpdate(sum, comp, prod)
             sum = s; comp = c
@@ -239,8 +243,8 @@ internal class VectorizedDotProduct(
      * The final partial block is **not** handled here.
      */
     private inline fun blockReduce(
-        a: DoubleArray, aOff: Int,
-        b: DoubleArray, bOff: Int,
+        a: SubArrayView,
+        b: SubArrayView,
         len: Int,
         acc0: DoubleVector,
         crossinline step: (DoubleVector, DoubleVector, DoubleVector) -> DoubleVector
@@ -249,8 +253,8 @@ internal class VectorizedDotProduct(
         var acc = acc0
         val limit = len - (len % lanes)
         while (i < limit) {
-            val va = DoubleVector.fromArray(species, a, aOff + i)
-            val vb = DoubleVector.fromArray(species, b, bOff + i)
+            val va = DoubleVector.fromArray(species, a.arr, a.offset + i)
+            val vb = DoubleVector.fromArray(species, b.arr, b.offset + i)
             acc = step(va, vb, acc)
             i += lanes
         }
@@ -262,19 +266,15 @@ internal class VectorizedDotProduct(
      * No-op when `next >= len`.
      */
     private fun accumulateMaskedTail(
-        a: DoubleArray, aOff: Int,
-        b: DoubleArray, bOff: Int,
-        next: Int, len: Int,
+        a: SubArrayView,
+        b: SubArrayView,
+        next: Int,
+        len: Int,
         acc0: DoubleVector
-    ): DoubleVector {
-        require(next >= 0 && len >= 0 && next <= len)
-        if (next >= len) return acc0
-
-        val m = species.indexInRange(next, len)
-        val va = DoubleVector.fromArray(species, a, aOff + next, m)
-        val vb = DoubleVector.fromArray(species, b, bOff + next, m)
-        return va.fma(vb, acc0)
-    }
+    ): DoubleVector =
+        (a to b).maskedTail(next, len, onEmpty = { acc0 }) { va, vb ->
+            va.fma(vb, acc0)
+        }
 
     /**
      * Horizontal Kahan reduction of two vectors `(sumV, compV)` into a scalar.
@@ -302,9 +302,42 @@ internal class VectorizedDotProduct(
         }
     }
 
+    /**
+     * Loads a masked tail (if any) and combines its vectors.
+     *
+     * - Returns `onEmpty()` when `next >= len`.
+     * - Otherwise builds the mask and loads `va`/`vb` once, then calls [combine].
+     *
+     * Kept as an extension on `Pair<SubArrayView, SubArrayView>` to avoid a long parameter list.
+     */
+    private inline fun <R> Views.maskedTail(
+        next: Int,
+        len: Int,
+        crossinline onEmpty: () -> R,
+        crossinline combine: (va: DoubleVector, vb: DoubleVector) -> R
+    ): R {
+        require(next in 0..len) { "next=$next must be in 0..$len" }
+        if (next >= len) return onEmpty()
+
+        val (a, b) = this
+        val m = species.indexInRange(next, len)
+        val va = DoubleVector.fromArray(species, a.arr, a.offset + next, m)
+        val vb = DoubleVector.fromArray(species, b.arr, b.offset + next, m)
+        return combine(va, vb)
+    }
+
     /** Loop result for block reduction (next index, vector accumulator). */
     private data class Acc(val index: Int, val sum: DoubleVector)
 
     /** Kahan per-lane state (sum and compensation). */
     private data class KahanState(val sum: DoubleVector, val comp: DoubleVector)
+
+    /**
+     * Represents a view into a subarray of a larger `DoubleArray` without making a copy.
+     *
+     * @property arr The underlying array being viewed.
+     * @property offset The offset within the array where the subarray begins.
+     */
+    @Suppress("ArrayInDataClass")
+    private data class SubArrayView(val arr: DoubleArray, val offset: Int)
 }

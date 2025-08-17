@@ -16,6 +16,7 @@ import io.kotest.property.arbitrary.double
  */
 fun Arb.Companion.finiteDouble(): Arb<Double> = Arb
     .double(
-        min = -1e6, max = 1e6,
+        min = -1e6,
+        max = 1e6,
         includeNonFiniteEdgeCases = false
     )

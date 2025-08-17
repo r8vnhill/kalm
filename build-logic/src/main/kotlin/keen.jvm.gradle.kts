@@ -56,7 +56,9 @@ kotlin {
 
         optIn.add("kotlin.RequiresOptIn")
         freeCompilerArgs.addAll(
-            "-Xcontext-parameters",
+            "-Xcontext-parameters", // Enable context parameters
+            "-Xjsr305=strict",      // Enable strict nullability checks
+            "-Xjvm-default=all",    // Enable default methods in interfaces
             "-Xnested-type-aliases",
             "-Xjavac-arguments=$moduleAdditionFlag=$vectorModule"
         )
