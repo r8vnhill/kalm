@@ -1,40 +1,273 @@
-public abstract interface class cl/ravenhill/keen/engine/OptimizationEngine {
-	public abstract fun getObjectiveFunction ()Lkotlin/jvm/functions/Function1;
-	public abstract fun optimize (Lcl/ravenhill/keen/repr/Feature;)Lcl/ravenhill/keen/repr/Feature;
+public abstract class cl/ravenhill/keen/exceptions/GradientError : java/lang/Exception, cl/ravenhill/keen/exceptions/KeenException {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 }
 
-public final class cl/ravenhill/keen/engine/SimpleHillClimber : cl/ravenhill/keen/engine/OptimizationEngine {
-	public fun <init> (Lkotlin/jvm/functions/Function1;DI)V
-	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;DIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun getObjectiveFunction ()Lkotlin/jvm/functions/Function1;
-	public synthetic fun optimize (Lcl/ravenhill/keen/repr/Feature;)Lcl/ravenhill/keen/repr/Feature;
-	public fun optimize (Lcl/ravenhill/keen/repr/ScalarFeature;)Lcl/ravenhill/keen/repr/ScalarFeature;
-}
-
-public final class cl/ravenhill/keen/engine/SimpleHillClimberKt {
-	public static final fun main ()V
-	public static synthetic fun main ([Ljava/lang/String;)V
-}
-
-public abstract interface class cl/ravenhill/keen/repr/Feature {
-	public abstract fun flatMap (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/keen/repr/Feature;
-	public abstract fun map (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/keen/repr/Feature;
-	public abstract fun zipWith (Lcl/ravenhill/keen/repr/Feature;Lkotlin/jvm/functions/Function2;)Lcl/ravenhill/keen/repr/Feature;
-}
-
-public final class cl/ravenhill/keen/repr/ScalarFeature : cl/ravenhill/keen/repr/Feature {
-	public fun <init> (D)V
-	public final fun component1 ()D
-	public final fun copy (D)Lcl/ravenhill/keen/repr/ScalarFeature;
-	public static synthetic fun copy$default (Lcl/ravenhill/keen/repr/ScalarFeature;DILjava/lang/Object;)Lcl/ravenhill/keen/repr/ScalarFeature;
+public final class cl/ravenhill/keen/exceptions/GradientError$InvalidOperation : cl/ravenhill/keen/exceptions/GradientError {
+	public fun <init> (Ljava/lang/String;Lcl/ravenhill/keen/repr/Gradient;Ljava/lang/Object;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcl/ravenhill/keen/repr/Gradient;Ljava/lang/Object;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcl/ravenhill/keen/repr/Gradient;
+	public final fun component3 ()Ljava/lang/Object;
+	public final fun component4 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/String;Lcl/ravenhill/keen/repr/Gradient;Ljava/lang/Object;Ljava/lang/Throwable;)Lcl/ravenhill/keen/exceptions/GradientError$InvalidOperation;
+	public static synthetic fun copy$default (Lcl/ravenhill/keen/exceptions/GradientError$InvalidOperation;Ljava/lang/String;Lcl/ravenhill/keen/repr/Gradient;Ljava/lang/Object;Ljava/lang/Throwable;ILjava/lang/Object;)Lcl/ravenhill/keen/exceptions/GradientError$InvalidOperation;
 	public fun equals (Ljava/lang/Object;)Z
-	public fun flatMap (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/keen/repr/Feature;
-	public final fun getX ()D
+	public fun getCause ()Ljava/lang/Throwable;
+	public final fun getOperation ()Ljava/lang/String;
+	public final fun getOther ()Ljava/lang/Object;
+	public final fun getSelf ()Lcl/ravenhill/keen/repr/Gradient;
 	public fun hashCode ()I
-	public synthetic fun map (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/keen/repr/Feature;
-	public fun map (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/keen/repr/ScalarFeature;
 	public fun toString ()Ljava/lang/String;
-	public synthetic fun zipWith (Lcl/ravenhill/keen/repr/Feature;Lkotlin/jvm/functions/Function2;)Lcl/ravenhill/keen/repr/Feature;
-	public fun zipWith (Lcl/ravenhill/keen/repr/ScalarFeature;Lkotlin/jvm/functions/Function2;)Lcl/ravenhill/keen/repr/ScalarFeature;
+}
+
+public final class cl/ravenhill/keen/exceptions/InvalidGradientException : java/lang/Exception, cl/ravenhill/keen/exceptions/KeenException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class cl/ravenhill/keen/exceptions/InvalidThresholdException : java/lang/Exception, cl/ravenhill/keen/exceptions/KeenException {
+	public fun <init> (Ljava/lang/String;D)V
+}
+
+public abstract interface class cl/ravenhill/keen/exceptions/KeenException {
+}
+
+public abstract interface class cl/ravenhill/keen/problem/Objective : kotlin/jvm/functions/Function1 {
+	public abstract fun invoke (Lcl/ravenhill/keen/repr/Solution;)Ljava/lang/Double;
+}
+
+public abstract interface class cl/ravenhill/keen/problem/Problem {
+	public static final field Companion Lcl/ravenhill/keen/problem/Problem$Companion;
+	public abstract fun getConstraints ()Ljava/util/Collection;
+	public abstract fun getObjectives-1X0FA-Y ()Ljava/util/List;
+}
+
+public final class cl/ravenhill/keen/problem/Problem$Companion {
+	public final fun invoke (Lcl/ravenhill/keen/problem/Objective;[Lcl/ravenhill/keen/problem/Objective;Ljava/util/Collection;)Lcl/ravenhill/keen/problem/Problem;
+	public static synthetic fun invoke$default (Lcl/ravenhill/keen/problem/Problem$Companion;Lcl/ravenhill/keen/problem/Objective;[Lcl/ravenhill/keen/problem/Objective;Ljava/util/Collection;ILjava/lang/Object;)Lcl/ravenhill/keen/problem/Problem;
+	public final fun invoke-ZALtuoE (Ljava/util/List;Ljava/util/Collection;)Lcl/ravenhill/keen/problem/Problem;
+	public static synthetic fun invoke-ZALtuoE$default (Lcl/ravenhill/keen/problem/Problem$Companion;Ljava/util/List;Ljava/util/Collection;ILjava/lang/Object;)Lcl/ravenhill/keen/problem/Problem;
+}
+
+public abstract interface class cl/ravenhill/keen/problem/constrained/Constraint : kotlin/jvm/functions/Function1 {
+	public abstract fun getLeft ()Lkotlin/jvm/functions/Function1;
+	public abstract fun getRight ()Lkotlin/jvm/functions/Function1;
+}
+
+public abstract interface class cl/ravenhill/keen/problem/constrained/EqualityConstraint : cl/ravenhill/keen/problem/constrained/Constraint {
+	public static final field Companion Lcl/ravenhill/keen/problem/constrained/EqualityConstraint$Companion;
+	public abstract fun getThreshold-IPGAAD0 ()D
+	public fun invoke (Lcl/ravenhill/keen/repr/Solution;)Ljava/lang/Boolean;
+	public synthetic fun invoke (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class cl/ravenhill/keen/problem/constrained/EqualityConstraint$Companion {
+	public final fun invoke (Larrow/core/Either;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Larrow/core/Either;
+	public final fun withDefaultThreshold (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;D)Larrow/core/Either;
+	public static synthetic fun withDefaultThreshold$default (Lcl/ravenhill/keen/problem/constrained/EqualityConstraint$Companion;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;DILjava/lang/Object;)Larrow/core/Either;
+}
+
+public final class cl/ravenhill/keen/problem/constrained/EqualityConstraint$DefaultImpls {
+	public static fun invoke (Lcl/ravenhill/keen/problem/constrained/EqualityConstraint;Lcl/ravenhill/keen/repr/Solution;)Ljava/lang/Boolean;
+}
+
+public abstract interface class cl/ravenhill/keen/problem/constrained/InequalityConstraint : cl/ravenhill/keen/problem/constrained/Constraint {
+	public static final field Companion Lcl/ravenhill/keen/problem/constrained/InequalityConstraint$Companion;
+	public abstract fun getType ()Lcl/ravenhill/keen/util/InequalityType;
+	public fun invoke (Lcl/ravenhill/keen/repr/Solution;)Ljava/lang/Boolean;
+	public synthetic fun invoke (Ljava/lang/Object;)Ljava/lang/Object;
+}
+
+public final class cl/ravenhill/keen/problem/constrained/InequalityConstraint$Companion {
+	public final fun invoke (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lcl/ravenhill/keen/util/InequalityType;)Lcl/ravenhill/keen/problem/constrained/InequalityConstraint;
+}
+
+public final class cl/ravenhill/keen/problem/constrained/InequalityConstraint$DefaultImpls {
+	public static fun invoke (Lcl/ravenhill/keen/problem/constrained/InequalityConstraint;Lcl/ravenhill/keen/repr/Solution;)Ljava/lang/Boolean;
+}
+
+public final class cl/ravenhill/keen/repr/Gradient : cl/ravenhill/keen/util/size/HasSize, java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
+	public static final field Companion Lcl/ravenhill/keen/repr/Gradient$Companion;
+	public synthetic fun <init> ([DLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun div (D)Lcl/ravenhill/keen/repr/Gradient;
+	public final fun dot (Lcl/ravenhill/keen/repr/Gradient;)Larrow/core/Either;
+	public final fun dotKahan (Lcl/ravenhill/keen/repr/Gradient;)Larrow/core/Either;
+	public fun equals (Ljava/lang/Object;)Z
+	public static final fun fill-b9AeEeE (ID)Larrow/core/Either;
+	public static final fun fromArray ([D)Larrow/core/Either;
+	public final fun get (I)D
+	public final fun getOrElse (ILkotlin/jvm/functions/Function1;)D
+	public final fun getOrNull (I)Ljava/lang/Double;
+	public fun getSize-nu1BF6k ()I
+	public fun hashCode ()I
+	public static final fun invoke-GZgkXh4 (Ljava/util/List;)Lcl/ravenhill/keen/repr/Gradient;
+	public synthetic fun iterator ()Ljava/util/Iterator;
+	public fun iterator ()Lkotlin/collections/DoubleIterator;
+	public final fun l2Norm ()D
+	public final fun map (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/keen/repr/Gradient;
+	public final fun minus (Lcl/ravenhill/keen/repr/Gradient;)Larrow/core/Either;
+	public static final fun of (D[D)Lcl/ravenhill/keen/repr/Gradient;
+	public final fun plus (Lcl/ravenhill/keen/repr/Gradient;)Larrow/core/Either;
+	public final fun safeDiv (D)Larrow/core/Either;
+	public final fun squaredL2Norm ()D
+	public final fun times (D)Lcl/ravenhill/keen/repr/Gradient;
+	public final fun toDoubleArray ()[D
+	public final fun toList ()Ljava/util/List;
+	public fun toString ()Ljava/lang/String;
+	public final fun unaryMinus ()Lcl/ravenhill/keen/repr/Gradient;
+	public static final fun unsafeFromOwnedArray ([D)Lcl/ravenhill/keen/repr/Gradient;
+	public static final fun zeros-t00_Kp8 (I)Larrow/core/Either;
+	public final fun zipWith (Lcl/ravenhill/keen/repr/Gradient;Lkotlin/jvm/functions/Function2;)Larrow/core/Either;
+}
+
+public final class cl/ravenhill/keen/repr/Gradient$Companion {
+	public final fun fill-b9AeEeE (ID)Larrow/core/Either;
+	public final fun fromArray ([D)Larrow/core/Either;
+	public final fun invoke-GZgkXh4 (Ljava/util/List;)Lcl/ravenhill/keen/repr/Gradient;
+	public final fun of (D[D)Lcl/ravenhill/keen/repr/Gradient;
+	public final fun unsafeFromOwnedArray ([D)Lcl/ravenhill/keen/repr/Gradient;
+	public final fun zeros-t00_Kp8 (I)Larrow/core/Either;
+}
+
+public final class cl/ravenhill/keen/repr/GradientKt {
+	public static final fun times (DLcl/ravenhill/keen/repr/Gradient;)Lcl/ravenhill/keen/repr/Gradient;
+}
+
+public abstract interface class cl/ravenhill/keen/repr/Solution : java/util/List, kotlin/jvm/internal/markers/KMappedMarker {
+	public static final field Companion Lcl/ravenhill/keen/repr/Solution$Companion;
+}
+
+public final class cl/ravenhill/keen/repr/Solution$Companion {
+	public final fun invoke (Ljava/util/List;)Lcl/ravenhill/keen/repr/Solution;
+	public final fun invoke ([Ljava/lang/Object;)Lcl/ravenhill/keen/repr/Solution;
+}
+
+public abstract interface class cl/ravenhill/keen/solver/Solver : kotlin/jvm/functions/Function1 {
+}
+
+public final class cl/ravenhill/keen/util/EqualityThreshold {
+	public static final field Companion Lcl/ravenhill/keen/util/EqualityThreshold$Companion;
+	public static final field DEFAULT D
+	public static final field EXACT D
+	public static final field RELAXED D
+	public static final field STRICT D
+	public static final synthetic fun box-impl (D)Lcl/ravenhill/keen/util/EqualityThreshold;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (DLjava/lang/Object;)Z
+	public static final fun equals-impl0 (DD)Z
+	public final fun getValue ()D
+	public fun hashCode ()I
+	public static fun hashCode-impl (D)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (D)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()D
+}
+
+public final class cl/ravenhill/keen/util/EqualityThreshold$Companion {
+	public final fun getDefault ()Larrow/core/Either;
+	public final fun getExact ()Larrow/core/Either;
+	public final fun getRelaxed ()Larrow/core/Either;
+	public final fun getStrict ()Larrow/core/Either;
+	public final fun invoke (D)Larrow/core/Either;
+}
+
+public final class cl/ravenhill/keen/util/InequalityType : java/lang/Enum {
+	public static final field GREATER_THAN Lcl/ravenhill/keen/util/InequalityType;
+	public static final field GREATER_THAN_OR_EQUAL Lcl/ravenhill/keen/util/InequalityType;
+	public static final field LESS_THAN Lcl/ravenhill/keen/util/InequalityType;
+	public static final field LESS_THAN_OR_EQUAL Lcl/ravenhill/keen/util/InequalityType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getSymbol ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lcl/ravenhill/keen/util/InequalityType;
+	public static fun values ()[Lcl/ravenhill/keen/util/InequalityType;
+}
+
+public abstract interface class cl/ravenhill/keen/util/size/HasSize {
+	public abstract fun getSize-nu1BF6k ()I
+}
+
+public final class cl/ravenhill/keen/util/size/HasSizeKt {
+	public static final fun checkSameSizeOrThrow (Lcl/ravenhill/keen/util/size/HasSize;Lcl/ravenhill/keen/util/size/HasSize;)V
+	public static final fun requireSameSize (Lcl/ravenhill/keen/util/size/HasSize;Lcl/ravenhill/keen/util/size/HasSize;)Larrow/core/Either;
+	public static final fun sameSizeAs (Lcl/ravenhill/keen/util/size/HasSize;Lcl/ravenhill/keen/util/size/HasSize;)Z
+}
+
+public final class cl/ravenhill/keen/util/size/Size : java/lang/Comparable {
+	public static final field Companion Lcl/ravenhill/keen/util/size/Size$Companion;
+	public static final synthetic fun box-impl (I)Lcl/ravenhill/keen/util/size/Size;
+	public synthetic fun compareTo (Ljava/lang/Object;)I
+	public fun compareTo-t00_Kp8 (I)I
+	public static fun compareTo-t00_Kp8 (II)I
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public static final fun fromNonNegative (I)Larrow/core/Either;
+	public final fun getValue ()I
+	public static final fun getZero-nu1BF6k ()I
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public static final fun invoke (I)Larrow/core/Either;
+	public static final fun isStrictlyPositive-impl (I)Z
+	public static final fun ofOrNull-mwv0TY8 (I)Lcl/ravenhill/keen/util/size/Size;
+	public static final fun ofOrThrow-RsdDKms (I)I
+	public static final fun plus-6vPgoiI (II)I
+	public static final fun strictlyPositive (I)Larrow/core/Either;
+	public static final fun toInt-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
+public final class cl/ravenhill/keen/util/size/Size$Companion {
+	public final fun fromNonNegative (I)Larrow/core/Either;
+	public final fun getZero-nu1BF6k ()I
+	public final fun invoke (I)Larrow/core/Either;
+	public final fun ofOrNull-mwv0TY8 (I)Lcl/ravenhill/keen/util/size/Size;
+	public final fun ofOrThrow-RsdDKms (I)I
+	public final fun strictlyPositive (I)Larrow/core/Either;
+}
+
+public abstract class cl/ravenhill/keen/util/size/SizeError : java/lang/Exception, cl/ravenhill/keen/exceptions/KeenException {
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class cl/ravenhill/keen/util/size/SizeError$MatchingSizesExpected : cl/ravenhill/keen/util/size/SizeError {
+	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-nu1BF6k ()I
+	public final fun component2-nu1BF6k ()I
+	public final fun copy-LuhVmeY (II)Lcl/ravenhill/keen/util/size/SizeError$MatchingSizesExpected;
+	public static synthetic fun copy-LuhVmeY$default (Lcl/ravenhill/keen/util/size/SizeError$MatchingSizesExpected;IIILjava/lang/Object;)Lcl/ravenhill/keen/util/size/SizeError$MatchingSizesExpected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActual-nu1BF6k ()I
+	public final fun getExpected-nu1BF6k ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cl/ravenhill/keen/util/size/SizeError$NonNegativeExpected : cl/ravenhill/keen/util/size/SizeError {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Lcl/ravenhill/keen/util/size/SizeError$NonNegativeExpected;
+	public static synthetic fun copy$default (Lcl/ravenhill/keen/util/size/SizeError$NonNegativeExpected;IILjava/lang/Object;)Lcl/ravenhill/keen/util/size/SizeError$NonNegativeExpected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActual ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class cl/ravenhill/keen/util/size/SizeError$StrictlyPositiveExpected : cl/ravenhill/keen/util/size/SizeError {
+	public fun <init> (I)V
+	public final fun component1 ()I
+	public final fun copy (I)Lcl/ravenhill/keen/util/size/SizeError$StrictlyPositiveExpected;
+	public static synthetic fun copy$default (Lcl/ravenhill/keen/util/size/SizeError$StrictlyPositiveExpected;IILjava/lang/Object;)Lcl/ravenhill/keen/util/size/SizeError$StrictlyPositiveExpected;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActual ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface annotation class cl/ravenhill/keen/util/size/UnsafeSizeCreation : java/lang/annotation/Annotation {
 }
 

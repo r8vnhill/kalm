@@ -84,7 +84,7 @@ kotlin {
     setDefaultJavaVersion(defaultJava)
 
     compilerOptions {
-        jvmTarget.set(JvmTarget.valueOf("JVM_${defaultJava.get()}"))
+        jvmTarget.set(defaultJava.map { JvmTarget.valueOf("JVM_$it") })
     }
 }
 

@@ -2,14 +2,15 @@
 arrow = "2.1.2"
 ben-manes-versions = "0.52.0"
 detekt = "1.23.8"
+doctor = "0.11.0"
 dokka = "2.0.0"
 kotest = "6.0.0.M17"
 kotest-arrow = "2.0.0"
 kotlin = "2.2.20-Beta2"
 kotlin-bin-compatibility-validator = "0.18.1"
+kover = "0.9.1"
 mockk = "1.14.5"
 version-catalog-update = "1.0.0"
-kover = "0.9.1"
 
 [libraries]
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
@@ -26,10 +27,11 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 [plugins]
 ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+doctor = { id = "com.osacky.doctor", version.ref = "doctor" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-bin-compatibility-validator" }
-version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "version-catalog-update" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "version-catalog-update" }
 
 [bundles]
 arrow = [

@@ -58,7 +58,7 @@ kotlin {
         freeCompilerArgs.addAll(
             "-Xcontext-parameters",
             "-Xnested-type-aliases",
-            "-Xjavac-arguments='$moduleAdditionFlag=$vectorModule'"
+            "-Xjavac-arguments=$moduleAdditionFlag=$vectorModule"
         )
 
         val wError = providers.gradleProperty("kotlin.warningsAsErrors")
