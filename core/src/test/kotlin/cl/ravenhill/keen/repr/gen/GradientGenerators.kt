@@ -12,9 +12,9 @@ import cl.ravenhill.keen.generators.doubleArrayExact
 import cl.ravenhill.keen.generators.flatTraverseEither
 import cl.ravenhill.keen.generators.traverseEither
 import cl.ravenhill.keen.repr.Gradient
-import cl.ravenhill.keen.util.size.Size
-import cl.ravenhill.keen.util.size.SizeError
-import cl.ravenhill.keen.util.size.UnsafeSizeCreation
+import cl.ravenhill.keen.utils.size.Size
+import cl.ravenhill.keen.utils.size.SizeError
+import cl.ravenhill.keen.utils.size.UnsafeSizeCreation
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.constant

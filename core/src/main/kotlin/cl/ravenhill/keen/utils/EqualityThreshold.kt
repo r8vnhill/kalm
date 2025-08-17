@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.util
+package cl.ravenhill.keen.utils
 
 import arrow.core.Either
 import arrow.core.Either.Left
@@ -11,10 +11,10 @@ import arrow.core.Either.Right
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import cl.ravenhill.keen.exceptions.InvalidThresholdException
-import cl.ravenhill.keen.util.EqualityThreshold.Companion.DEFAULT
-import cl.ravenhill.keen.util.EqualityThreshold.Companion.EXACT
-import cl.ravenhill.keen.util.EqualityThreshold.Companion.RELAXED
-import cl.ravenhill.keen.util.EqualityThreshold.Companion.STRICT
+import cl.ravenhill.keen.utils.EqualityThreshold.Companion.DEFAULT
+import cl.ravenhill.keen.utils.EqualityThreshold.Companion.EXACT
+import cl.ravenhill.keen.utils.EqualityThreshold.Companion.RELAXED
+import cl.ravenhill.keen.utils.EqualityThreshold.Companion.STRICT
 
 /**
  * Represents a validated numerical tolerance used for approximate floating-point equality.

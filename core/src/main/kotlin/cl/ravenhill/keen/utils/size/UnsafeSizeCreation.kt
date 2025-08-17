@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.util.size
+package cl.ravenhill.keen.utils.size
 
 /**
  * Marks an API that allows unsafe creation of [Size] instances without validation.

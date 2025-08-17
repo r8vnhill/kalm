@@ -13,7 +13,7 @@ import arrow.core.tail
 import cl.ravenhill.keen.repr.Solution
 import cl.ravenhill.keen.exceptions.InvalidThresholdException
 import cl.ravenhill.keen.matchers.shouldBeCloseTo
-import cl.ravenhill.keen.util.EqualityThreshold
+import cl.ravenhill.keen.utils.EqualityThreshold
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.FreeSpec

@@ -6,7 +6,7 @@
 package cl.ravenhill.keen.problem.constrained
 
 import cl.ravenhill.keen.repr.Solution
-import cl.ravenhill.keen.util.InequalityType
+import cl.ravenhill.keen.utils.InequalityType
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.datatest.withData
 import io.kotest.engine.names.WithDataTestName

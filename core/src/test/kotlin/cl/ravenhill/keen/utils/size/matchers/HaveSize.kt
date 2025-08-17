@@ -3,10 +3,10 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.util.size.matchers
+package cl.ravenhill.keen.utils.size.matchers
 
-import cl.ravenhill.keen.util.size.HasSize
-import cl.ravenhill.keen.util.size.Size
+import cl.ravenhill.keen.utils.size.HasSize
+import cl.ravenhill.keen.utils.size.Size
 import io.kotest.matchers.Matcher
 import io.kotest.matchers.MatcherResult
 import io.kotest.matchers.should

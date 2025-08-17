@@ -5,7 +5,7 @@
 
 package cl.ravenhill.keen.generators
 
-import cl.ravenhill.keen.util.size.Size
+import cl.ravenhill.keen.utils.size.Size
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.doubleArray

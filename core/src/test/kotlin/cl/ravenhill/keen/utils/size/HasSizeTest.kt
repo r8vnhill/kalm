@@ -3,11 +3,11 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.util.size
+package cl.ravenhill.keen.utils.size
 
-import cl.ravenhill.keen.util.orderedPair
-import cl.ravenhill.keen.util.size.gen.hasSize
-import cl.ravenhill.keen.util.size.gen.validSize
+import cl.ravenhill.keen.utils.orderedPair
+import cl.ravenhill.keen.utils.size.gen.hasSize
+import cl.ravenhill.keen.utils.size.gen.validSize
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.throwables.shouldNotThrowAny

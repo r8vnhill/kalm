@@ -14,8 +14,8 @@ import cl.ravenhill.keen.problem.Objective
 import cl.ravenhill.keen.problem.Problem
 import cl.ravenhill.keen.problem.constrained.EqualityConstraint
 import cl.ravenhill.keen.problem.constrained.InequalityConstraint
-import cl.ravenhill.keen.util.EqualityThreshold
-import cl.ravenhill.keen.util.InequalityType
+import cl.ravenhill.keen.utils.EqualityThreshold
+import cl.ravenhill.keen.utils.InequalityType
 
 /**
  * ## Formal problem definition:

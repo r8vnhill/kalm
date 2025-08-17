@@ -7,7 +7,7 @@ package api.core.problem.constrained
 
 import cl.ravenhill.keen.repr.Solution
 import cl.ravenhill.keen.problem.constrained.InequalityConstraint
-import cl.ravenhill.keen.util.InequalityType
+import cl.ravenhill.keen.utils.InequalityType
 
 /**
  * Evaluates an [InequalityConstraint] using the given operator and expressions over a [Solution].

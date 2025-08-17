@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.util.size
+package cl.ravenhill.keen.utils.size
 
 import arrow.core.Either
 import arrow.core.raise.either

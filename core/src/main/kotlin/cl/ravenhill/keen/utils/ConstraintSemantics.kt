@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.util
+package cl.ravenhill.keen.utils
 
 import cl.ravenhill.keen.problem.constrained.InequalityConstraint
 

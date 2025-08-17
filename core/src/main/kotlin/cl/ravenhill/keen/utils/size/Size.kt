@@ -3,16 +3,16 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.util.size
+package cl.ravenhill.keen.utils.size
 
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import cl.ravenhill.keen.util.size.Size.Companion.fromNonNegative
-import cl.ravenhill.keen.util.size.Size.Companion.invoke
-import cl.ravenhill.keen.util.size.Size.Companion.ofOrNull
-import cl.ravenhill.keen.util.size.Size.Companion.ofOrThrow
-import cl.ravenhill.keen.util.size.Size.Companion.strictlyPositive
+import cl.ravenhill.keen.utils.size.Size.Companion.fromNonNegative
+import cl.ravenhill.keen.utils.size.Size.Companion.invoke
+import cl.ravenhill.keen.utils.size.Size.Companion.ofOrNull
+import cl.ravenhill.keen.utils.size.Size.Companion.ofOrThrow
+import cl.ravenhill.keen.utils.size.Size.Companion.strictlyPositive
 
 /**
  * Value type that represents a **non-negative** size.

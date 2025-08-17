@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.util
+package cl.ravenhill.keen.utils
 
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe

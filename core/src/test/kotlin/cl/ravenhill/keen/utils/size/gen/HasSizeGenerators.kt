@@ -3,10 +3,10 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.util.size.gen
+package cl.ravenhill.keen.utils.size.gen
 
-import cl.ravenhill.keen.util.size.HasSize
-import cl.ravenhill.keen.util.size.Size
+import cl.ravenhill.keen.utils.size.HasSize
+import cl.ravenhill.keen.utils.size.Size
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.map
 

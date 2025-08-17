@@ -10,7 +10,7 @@ import cl.ravenhill.keen.problem.Problem
 import cl.ravenhill.keen.problem.constrained.Constraint
 import cl.ravenhill.keen.problem.constrained.InequalityConstraint
 import cl.ravenhill.keen.repr.Solution
-import cl.ravenhill.keen.util.InequalityType
+import cl.ravenhill.keen.utils.InequalityType
 import kotlin.math.pow
 
 public val sphereObjective: Objective<Double> = Objective { solution: Solution<Double> ->

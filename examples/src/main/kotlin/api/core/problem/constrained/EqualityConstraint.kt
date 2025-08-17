@@ -11,7 +11,7 @@ import arrow.core.recover
 import cl.ravenhill.keen.repr.Solution
 import cl.ravenhill.keen.exceptions.InvalidThresholdException
 import cl.ravenhill.keen.problem.constrained.EqualityConstraint
-import cl.ravenhill.keen.util.EqualityThreshold
+import cl.ravenhill.keen.utils.EqualityThreshold
 
 // Uses a context-provided threshold to build and evaluate an equality constraint.
 context(threshold: Either<InvalidThresholdException, EqualityThreshold>)

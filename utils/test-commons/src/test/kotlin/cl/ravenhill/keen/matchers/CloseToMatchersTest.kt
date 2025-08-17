@@ -18,8 +18,10 @@ import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.longs
-import java.lang.Double.*
+import java.lang.Double.doubleToRawLongBits
+import java.lang.Double.longBitsToDouble
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.nextDown
 import kotlin.math.nextUp
 

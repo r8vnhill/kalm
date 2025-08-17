@@ -6,7 +6,7 @@
 package cl.ravenhill.keen.problem.constrained
 
 import cl.ravenhill.keen.repr.Solution
-import cl.ravenhill.keen.util.InequalityType
+import cl.ravenhill.keen.utils.InequalityType
 
 /**
  * Represents an inequality constraint over a [Solution], evaluated using a specified [InequalityType].

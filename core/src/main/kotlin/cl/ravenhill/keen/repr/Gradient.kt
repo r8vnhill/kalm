@@ -15,11 +15,11 @@ import cl.ravenhill.keen.repr.Gradient.Companion.fill
 import cl.ravenhill.keen.repr.Gradient.Companion.fromArray
 import cl.ravenhill.keen.repr.Gradient.Companion.unsafeFromOwnedArray
 import cl.ravenhill.keen.repr.Gradient.Companion.zeros
-import cl.ravenhill.keen.util.size.HasSize
-import cl.ravenhill.keen.util.size.Size
-import cl.ravenhill.keen.util.size.SizeError
-import cl.ravenhill.keen.util.size.UnsafeSizeCreation
-import cl.ravenhill.keen.util.size.requireSameSize
+import cl.ravenhill.keen.utils.size.HasSize
+import cl.ravenhill.keen.utils.size.Size
+import cl.ravenhill.keen.utils.size.SizeError
+import cl.ravenhill.keen.utils.size.UnsafeSizeCreation
+import cl.ravenhill.keen.utils.size.requireSameSize
 import kotlin.math.sqrt
 
 
