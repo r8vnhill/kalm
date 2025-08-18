@@ -7,7 +7,9 @@ package cl.ravenhill.keen.utils.size.gen
 
 import cl.ravenhill.keen.utils.size.HasSize
 import cl.ravenhill.keen.utils.size.Size
+import cl.ravenhill.keen.utils.size.validSize
 import io.kotest.property.Arb
+import io.kotest.property.arbitrary.map
 
 /**
  * Represents a container with an associated non-negative size.

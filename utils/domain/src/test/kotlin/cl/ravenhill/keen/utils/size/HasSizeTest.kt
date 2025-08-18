@@ -7,7 +7,6 @@ package cl.ravenhill.keen.utils.size
 
 import cl.ravenhill.keen.utils.orderedPair
 import cl.ravenhill.keen.utils.size.gen.hasSize
-import cl.ravenhill.keen.utils.size.gen.validSize
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.throwables.shouldNotThrowAny
@@ -21,6 +20,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.checkAll
 
