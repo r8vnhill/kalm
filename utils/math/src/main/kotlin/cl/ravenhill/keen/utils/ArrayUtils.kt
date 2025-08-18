@@ -22,5 +22,23 @@ internal fun requireSliceInBounds(size: Int, offset: Int, length: Int) {
  * @property arr The underlying array being viewed.
  * @property offset The offset within the array where the subarray begins.
  */
-@Suppress("ArrayInDataClass")
-internal data class DoubleArraySlice(val arr: DoubleArray, val offset: Int)
+public data class DoubleArraySlice(val arr: DoubleArray, val offset: Int) {
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as DoubleArraySlice
+
+        if (offset != other.offset) return false
+        if (!arr.contentEquals(other.arr)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = offset
+        result = 31 * result + arr.contentHashCode()
+        return result
+    }
+}

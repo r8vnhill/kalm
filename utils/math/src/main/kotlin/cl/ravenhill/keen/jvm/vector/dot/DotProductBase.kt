@@ -20,7 +20,7 @@ import jdk.incubator.vector.VectorSpecies
  *   This determines the vector width and alignment used in computations.
  */
 @JvmSpecific
-internal abstract class AbstractDotProduct(private val species: VectorSpecies<Double>) {
+internal open class DotProductBase(private val species: VectorSpecies<Double>) {
 
     /**
      * Represents a pair of subarray views that are processed together in vectorized operations.

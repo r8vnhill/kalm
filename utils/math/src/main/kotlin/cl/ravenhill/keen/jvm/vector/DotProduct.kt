@@ -6,6 +6,7 @@
 package cl.ravenhill.keen.jvm.vector
 
 import cl.ravenhill.keen.jvm.JvmSpecific
+import cl.ravenhill.keen.jvm.vector.dot.DotProductBase
 import cl.ravenhill.keen.utils.DoubleArraySlice
 import cl.ravenhill.keen.utils.requireSliceInBounds
 import jdk.incubator.vector.DoubleVector
@@ -68,7 +69,7 @@ internal interface DotProduct {
     infix fun DoubleArray.dotProduct(that: DoubleArray): Double
 
     /** Computes `Σ_{i=0}^{len-1} a[aOff + i] * b[bOff + i]` on contiguous slices of `a` and `b`. */
-    fun dotProduct(a: DoubleArray, aOff: Int, len: Int, b: DoubleArray, bOff: Int): Double
+    fun dotProduct(a: DoubleArraySlice, b: DoubleArraySlice, len: Int): Double
 
     /**
      * Computes `this · that` with Kahan compensation per SIMD lane.
@@ -119,32 +120,30 @@ internal interface DotProduct {
 internal class VectorizedDotProduct(
     private val species: VectorSpecies<Double>,
     private val lanes: Int
-) : DotProduct, KahanDotProduct by VectorizedKahanDotProduct(species, lanes) {
+) : DotProductBase(species), DotProduct, KahanDotProduct by VectorizedKahanDotProduct(species, lanes) {
 
     override infix fun DoubleArray.dotProduct(that: DoubleArray): Double =
         dotProduct(this, 0, minOf(this.size, that.size), that, 0)
 
     override fun dotProduct(
-        a: DoubleArray, aOff: Int, len: Int,
-        b: DoubleArray, bOff: Int
+        a: DoubleArraySlice,
+        b: DoubleArraySlice,
+        len: Int,
     ): Double {
         if (len <= 0) return 0.0
-        requireSliceInBounds(a.size, aOff, len)
-        requireSliceInBounds(b.size, bOff, len)
-
-        val viewA = DoubleArraySlice(a, aOff)
-        val viewB = DoubleArraySlice(b, bOff)
+        requireSliceInBounds(a.arr.size, a.offset, len)
+        requireSliceInBounds(b.arr.size, b.offset, len)
 
         // Vectorized accumulation over full-width blocks.
         val (next, acc0) = blockReduce(
-            a = viewA,
-            b = viewB,
+            a = a,
+            b = b,
             len = len,
             acc0 = DoubleVector.zero(species)
         ) { va, vb, acc -> va.fma(vb, acc) }
 
         // Process the (possibly partial) masked tail, then horizontally sum SIMD lanes.
-        return accumulateMaskedTail(viewA, viewB, next, len, acc0)
+        return accumulateMaskedTail(a, b, next, len, acc0)
             .reduceLanes(VectorOperators.ADD)
     }
 

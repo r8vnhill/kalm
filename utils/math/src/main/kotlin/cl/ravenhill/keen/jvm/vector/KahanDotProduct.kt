@@ -5,6 +5,7 @@
 
 package cl.ravenhill.keen.jvm.vector
 
+import cl.ravenhill.keen.jvm.vector.dot.DotProductBase
 import cl.ravenhill.keen.utils.DoubleArraySlice
 import cl.ravenhill.keen.utils.requireSliceInBounds
 import jdk.incubator.vector.DoubleVector
@@ -17,7 +18,8 @@ internal interface KahanDotProduct {
     fun dotProductKahan(a: DoubleArray, aOff: Int, len: Int, b: DoubleArray, bOff: Int): Double
 }
 
-internal class VectorizedKahanDotProduct(private val species: VectorSpecies<Double>, lanes: Int) : KahanDotProduct {
+internal class VectorizedKahanDotProduct(private val species: VectorSpecies<Double>, private val lanes: Int) :
+    DotProductBase(species), KahanDotProduct {
     override fun dotProductKahan(
         a: DoubleArray, aOff: Int, len: Int,
         b: DoubleArray, bOff: Int
