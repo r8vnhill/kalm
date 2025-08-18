@@ -20,7 +20,7 @@ import cl.ravenhill.keen.utils.size.Size.Companion.strictlyPositive
  * A [Size] wraps an underlying [Int] and guarantees the invariant `value >= 0` for all instances created through its
  * validated factories. Use the companion factories to construct instances according to your needs:
  *
- * - [invoke] / [fromNonNegative] return an [Either] with a typed [SizeError] on failure.
+ * - [invoke] / [fromNonNegative] return an [arrow.core.Either] with a typed [SizeError] on failure.
  * - [strictlyPositive] enforces `value > 0`.
  * - [ofOrNull] returns `null` on invalid input (Java/Kotlin friendly).
  * - [ofOrThrow] throws [SizeError.NonNegativeExpected] on invalid input (Java friendly).
@@ -67,7 +67,7 @@ public value class Size private constructor(public val value: Int) : Comparable<
          * Validated constructor alias for [fromNonNegative].
          *
          * @param n Candidate [Int] value.
-         * @return [Either] with [Size] on success or [SizeError] on failure.
+         * @return [arrow.core.Either] with [Size] on success or [SizeError] on failure.
          */
         @JvmStatic
         public operator fun invoke(n: Int): Either<SizeError, Size> =
@@ -77,7 +77,7 @@ public value class Size private constructor(public val value: Int) : Comparable<
          * Builds a [Size] if `n >= 0`; otherwise returns a typed error.
          *
          * @param n Candidate [Int] value.
-         * @return [Either] with [Size] or [SizeError.NonNegativeExpected].
+         * @return [arrow.core.Either] with [Size] or [SizeError.NonNegativeExpected].
          */
         @JvmStatic
         public fun fromNonNegative(n: Int): Either<SizeError, Size> = either {
@@ -91,7 +91,7 @@ public value class Size private constructor(public val value: Int) : Comparable<
          * Builds a [Size] if `n > 0`; otherwise returns a typed error.
          *
          * @param n Candidate [Int] value.
-         * @return [Either] with [Size] or [SizeError.StrictlyPositiveExpected].
+         * @return [arrow.core.Either] with [Size] or [SizeError.StrictlyPositiveExpected].
          */
         @JvmStatic
         public fun strictlyPositive(n: Int): Either<SizeError, Size> = either {

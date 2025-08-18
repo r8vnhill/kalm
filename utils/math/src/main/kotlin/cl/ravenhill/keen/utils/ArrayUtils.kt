@@ -16,13 +16,17 @@ internal fun requireSliceInBounds(size: Int, offset: Int, length: Int) {
     }
 }
 
-/**
- * Represents a view into a subarray of a larger `DoubleArray` without making a copy.
- *
- * @property arr The underlying array being viewed.
- * @property offset The offset within the array where the subarray begins.
- */
+internal fun requireSlicesInBounds(vararg slices: DoubleArraySlice, length: Int) {
+    for (slice in slices) {
+        require(slice.offset >= 0 && length >= 0 && slice.offset + length <= slice.arr.size) {
+            "Slice out of bounds: $slice, length=$length"
+        }
+    }
+}
+
 public data class DoubleArraySlice(val arr: DoubleArray, val offset: Int) {
+
+    public operator fun get(index: Int): Double = arr[index + offset]
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

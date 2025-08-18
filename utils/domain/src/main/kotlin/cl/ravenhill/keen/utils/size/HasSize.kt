@@ -62,15 +62,13 @@ public infix fun HasSize.sameSizeAs(other: HasSize): Boolean =
  *
  * @receiver The first [HasSize] instance.
  * @param other Another [HasSize] instance to compare against.
- * @return An [Either] containing `Right(this)` if sizes match,
+ * @return An [arrow.core.Either] containing `Right(this)` if sizes match,
  *         or `Left(SizeError.MatchingSizesExpected)` if they differ.
  */
 public infix fun HasSize.requireSameSize(
     other: HasSize
 ): Either<SizeError, HasSize> = either {
-    ensure(other.size == size) {
-        SizeError.MatchingSizesExpected(other.size, size)
-    }
+    ensure(other.size == size) { SizeError.MatchingSizesExpected(other.size, size) }
     this@requireSameSize
 }
 

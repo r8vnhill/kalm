@@ -65,6 +65,7 @@ import jdk.incubator.vector.VectorSpecies
  *   maintaining per-lane `(sum, comp)` and performing a scalar Kahan reduction across lanes at the end.
  */
 internal interface DotProduct {
+
     /** Computes `this · that` up to `min(|this|, |that|)`. */
     infix fun DoubleArray.dotProduct(that: DoubleArray): Double
 
@@ -123,7 +124,11 @@ internal class VectorizedDotProduct(
 ) : DotProductBase(species), DotProduct, KahanDotProduct by VectorizedKahanDotProduct(species, lanes) {
 
     override infix fun DoubleArray.dotProduct(that: DoubleArray): Double =
-        dotProduct(this, 0, minOf(this.size, that.size), that, 0)
+        dotProduct(
+            a = DoubleArraySlice(this, 0),
+            b = DoubleArraySlice(that, 0),
+            len = minOf(this.size, that.size)
+        )
 
     override fun dotProduct(
         a: DoubleArraySlice,
@@ -136,9 +141,9 @@ internal class VectorizedDotProduct(
 
         // Vectorized accumulation over full-width blocks.
         val (next, acc0) = blockReduce(
-            a = a,
-            b = b,
-            len = len,
+            a,
+            b,
+            len,
             acc0 = DoubleVector.zero(species)
         ) { va, vb, acc -> va.fma(vb, acc) }
 

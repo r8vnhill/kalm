@@ -32,8 +32,11 @@ dependencies {
     // House BOM/platform for consistent versions (Kotest, etc.)
     implementation(platform(projects.dependencyConstraints))
 
+    implementation(projects.utils.domain)
+
     // Test: Kotest (core, assertions, property)
     api(libs.bundles.testing)
+
     // Detekt formatting (ktlint rules packaged for Detekt)
     detektPlugins(libs.detekt.formatting)
 }

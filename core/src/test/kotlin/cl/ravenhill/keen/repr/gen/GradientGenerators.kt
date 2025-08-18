@@ -25,7 +25,7 @@ import io.kotest.property.arbitrary.map
 
 //#region Type aliases (test ergonomics)
 
-/** Either-wrapped [DoubleArray]; Left holds a [SizeError]. */
+/** Either-wrapped [DoubleArray]; Left holds a [cl.ravenhill.keen.utils.size.SizeError]. */
 private typealias ArrayEither = Either<SizeError, DoubleArray>
 /** Either-wrapped pair of a backing [DoubleArray] and its corresponding [Gradient]. */
 private typealias PairEither = Either<SizeError, Pair<DoubleArray, Gradient>>

@@ -5,6 +5,8 @@
 
 package cl.ravenhill.keen.exceptions
 
+import cl.ravenhill.keen.KeenException
+
 /**
  * Exception thrown when a gradient value does not meet the required conditions or expectations.
  *

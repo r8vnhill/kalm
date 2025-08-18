@@ -8,6 +8,9 @@ package cl.ravenhill.keen.jvm.vector
 import cl.ravenhill.keen.jvm.VectorOps
 import cl.ravenhill.keen.matchers.shouldBeCloseTo
 import cl.ravenhill.keen.matchers.shouldBeFinite
+import cl.ravenhill.keen.utils.DoubleArraySlice
+import cl.ravenhill.keen.utils.requireSliceInBounds
+import cl.ravenhill.keen.utils.requireSlicesInBounds
 import io.kotest.core.spec.style.FreeSpec
 import java.math.BigDecimal
 import java.math.MathContext
@@ -137,19 +140,20 @@ class VectorizedDotProductTest : FreeSpec({
 private object ScalarDotProduct : DotProduct {
 
     override infix fun DoubleArray.dotProduct(that: DoubleArray): Double =
-        dotProduct(this, 0, minOf(size, that.size), that, 0)
+        dotProduct(
+            a = DoubleArraySlice(this, 0),
+            b = DoubleArraySlice(that, 0),
+            len = minOf(this.size, that.size)
+        )
 
-    override fun dotProduct(
-        a: DoubleArray, aOff: Int, len: Int,
-        b: DoubleArray, bOff: Int
-    ): Double {
+    override fun dotProduct(a: DoubleArraySlice, b: DoubleArraySlice, len: Int): Double {
         if (len <= 0) return 0.0
-        checkBounds(a.size, aOff, len); checkBounds(b.size, bOff, len)
+        requireSlicesInBounds(a, b, length = len)
         var s = 0.0
         var i = 0
         while (i < len) {
             // Using Math.fma tends to match vectorized FMA behavior closely.
-            s = Math.fma(a[aOff + i], b[bOff + i], s)
+            s = Math.fma(a[i], b[i], s)
             i++
         }
         return s
@@ -188,18 +192,19 @@ private fun checkBounds(size: Int, off: Int, len: Int) {
 private class BigDecimalDotProduct(private val mc: MathContext = MathContext.DECIMAL128) : DotProduct {
 
     override infix fun DoubleArray.dotProduct(that: DoubleArray): Double =
-        dotProduct(this, 0, minOf(size, that.size), that, 0)
+        dotProduct(
+            a = DoubleArraySlice(this, 0),
+            b = DoubleArraySlice(that, 0),
+            len = minOf(this.size, that.size)
+        )
 
-    override fun dotProduct(
-        a: DoubleArray, aOff: Int, len: Int,
-        b: DoubleArray, bOff: Int
-    ): Double {
+    override fun dotProduct(a: DoubleArraySlice, b: DoubleArraySlice, len: Int): Double {
         if (len <= 0) return 0.0
-        checkBounds(a.size, aOff, len); checkBounds(b.size, bOff, len)
+        requireSlicesInBounds(a, b, length = len)
         var sum = BigDecimal.ZERO
         var i = 0
         while (i < len) {
-            val term = a[aOff + i].toBig(mc).multiply(b[bOff + i].toBig(mc), mc)
+            val term = a[i].toBig(mc).multiply(b[i].toBig(mc), mc)
             sum = sum.add(term, mc)
             i++
         }
@@ -212,7 +217,11 @@ private class BigDecimalDotProduct(private val mc: MathContext = MathContext.DEC
     override fun dotProductKahan(
         a: DoubleArray, aOff: Int, len: Int,
         b: DoubleArray, bOff: Int
-    ): Double = dotProduct(a, aOff, len, b, bOff)
+    ): Double = dotProduct(
+        a = DoubleArraySlice(a, aOff),
+        b = DoubleArraySlice(b, bOff),
+        len = len
+    )
 
     private fun Double.toBig(mc: MathContext): BigDecimal =
         when {

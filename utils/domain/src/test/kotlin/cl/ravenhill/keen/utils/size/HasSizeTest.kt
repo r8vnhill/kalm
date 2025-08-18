@@ -21,7 +21,6 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.constant
-import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.checkAll
 

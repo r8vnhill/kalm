@@ -13,9 +13,9 @@ import io.kotest.property.arbitrary.pair
 /**
  * Builds an [Arb] that produces ordered pairs (a <= b) from two generators.
  *
- * If [strict] is true, only (a < b) pairs are emitted..
+ * If [strict] is true, only (a < b) pairs are emitted.
  */
-internal fun <T : Comparable<T>> Arb.Companion.orderedPair(
+fun <T : Comparable<T>> Arb.Companion.orderedPair(
     arb1: Arb<T>,
     arb2: Arb<T>,
     strict: Boolean = false
@@ -38,14 +38,14 @@ internal fun <T : Comparable<T>> Arb.Companion.orderedPair(
  *   also allowed.
  * @return An [Arb<Pair<T, T>>] that generates ordered pairs based on the given conditions.
  */
-internal fun <T : Comparable<T>> Arb.Companion.orderedPair(arb: Arb<T>, strict: Boolean = false): Arb<Pair<T, T>> =
+fun <T : Comparable<T>> Arb.Companion.orderedPair(arb: Arb<T>, strict: Boolean = false): Arb<Pair<T, T>> =
     orderedPair(arb, arb, strict)
 
 /**
  * Produces an [Arb] that generates pairs of elements from two given arbitraries, where the elements in each generated
  * pair are arranged in descending order (b, a).
  */
-internal fun <T : Comparable<T>> Arb.Companion.descendingPair(
+fun <T : Comparable<T>> Arb.Companion.descendingPair(
     a1: Arb<T>,
     a2: Arb<T>,
     strict: Boolean = false
@@ -56,7 +56,7 @@ internal fun <T : Comparable<T>> Arb.Companion.descendingPair(
  * Produces an [Arb] that generates pairs of elements from a single arbitrary, where the elements in each generated
  * pair are arranged in descending order (b, a).
  */
-internal fun <T : Comparable<T>> Arb.Companion.descendingPair(
+fun <T : Comparable<T>> Arb.Companion.descendingPair(
     arb: Arb<T>,
     strict: Boolean = false
 ): Arb<Pair<T, T>> = descendingPair(arb, arb, strict)

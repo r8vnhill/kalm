@@ -5,7 +5,7 @@
 
 package cl.ravenhill.keen.utils.size
 
-import cl.ravenhill.keen.exceptions.KeenException
+import cl.ravenhill.keen.KeenException
 
 /**
  * Represents domain-specific errors that can occur when constructing a [Size] instance.

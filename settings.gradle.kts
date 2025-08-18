@@ -68,6 +68,7 @@ buildCache {
 include(
     ":dependency-constraints",  // BOM for consistent versions across modules
 
+    ":utils:domain",            // Domain-specific models and utilities
     ":utils:test-commons",      // Common test utilities for Keen modules
     ":utils:math",              // Efficient math utilities (JVM-only, uses Math.fma, Vector API)
 

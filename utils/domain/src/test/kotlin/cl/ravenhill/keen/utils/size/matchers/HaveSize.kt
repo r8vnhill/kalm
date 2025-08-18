@@ -12,13 +12,13 @@ import io.kotest.matchers.MatcherResult
 import io.kotest.matchers.should
 
 /**
- * Creates a [Matcher] that verifies whether the size of a [HasSize] is exactly equal to [expected].
+ * Creates a [io.kotest.matchers.Matcher] that verifies whether the size of a [HasSize] is exactly equal to [expected].
  *
  * The comparison is performed against the `Int` value of [HasSize.size].
  * Failure messages include both the raw `Int` size and the [Size] representation for clarity.
  *
  * @param expected the expected size as a raw [Int].
- * @return a [Matcher] that succeeds if the actual size equals [expected].
+ * @return a [io.kotest.matchers.Matcher] that succeeds if the actual size equals [expected].
  */
 internal fun haveSize(expected: Int): Matcher<HasSize> =
     Matcher { actual ->
@@ -35,13 +35,13 @@ internal fun haveSize(expected: Int): Matcher<HasSize> =
     }
 
 /**
- * Creates a [Matcher] that verifies whether the size of a [HasSize] is exactly equal to [expected].
+ * Creates a [io.kotest.matchers.Matcher] that verifies whether the size of a [HasSize] is exactly equal to [expected].
  *
  * This overload accepts a [Size] instance directly, which is internally compared by converting it to an [Int] and
  * delegating to [haveSize] for consistency.
  *
  * @param expected the expected size as a [Size].
- * @return a [Matcher] that succeeds if the actual size equals [expected].
+ * @return a [io.kotest.matchers.Matcher] that succeeds if the actual size equals [expected].
  */
 internal fun haveSize(expected: Size): Matcher<HasSize> = haveSize(expected.toInt())
 

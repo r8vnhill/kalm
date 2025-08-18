@@ -20,7 +20,6 @@ import cl.ravenhill.keen.utils.size.SizeError
 import cl.ravenhill.keen.utils.size.UnsafeSizeCreation
 import cl.ravenhill.keen.utils.size.gen.size
 import cl.ravenhill.keen.utils.size.gen.validSize
-import cl.ravenhill.keen.utils.size.matchers.shouldHaveSize
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.throwables.shouldThrow

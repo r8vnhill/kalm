@@ -5,6 +5,8 @@
 
 package cl.ravenhill.keen.exceptions
 
+import cl.ravenhill.keen.KeenException
+
 /**
  * Exception thrown when a provided threshold value does not satisfy the required conditions.
  *

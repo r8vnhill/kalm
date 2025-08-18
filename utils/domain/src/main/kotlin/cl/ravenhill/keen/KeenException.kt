@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.exceptions
+package cl.ravenhill.keen
 
 /**
  * Marker interface for all Keen exceptions.

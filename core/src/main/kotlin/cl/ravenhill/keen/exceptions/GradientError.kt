@@ -5,6 +5,7 @@
 
 package cl.ravenhill.keen.exceptions
 
+import cl.ravenhill.keen.KeenException
 import cl.ravenhill.keen.repr.Gradient
 
 /**

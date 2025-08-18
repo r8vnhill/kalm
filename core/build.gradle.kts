@@ -32,6 +32,8 @@ dependencies {
 
     // JVM-specific math utilities (vectorized ops, numeric kernels).
     implementation(projects.utils.math)
+    // Domain-specific types (Size, HasSize) and utilities.
+    api(projects.utils.domain)
 
     // Attach Detekt’s formatting ruleset (ktlint rules packaged for Detekt).
     detektPlugins(libs.detekt.formatting.get().apply { "$group:$module:$version" })

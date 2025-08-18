@@ -8,7 +8,6 @@ package cl.ravenhill.keen.utils.size.gen
 import cl.ravenhill.keen.utils.size.HasSize
 import cl.ravenhill.keen.utils.size.Size
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.map
 
 /**
  * Represents a container with an associated non-negative size.
@@ -21,11 +20,11 @@ import io.kotest.property.arbitrary.map
 data class HasSizeImpl(override val size: Size) : HasSize
 
 /**
- * Generates an arbitrary instance of [HasSize] with its [Size] determined by the given [Arb] of [Size].
+ * Generates an arbitrary instance of [HasSize] with its [Size] determined by the given [io.kotest.property.Arb] of [Size].
  *
- * @param size An [Arb] that generates valid [Size] instances. Defaults to [validSize], which produces random,
+ * @param size An [io.kotest.property.Arb] that generates valid [Size] instances. Defaults to [validSize], which produces random,
  *   non-negative [Size] values.
- * @return An [Arb] that generates instances of [HasSize] with a specified [Size].
+ * @return An [io.kotest.property.Arb] that generates instances of [HasSize] with a specified [Size].
  */
 fun Arb.Companion.hasSize(size: Arb<Size> = validSize()): Arb<HasSize> =
     size.map(::HasSizeImpl)
