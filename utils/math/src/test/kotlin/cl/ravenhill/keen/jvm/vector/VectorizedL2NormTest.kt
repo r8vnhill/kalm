@@ -5,11 +5,10 @@
 
 package cl.ravenhill.keen.jvm.vector
 
+import cl.ravenhill.keen.matchers.shouldBeCloseToUlps
 import io.kotest.core.spec.style.FreeSpec
-import io.kotest.matchers.shouldBe
+import io.kotest.datatest.withData
 import jdk.incubator.vector.DoubleVector
-import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.sqrt
 import kotlin.properties.Delegates
 
@@ -28,53 +27,43 @@ class VectorizedL2NormTest : FreeSpec({
     fun DoubleArray.refSquared(): Double = ScalarL2Norm.run { squaredL2Norm() }
     fun DoubleArray.refNorm(): Double = ScalarL2Norm.run { l2Norm() }
 
-    // close-check helper (absolute + relative)
-    fun assertClose(actual: Double, expected: Double, absTol: Double = 1e-12, relTol: Double = 1e-12) {
-        val scale = max(1.0, max(abs(actual), abs(expected)))
-        val ok = abs(actual - expected) <= max(absTol, relTol * scale)
-        if (!ok) {
-            error("Not close:\n  actual=$actual\n  expected=$expected\n  absTol=$absTol relTol=$relTol (scale=$scale)")
-        }
-    }
-
     "a vectorized L2 norm" - {
         "when the input is empty" - {
             "should return 0.0 for squaredL2Norm and l2Norm" {
                 val a = doubleArrayOf()
                 val vsq = vectorized.run { a.squaredL2Norm() }
                 val v = vectorized.run { a.l2Norm() }
-                vsq shouldBe 0.0
-                v shouldBe 0.0
+                vsq.shouldBeCloseToUlps(0.0)
+                v.shouldBeCloseToUlps(0.0)
             }
         }
 
         "when the input length is not a multiple of the SIMD lanes" - {
-            TODO()
             "should match the scalar reference" {
                 // Pick a size that is definitely not a multiple of lanes
                 val n = if (lanes == 1) 7 else (3 * lanes + 1)
                 val a = DoubleArray(n) { i -> (i % 5 - 2).toDouble() * 0.125 } // some small varied values
                 val vsq = vectorized.run { a.squaredL2Norm() }
                 val rsq = a.refSquared()
-                assertClose(vsq, rsq)
-                assertClose(vectorized.run { a.l2Norm() }, a.refNorm())
+                vsq shouldBeCloseToUlps rsq
+                vectorized.run { a.l2Norm() } shouldBeCloseToUlps a.refNorm()
             }
         }
 
         "when comparing against known small examples" - {
-            TODO()
-//            "should equal the scalar reference for zeros and mixed signs" {
-//                val cases = listOf(
-//                    doubleArrayOf(0.0, 0.0, 0.0, 0.0),
-//                    doubleArrayOf(1.0, -1.0, 2.0, -2.0),
-//                    doubleArrayOf(1e-12, -2e-12, 3e-12),
-//                    doubleArrayOf(1.0, 2.0, 3.0, 4.0, 5.0),
-//                )
-//                for (a in cases) {
-//                    assertClose(vectorized.run { a.squaredL2Norm() }, a.refSquared())
-//                    assertClose(vectorized.run { a.l2Norm() }, a.refNorm())
-//                }
-//            }
+            "should equal the scalar reference for" - {
+                withData(
+                    doubleArrayOf(0.0, 0.0, 0.0, 0.0),
+                    doubleArrayOf(1.0, -1.0, 2.0, -2.0),
+                    doubleArrayOf(1e-12, -2e-12, 3e-12),
+                    doubleArrayOf(1.0, 2.0, 3.0, 4.0, 5.0),
+                ) {
+                    vectorized.run {
+                        it.squaredL2Norm() shouldBeCloseToUlps it.refSquared()
+                        it.l2Norm() shouldBeCloseToUlps it.refNorm()
+                    }
+                }
+            }
         }
 
         "when comparing random finite arrays" - {
@@ -121,13 +110,21 @@ class VectorizedL2NormTest : FreeSpec({
     }
 })
 
+/**
+ * Scalar implementation of the [L2Norm] interface for [DoubleArray].
+ *
+ * This object computes the squared L2 norm and L2 norm using a straightforward element-wise accumulation.
+ * It uses [Math.fma] for the accumulation step, which improves both numerical accuracy and performance by combining
+ * multiplication and addition into a single operation.
+ */
 private object ScalarL2Norm : L2Norm {
+
     override fun DoubleArray.squaredL2Norm(): Double {
         var s = 0.0
         var i = 0
         while (i < size) {
             val x = this[i]
-            s = Math.fma(x, x, s) // s += x*x (FMA aids both accuracy and throughput)
+            s = Math.fma(x, x, s) // fused multiply–add: s += x * x
             i++
         }
         return s

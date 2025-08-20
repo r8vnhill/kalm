@@ -73,21 +73,47 @@ fun beCloseToUlps(
 }
 
 /**
- * Asserts that this [ActualD] value is within [maxUlps] **ULPs** of [expected].
- * ULPs (Units in the Last Place) compare values by the distance between their IEEE 754 representations after sign-aware
- * ordering.
+ * Asserts that this [Double] is close to [expected] within a given number of ULPs (units in last place).
  *
- * @receiver The [ActualD] value under test.
- * @param expected The [ExpectedD] reference value.
- * @param maxUlps Maximum allowed ULP distance (non-negative, default `4`).
- * @return The receiver [ActualD], to allow fluent chaining.
- * @throws [IllegalArgumentException] if `expected` is not finite or `maxUlps` is negative.
+ * This matcher is designed for floating-point comparisons where strict equality is too brittle.
+ * The tolerance is expressed in ULPs rather than absolute/relative difference, making it robust near boundaries, very
+ * small values, or very large values.
+ *
+ * ## Usage:
+ * ```kotlin
+ * val x = 1.0 + Double.MIN_VALUE
+ * x.shouldBeCloseToUlps(1.0, maxUlps = 10) // passes if within 10 ULPs of 1.0
+ * ```
+ *
+ * @receiver The [Double] under test.
+ * @param expected The target value to compare against.
+ * @param maxUlps The maximum difference, expressed as a number of ULP steps allowed.
+ * @return The same [Double], for fluent chaining.
  * @see beCloseToUlps
  */
-fun ActualD.shouldBeCloseToUlps(
-    expected: ExpectedD,
-    maxUlps: Long = 4L
-): ActualD = apply { this should beCloseToUlps(expected, maxUlps) }
+fun Double.shouldBeCloseToUlps(
+    expected: Double,
+    maxUlps: Long
+): Double = apply { this should beCloseToUlps(expected, maxUlps) }
+
+/**
+ * Asserts that this [Double] is close to [expected] within a default tolerance of 4 ULPs.
+ *
+ * Provides a concise infix form for common cases where a small tolerance is enough.
+ *
+ * ## Usage:
+ * ```kotlin
+ * val result = 0.1 + 0.2
+ * result shouldBeCloseToUlps 0.3  // uses default maxUlps = 4
+ * ```
+ *
+ * @receiver The [Double] under test.
+ * @param expected The target value to compare against.
+ * @return The same [Double], for fluent chaining.
+ * @see beCloseToUlps
+ */
+infix fun Double.shouldBeCloseToUlps(expected: Double): Double =
+    this.shouldBeCloseToUlps(expected, 4L)
 
 /**
  * Asserts that this [ActualD] value is **not** within [maxUlps] **ULPs** of [expected].
