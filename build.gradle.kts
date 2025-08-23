@@ -20,7 +20,7 @@
 
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
-import plugins.VerifyKeenJavaDefaultTask
+import plugins.VerifyKnobJavaDefaultTask
 import java.util.*
 
 //#region Plugins ======================================================================================================
@@ -157,9 +157,9 @@ val skipJavaDefaultCheck = providers.gradleProperty("skipJavaDefaultCheck")
     .orElse(false)
 
 // Register the verification task implemented in build-logic (plugin package).
-val verifyKeenJavaDefault by tasks.registering(VerifyKeenJavaDefaultTask::class) {
+val verifyKnobJavaDefault by tasks.registering(VerifyKnobJavaDefaultTask::class) {
     group = "verification"
-    description = "Ensures keen.java.default is present in root and build-logic gradle.properties and that both match."
+    description = "Ensures knob.java.default is present in root and build-logic gradle.properties and that both match."
 
     // Input files tracked with RELATIVE path sensitivity by the task itself.
     rootProps.set(layout.projectDirectory.file("gradle.properties"))
@@ -173,7 +173,7 @@ val verifyKeenJavaDefault by tasks.registering(VerifyKeenJavaDefaultTask::class)
 // This stays CC-friendly (no captured outer state) because we reference a named task.
 allprojects {
     tasks.matching { it.name == "assemble" }.configureEach {
-        dependsOn(rootProject.tasks.named("verifyKeenJavaDefault"))
+        dependsOn(rootProject.tasks.named("verifyKnobJavaDefault"))
     }
 }
 //#endregion

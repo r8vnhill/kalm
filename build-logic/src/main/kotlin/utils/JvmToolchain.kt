@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
  * Lightweight facade to lazily resolve the default Java *major* version from Gradle properties.
  *
  * Source of truth:
- *  - -Pkeen.java.default=<N>, e.g., 17, 21, 22
+ *  - -Pknob.java.default=<N>, e.g., 17, 21, 22
  * Fallback:
  *  - DEFAULT_JAVA_VERSION when the property is absent
  */
@@ -68,7 +68,7 @@ interface ProviderFactoryRef {
 
     companion object {
         /** Gradle property that selects the default Java major version. */
-        const val PROP_JAVA_DEFAULT: String = "keen.java.default"
+        const val PROP_JAVA_DEFAULT: String = "knob.java.default"
 
         /** Framework default when the property is absent. */
         const val DEFAULT_JAVA_VERSION: Int = 22

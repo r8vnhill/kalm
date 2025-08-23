@@ -20,8 +20,8 @@
  * -----
  * Usage
  * -----
- *  - Set `keen.java.default` in gradle.properties or via CLI to override the default Java version
- *  - Example: `./gradlew build -Pkeen.java.default=21`
+ *  - Set `knob.java.default` in gradle.properties or via CLI to override the default Java version
+ *  - Example: `./gradlew build -Pknob.java.default=21`
  */
 
 import utils.jvmTargetFor

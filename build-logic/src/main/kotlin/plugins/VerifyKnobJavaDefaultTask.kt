@@ -15,7 +15,7 @@ import java.io.File
 import java.util.*
 
 /**
- * A verification task that enforces consistency of the `keen.java.default` property across the **root
+ * A verification task that enforces consistency of the `knob.java.default` property across the **root
  * `gradle.properties`** and **`build-logic/gradle.properties`** files.
  *
  * ### Why this matters
@@ -35,7 +35,7 @@ import java.util.*
  * - Configuration-cache friendly: no lambdas capturing outer scope.
  */
 @DisableCachingByDefault(because = "Verification only, no cacheable outputs")
-abstract class VerifyKeenJavaDefaultTask : DefaultTask() {
+abstract class VerifyKnobJavaDefaultTask : DefaultTask() {
 
     /**
      * Path to the root `gradle.properties` file.
@@ -58,7 +58,7 @@ abstract class VerifyKeenJavaDefaultTask : DefaultTask() {
     /**
      * The property key to verify.
      *
-     * Defaults to `"keen.java.default"`, but can be overridden to reuse this task for other properties.
+     * Defaults to `"knob.java.default"`, but can be overridden to reuse this task for other properties.
      */
     @get:Input
     abstract val propertyKey: Property<String>
@@ -73,7 +73,7 @@ abstract class VerifyKeenJavaDefaultTask : DefaultTask() {
 
     init {
         // Default values, so consumers don’t need to wire them explicitly.
-        propertyKey.convention("keen.java.default")
+        propertyKey.convention("knob.java.default")
         skipCheck.convention(false)
     }
 

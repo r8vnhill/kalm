@@ -6,7 +6,7 @@
  * This build script configures the *build-logic* included build that contains your precompiled / convention plugins.
  * Build logic runs **inside the Gradle daemon’s JVM**, so we:
  *
- * 1) Resolve a single “default Java” version from a Gradle property (`keen.java.default`) with a safe fallback to the
+ * 1) Resolve a single “default Java” version from a Gradle property (`knob.java.default`) with a safe fallback to the
  *    **current Gradle JVM** major version.
  * 2) Provide tiny helpers to apply that version to both Java and Kotlin *toolchains*.
  * 3) Pin Kotlin bytecode (`jvmTarget`) to **22** for broader IDE/daemon compatibility, regardless of which JDK compiles
@@ -33,20 +33,20 @@ dependencies {
 }
 
 //#region Default Java Version
-val defaultJavaProp = providers.gradleProperty("keen.java.default")
+val defaultJavaProp = providers.gradleProperty("knob.java.default")
 val runtimeJavaVersion = JavaVersion.current().majorVersion
 
 if (!defaultJavaProp.isPresent) {
     logger.lifecycle(
         """
-        ⚠️  No 'keen.java.default' property found.
+        ⚠️  No 'knob.java.default' property found.
         
         Steps to fix:
           • Add to root gradle.properties:
-                keen.java.default=22
+                knob.java.default=22
           • OR set globally in ~/.gradle/gradle.properties
           • OR pass via CLI:
-                ./gradlew build -Pkeen.java.default=22
+                ./gradlew build -Pknob.java.default=22
 
         Falling back to current Gradle JVM: $runtimeJavaVersion
         """.trimIndent()
