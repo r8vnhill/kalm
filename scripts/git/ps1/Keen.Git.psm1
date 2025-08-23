@@ -1,4 +1,4 @@
-# Keen.Git.psm1 - Module Entry Point for Keen Git Utilities
+# Knob.Git.psm1 - Module Entry Point for Knob Git Utilities
 # 
 # This script dynamically loads all internal and public function scripts from the
 # 'internal/' and 'public/' directories.

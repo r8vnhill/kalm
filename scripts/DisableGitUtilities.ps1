@@ -2,7 +2,7 @@
 param ()
 
 # Define the name of the module to remove from the session
-$moduleName = 'Keen.Git'
+$moduleName = 'Knob.Git'
 
 # Check whether the module is currently loaded in the session
 if (-not (Get-Module -Name $moduleName)) {

@@ -4,11 +4,11 @@
  * ==============================================
  *
  * Provides a shared bundle of test libraries (Kotest core, assertions, property testing, etc.) as an API dependency for
- * other Keen modules.
+ * other Knob modules.
  * This prevents duplication of test-related dependency declarations across the project.
  *
  * This module is **not intended for publication**.
- * It exists purely as a convenience layer within the Keen build, ensuring consistent test stacks across all
+ * It exists purely as a convenience layer within the Knob build, ensuring consistent test stacks across all
  * subprojects.
  *
  * --------------------
@@ -17,14 +17,14 @@
  *  - Use this module to centralize test dependencies. Do not add production libraries here.
  *  - If new test libraries are adopted project-wide, declare them here once and consume them via
  *    `api(projects.utils.testCommons)` in downstream modules.
- *  - Keep in mind that since this module is not published, external consumers of Keen will not have access to its
+ *  - Keep in mind that since this module is not published, external consumers of Knob will not have access to its
  *    dependencies.
  *  - Since this is an internal API module, explicit public APIs are not required.
  */
 
 
 plugins {
-    id("keen.jvm")
+    id("knob.jvm")
     alias(libs.plugins.detekt)
 }
 

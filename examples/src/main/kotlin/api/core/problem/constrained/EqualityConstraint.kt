@@ -8,10 +8,10 @@ package api.core.problem.constrained
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.recover
-import cl.ravenhill.keen.repr.Solution
-import cl.ravenhill.keen.exceptions.InvalidThresholdException
-import cl.ravenhill.keen.problem.constrained.EqualityConstraint
-import cl.ravenhill.keen.utils.EqualityThreshold
+import cl.ravenhill.knob.repr.Solution
+import cl.ravenhill.knob.exceptions.InvalidThresholdException
+import cl.ravenhill.knob.problem.constrained.EqualityConstraint
+import cl.ravenhill.knob.utils.EqualityThreshold
 
 // Uses a context-provided threshold to build and evaluate an equality constraint.
 context(threshold: Either<InvalidThresholdException, EqualityThreshold>)

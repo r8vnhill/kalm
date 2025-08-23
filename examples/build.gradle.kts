@@ -12,7 +12,7 @@
 import java.io.Serializable
 
 plugins {
-    id("keen.jvm")
+    id("knob.jvm")
     alias(libs.plugins.detekt)
     application
 }

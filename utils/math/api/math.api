@@ -1,13 +1,13 @@
-public abstract interface annotation class cl/ravenhill/keen/jvm/JvmSpecific : java/lang/annotation/Annotation {
+public abstract interface annotation class cl/ravenhill/knob/jvm/JvmSpecific : java/lang/annotation/Annotation {
 }
 
-public final class cl/ravenhill/keen/jvm/MathCompat {
-	public static final field INSTANCE Lcl/ravenhill/keen/jvm/MathCompat;
+public final class cl/ravenhill/knob/jvm/MathCompat {
+	public static final field INSTANCE Lcl/ravenhill/knob/jvm/MathCompat;
 	public static final fun fma (DDD)D
 }
 
-public final class cl/ravenhill/keen/jvm/VectorOps : cl/ravenhill/keen/jvm/vector/DotProduct, cl/ravenhill/keen/jvm/vector/L2Norm {
-	public static final field INSTANCE Lcl/ravenhill/keen/jvm/VectorOps;
+public final class cl/ravenhill/knob/jvm/VectorOps : cl/ravenhill/knob/jvm/vector/DotProduct, cl/ravenhill/knob/jvm/vector/L2Norm {
+	public static final field INSTANCE Lcl/ravenhill/knob/jvm/VectorOps;
 	public fun dotProduct ([DII[DI)D
 	public fun dotProduct ([D[D)D
 	public fun dotProductKahan ([DII[DI)D
@@ -16,7 +16,7 @@ public final class cl/ravenhill/keen/jvm/VectorOps : cl/ravenhill/keen/jvm/vecto
 	public fun squaredL2Norm ([D)D
 }
 
-public abstract interface class cl/ravenhill/keen/jvm/vector/L2Norm {
+public abstract interface class cl/ravenhill/knob/jvm/vector/L2Norm {
 	public abstract fun l2Norm ([D)D
 	public abstract fun squaredL2Norm ([D)D
 }

@@ -50,7 +50,7 @@ Before using the wrapped Git commands, import the utility module into your sessi
 .\scripts\EnableGitUtilities.ps1
 ```
 
-This script loads the `Keen.Git` module and makes all Git-related functions available.
+This script loads the `Knob.Git` module and makes all Git-related functions available.
 
 > [!note]
 > If you're running PowerShell for the first time or on macOS/Linux, you may need to allow script execution:
@@ -64,16 +64,16 @@ Or follow your organization’s security policies.
 
 ## 🧰 Available Git Commands
 
-After running `EnableGitUtilities.ps1`, all commands from the `Keen.Git` module become available. To see the full list:
+After running `EnableGitUtilities.ps1`, all commands from the `Knob.Git` module become available. To see the full list:
 
 ```powershell
-Get-Command -Module Keen.Git
+Get-Command -Module Knob.Git
 ```
 
 To verify the module is loaded:
 
 ```powershell
-Get-Module Keen.Git
+Get-Module Knob.Git
 ```
 
 Each command is designed to:
@@ -136,7 +136,7 @@ To unload the Git utility functions from your session:
 .\scripts\DisableGitUtilities.ps1
 ```
 
-This removes all `Keen.Git` commands from your current shell to prevent conflicts with global or system modules.
+This removes all `Knob.Git` commands from your current shell to prevent conflicts with global or system modules.
 
 
 ## 🔧 When to Use Raw `git` Commands

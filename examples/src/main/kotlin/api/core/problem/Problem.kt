@@ -8,14 +8,14 @@ package api.core.problem
 import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.recover
-import cl.ravenhill.keen.KeenException
-import cl.ravenhill.keen.repr.Solution
-import cl.ravenhill.keen.problem.Objective
-import cl.ravenhill.keen.problem.Problem
-import cl.ravenhill.keen.problem.constrained.EqualityConstraint
-import cl.ravenhill.keen.problem.constrained.InequalityConstraint
-import cl.ravenhill.keen.utils.EqualityThreshold
-import cl.ravenhill.keen.utils.InequalityType
+import cl.ravenhill.knob.KnobException
+import cl.ravenhill.knob.repr.Solution
+import cl.ravenhill.knob.problem.Objective
+import cl.ravenhill.knob.problem.Problem
+import cl.ravenhill.knob.problem.constrained.EqualityConstraint
+import cl.ravenhill.knob.problem.constrained.InequalityConstraint
+import cl.ravenhill.knob.utils.EqualityThreshold
+import cl.ravenhill.knob.utils.InequalityType
 
 /**
  * ## Formal problem definition:
@@ -87,5 +87,5 @@ private fun example1() = either {
 
 fun main() {
     example1()
-        .recover<_, KeenException, _> { println("Error: ${it.message}") }
+        .recover<_, KnobException, _> { println("Error: ${it.message}") }
 }

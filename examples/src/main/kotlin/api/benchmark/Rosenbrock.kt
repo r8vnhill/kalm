@@ -5,9 +5,9 @@
 
 package api.benchmark
 
-import cl.ravenhill.keen.repr.Solution
-import cl.ravenhill.keen.benchmark.rosenbrockProblem
-import cl.ravenhill.keen.benchmark.sphereConstraint
+import cl.ravenhill.knob.repr.Solution
+import cl.ravenhill.knob.benchmark.rosenbrockProblem
+import cl.ravenhill.knob.benchmark.sphereConstraint
 
 fun main() {
     val problem = rosenbrockProblem(listOf(sphereConstraint(dims = 3)))

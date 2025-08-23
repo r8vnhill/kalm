@@ -3,4 +3,4 @@
  * 2-Clause BSD License.
  */
 
-rootProject.name = "keen-core"
+rootProject.name = "knob-core"

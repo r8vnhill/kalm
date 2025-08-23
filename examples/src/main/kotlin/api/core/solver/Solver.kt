@@ -5,9 +5,9 @@
 
 package api.core.solver
 
-import cl.ravenhill.keen.benchmark.sphereProblem
-import cl.ravenhill.keen.repr.Solution
-import cl.ravenhill.keen.solver.Solver
+import cl.ravenhill.knob.benchmark.sphereProblem
+import cl.ravenhill.knob.repr.Solution
+import cl.ravenhill.knob.solver.Solver
 
 /**
  * Demonstrates solving a simple optimization problem using a custom solver.

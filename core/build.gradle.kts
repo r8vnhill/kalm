@@ -4,7 +4,7 @@
  * ---------
  * Key ideas
  * ---------
- *  - Conventions live in the precompiled plugins (`keen.library`, `keen.jvm`).
+ *  - Conventions live in the precompiled plugins (`knob.library`, `knob.jvm`).
  *  - A central constraints/BOM project (`:dependency-constraints`) defines versions.
  *  - Detekt runs with an extra ruleset (formatting).
  *  - Some modules (e.g., `:util:math`) are JVM-exclusive by design, since they rely on efficient JVM numeric APIs
@@ -20,8 +20,8 @@
  */
 
 plugins {
-    id("keen.library") // Project-wide library conventions (tests, publishing knobs, etc.)
-    id("keen.jvm") // JVM/Kotlin toolchain + compiler defaults (property-driven Java version)
+    id("knob.library") // Project-wide library conventions (tests, publishing knobs, etc.)
+    id("knob.jvm") // JVM/Kotlin toolchain + compiler defaults (property-driven Java version)
     alias(libs.plugins.detekt) // Static analysis (Detekt) for Kotlin sources
 }
 

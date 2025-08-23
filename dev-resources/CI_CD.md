@@ -12,7 +12,7 @@
     - [🧪 Before Drafting](#-before-drafting)
     - [✍️ How to Create a Release Draft](#️-how-to-create-a-release-draft)
       - [In GitLab (🔐 Primary Source of Truth)](#in-gitlab--primary-source-of-truth)
-      - [In GitHub (🌐 Public Mirror at `r8vnhill/keen-op`)](#in-github--public-mirror-at-r8vnhillkeen-op)
+      - [In GitHub (🌐 Public Mirror at `r8vnhill/knob-op`)](#in-github--public-mirror-at-r8vnhillknob-op)
     - [🧾 Changelog Guidelines](#-changelog-guidelines)
     - [🏷️ Tagging the Release](#️-tagging-the-release)
 
@@ -30,15 +30,15 @@ To apply centralized versioning, subprojects must apply the base convention plug
 
 ```kotlin
 plugins {
-    id("keen.base")
+    id("knob.base")
 }
 ```
 
-For example, the `keen.reproducible` plugin automatically inherits the version through:
+For example, the `knob.reproducible` plugin automatically inherits the version through:
 
 ```kotlin
 plugins {
-    id("keen.base")
+    id("knob.base")
 }
 ```
 
@@ -120,7 +120,7 @@ To ensure traceability and consistency across GitLab and GitHub, releases are dr
 6. Optionally link related merge requests or issues.
 7. Click **Save Release**.
 
-#### In GitHub (🌐 Public Mirror at [`r8vnhill/keen-op`](https://github.com/r8vnhill/keen-op))
+#### In GitHub (🌐 Public Mirror at [`r8vnhill/knob-op`](https://github.com/r8vnhill/knob-op))
 
 If desired, you may also publish a matching release in the GitHub mirror:
 

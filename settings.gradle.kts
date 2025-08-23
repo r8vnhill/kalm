@@ -11,7 +11,7 @@
  *  - Project structure (root name + modules)
  */
 
-rootProject.name = "keen-op"
+rootProject.name = "knob-op"
 
 // === FEATURE PREVIEWS ===
 // Enables type-safe project accessors so you can reference modules as `projects.core` instead of string paths in build
@@ -69,12 +69,12 @@ include(
     ":dependency-constraints",  // BOM for consistent versions across modules
 
     ":utils:domain",            // Domain-specific models and utilities
-    ":utils:test-commons",      // Common test utilities for Keen modules
+    ":utils:test-commons",      // Common test utilities for Knob modules
     ":utils:math",              // Efficient math utilities (JVM-only, uses Math.fma, Vector API)
 
-    ":core",                    // Core Keen library; contains the main Problem-solving API
+    ":core",                    // Core Knob library; contains the main Problem-solving API
 
-    ":benchmark",               // Benchmarking utilities for Keen
+    ":benchmark",               // Benchmarking utilities for Knob
 
-    ":examples"                 // Example applications using Keen
+    ":examples"                 // Example applications using Knob
 )

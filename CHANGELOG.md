@@ -14,14 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### ✨ Added
 
 - Introduced `CHANGELOG.md` following Keep a Changelog and SemVer standard.
-- Added `Keen.Git` PowerShell module for standardized Git operations.
-- Introduced `EnableGitUtilities.ps1` to load the `Keen.Git` module into the session, and `DisableGitUtilities.ps1` to unload it.
+- Added `Knob.Git` PowerShell module for standardized Git operations.
+- Introduced `EnableGitUtilities.ps1` to load the `Knob.Git` module into the session, and `DisableGitUtilities.ps1` to unload it.
 - Added `Invoke-GitCheckout` wrapper for safer and validated Git branch checkout.
 
 ## [0.0.2.2] – 2025-04-30
 
 ### Added
-- `keen.reproducible` convention plugin to configure reproducible archives across the project.
+- `knob.reproducible` convention plugin to configure reproducible archives across the project.
 - Centralized Detekt and binary compatibility validator plugin configuration in the root build.
 - `.gitignore` updated to allow `gradle-wrapper.jar` in convention plugins.
 
@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] – 2025-04-28
 
 ### Added
-- Convention plugins: `keen.kotlin`, `keen.jvm`, `keen.library`.
+- Convention plugins: `knob.kotlin`, `knob.jvm`, `knob.library`.
 - Core module with shared build logic via convention plugins.
 - GitHub Actions CI workflow for build and test.
 - README badges: CI status, Kotlin/Gradle version, license, project status.
@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Switched `kotlin.gradle.plugin` to `implementation` scope.
-- Refined project naming from `keen-ii` to `keen-go` across files.
+- Refined project naming from `knob-ii` to `knob-go` across files.
 - Improved internal build clarity through inline documentation in:
     - `build.gradle.kts`
     - `settings.gradle.kts`

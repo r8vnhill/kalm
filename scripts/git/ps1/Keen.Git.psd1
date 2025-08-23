@@ -4,7 +4,7 @@
      ###########################>
 
     # Entry point for the module (loads and initializes functions)
-    RootModule        = 'Keen.Git.psm1'
+    RootModule        = 'Knob.Git.psm1'
 
     # Version of the module (semantic versioning recommended)
     ModuleVersion     = '0.3.0'
@@ -14,11 +14,11 @@
 
     # Author and ownership information
     Author            = 'Ignacio Slater-Muñoz'
-    CompanyName       = 'KEEN-OP'
+    CompanyName       = 'KNOB'
     Copyright         = '(c) Ignacio Slater-Muñoz. All rights reserved.'
 
     # Human-readable module description
-    Description       = 'Keen.Git provides Git command wrappers for simplified and structured usage in PowerShell.'
+    Description       = 'Knob.Git provides Git command wrappers for simplified and structured usage in PowerShell.'
 
     # Minimum required PowerShell version
     PowerShellVersion = '7.0'
@@ -66,7 +66,7 @@
 
             # Licensing and source information
             LicenseUri = 'https://opensource.org/licenses/BSD-2-Clause'
-            ProjectUri = 'https://gitlab.com/r8vnhill/keen-op'
+            ProjectUri = 'https://gitlab.com/r8vnhill/knob-op'
         }
     }
 }
