@@ -8,6 +8,7 @@ package cl.ravenhill.knob.problem
 import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
 import cl.ravenhill.knob.problem.constrained.Constraint
+import cl.ravenhill.knob.problem.objective.Objective
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
@@ -193,7 +194,7 @@ private fun <T> Arb<Constraint<T>>.asList(): Arb<List<Constraint<T>>> =
     Arb.list(this, 0..3)
 
 /**
- * Transforms an [Arb] of [Objective] instances into an [Arb] of [NonEmptyList] containing [Objective] instances.
+ * Transforms an [Arb] of [objective.Objective] instances into an [Arb] of [NonEmptyList] containing [objective.Objective] instances.
  */
 private fun <T> Arb<Objective<T>>.asNel(): Arb<NonEmptyList<Objective<T>>> =
     Arb.nel(this, 1..5)

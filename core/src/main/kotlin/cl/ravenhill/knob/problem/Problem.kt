@@ -10,13 +10,14 @@ import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
 import cl.ravenhill.knob.repr.Solution
 import cl.ravenhill.knob.problem.constrained.Constraint
+import cl.ravenhill.knob.problem.objective.Objective
 
 /**
  * Represents an optimization problem consisting of one or more objective functions and optional constraints.
  *
  * A [Problem] encapsulates all the components needed to evaluate the quality and feasibility of candidate solutions in
  * an optimization task.
- * Each problem must have at least one [Objective], and may optionally include a collection of [Constraint]s that
+ * Each problem must have at least one [cl.ravenhill.knob.problem.objective.Objective], and may optionally include a collection of [Constraint]s that
  * restrict the feasible solution space.
  *
  * ## Usage:
@@ -40,12 +41,12 @@ import cl.ravenhill.knob.problem.constrained.Constraint
  * val problem = Problem(f1, f2, constraints = listOf(constraint))
  * ```
  *
- * Here, `sphereConstraint` is a function from the [benchmark](https://www.github.com/r8vnhill/knob-op/tree/main/benchmark)
+ * Here, `sphereConstraint` is a function from the [benchmark](https://www.github.com/r8vnhill/knob/tree/main/benchmark)
  * module.
  *
  * ## Note:
  *
- * A collection of well-known problems can be found in the [benchmark](https://www.github.com/r8vnhill/knob-op/tree/main/benchmark)
+ * A collection of well-known problems can be found in the [benchmark](https://www.github.com/r8vnhill/knob/tree/main/benchmark)
  * module.
  *
  * @param T The type of the representation stored in the [Solution]s evaluated by this problem.

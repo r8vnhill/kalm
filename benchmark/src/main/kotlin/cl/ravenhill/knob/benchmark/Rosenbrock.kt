@@ -5,7 +5,7 @@
 
 package cl.ravenhill.knob.benchmark
 
-import cl.ravenhill.knob.problem.Objective
+import cl.ravenhill.knob.problem.objective.Objective
 import cl.ravenhill.knob.problem.Problem
 import cl.ravenhill.knob.problem.constrained.Constraint
 import kotlin.math.pow

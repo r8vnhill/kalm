@@ -11,7 +11,7 @@
  *  - Project structure (root name + modules)
  */
 
-rootProject.name = "knob-op"
+rootProject.name = "knob"
 
 // === FEATURE PREVIEWS ===
 // Enables type-safe project accessors so you can reference modules as `projects.core` instead of string paths in build

@@ -10,7 +10,7 @@ import arrow.core.raise.either
 import arrow.core.recover
 import cl.ravenhill.knob.KnobException
 import cl.ravenhill.knob.repr.Solution
-import cl.ravenhill.knob.problem.Objective
+import cl.ravenhill.knob.problem.objective.Objective
 import cl.ravenhill.knob.problem.Problem
 import cl.ravenhill.knob.problem.constrained.EqualityConstraint
 import cl.ravenhill.knob.problem.constrained.InequalityConstraint

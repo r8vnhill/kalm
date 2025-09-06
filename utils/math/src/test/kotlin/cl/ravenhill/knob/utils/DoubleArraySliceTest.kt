@@ -20,10 +20,9 @@ class DoubleArraySliceTest : FreeSpec({
         "when indexing" - {
             "should return the same value as the backing array at (offset + index) [PBT]" {
                 TODO()
-//                // Generate safe combinations: n>=1, 0<=offset<n, 0<=index<n-offset
+                // Generate safe combinations: n>=1, 0<=offset<n, 0<=index<n-offset
 //                val sizes = Arb.positiveInt(128)
 //                checkAll(
-//                    PropTestConfig(iterations = 300),
 //                    Arb.doubleArray(),
 //                    sizes.flatMap { n ->
 //                        // For a given array length, pick an offset within range

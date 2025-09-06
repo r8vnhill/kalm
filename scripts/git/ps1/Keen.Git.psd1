@@ -66,7 +66,7 @@
 
             # Licensing and source information
             LicenseUri = 'https://opensource.org/licenses/BSD-2-Clause'
-            ProjectUri = 'https://gitlab.com/r8vnhill/knob-op'
+            ProjectUri = 'https://gitlab.com/r8vnhill/knob'
         }
     }
 }

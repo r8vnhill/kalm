@@ -48,18 +48,6 @@ internal typealias Index = Int
 //#region Generators
 
 /**
- * Builds an [Arb] that yields `Either<SizeError, DoubleArray>` using context-provided generators.
- *
- * @receiver [Arb.Companion]
- * @return An [Arb] of `Either<SizeError, DoubleArray>`.
- */
-context(sizeCtx: Arb<Either<SizeError, Size>>, contentCtx: Arb<Double>)
-internal fun Arb.Companion.sizedDoubleArrayEither(): Arb<Either<SizeError, DoubleArray>> =
-    sizeCtx.traverseEither { sz ->
-        Arb.doubleArrayExact(sz, contentCtx)
-    }
-
-/**
  * Pairs each successful array sample with a freshly **copied** [Gradient] via [Gradient.fromArray].
  *
  * The resulting pair is `(originalArray, gradient)`, where the gradient's storage is a **defensive copy**.

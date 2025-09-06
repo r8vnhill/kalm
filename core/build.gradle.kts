@@ -23,7 +23,11 @@ plugins {
     id("knob.library") // Project-wide library conventions (tests, publishing knobs, etc.)
     id("knob.jvm") // JVM/Kotlin toolchain + compiler defaults (property-driven Java version)
     alias(libs.plugins.detekt) // Static analysis (Detekt) for Kotlin sources
+    `maven-publish`
 }
+
+group = "cl.ravenhill.knob"
+version = "0.1.0-SNAPSHOT"
 
 dependencies {
     // Import the project-local platform/BOM that pins versions for your house stack (e.g., Arrow, Kotest).
@@ -43,4 +47,43 @@ dependencies {
 
     // Test dependencies
     testImplementation(projects.utils.testCommons)
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+            pom {
+                name.set("knob-core")
+                description.set("Core module of the Knob optimization framework")
+                url.set("https://gitlab.com/r8vnhill/knob/-/tree/main/core")
+
+                licenses {
+                    license {
+                        name.set("BSD-2-Clause")
+                        url.set("https://opensource.org/license/bsd-2-clause/")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("r8vnhill")
+                        name.set("Ignacio Slater-Muñoz")
+                    }
+                }
+                scm {
+                    url.set("https://gitlab.com/r8vnhill/knob/")
+                    connection.set("scm:git://gitlab.com/r8vnhill/knob.git")
+                    developerConnection.set("scm:git:ssh://gitlab.com/r8vnhill/knob.git")
+                }
+            }
+        }
+    }
+    repositories {
+        mavenLocal() // publishes to ~/.m2/repository
+    }
 }

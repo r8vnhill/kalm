@@ -3,14 +3,14 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.knob.problem
+package cl.ravenhill.knob.problem.objective
 
 import cl.ravenhill.knob.repr.Solution
 
 /**
  * Represents an objective function in an optimization problem.
  *
- * This is a functional interface that maps a [Solution] of type [T] to a [Double] value representing its objective
+ * This is a functional interface that maps a [cl.ravenhill.knob.repr.Solution] of type [T] to a [Double] value representing its objective
  * score (e.g., fitness, cost, or utility).
  * Higher-level algorithms use this function to evaluate and compare candidate solutions.
  *
@@ -22,7 +22,7 @@ import cl.ravenhill.knob.repr.Solution
  * }
  * ```
  *
- * @param T The type of the representation stored in the [Solution].
+ * @param T The type of the representation stored in the [cl.ravenhill.knob.repr.Solution].
  */
 public fun interface Objective<T> : (Solution<T>) -> Double {
 

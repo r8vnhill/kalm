@@ -55,7 +55,6 @@ dependencyResolutionManagement {
         }
     }
 
-    // Use the shared version catalog from the root build to keep versions aligned.
     versionCatalogs {
         create("libs") {
             from(files("../gradle/libs.versions.toml"))

@@ -5,98 +5,75 @@
 
 package cl.ravenhill.knob.repr
 
-import cl.ravenhill.knob.repr.Solution.Companion.invoke
-import cl.ravenhill.knob.problem.Objective
-import cl.ravenhill.knob.problem.constrained.Constraint
+import arrow.core.NonEmptyList
 
 /**
- * Represents a candidate solution in an optimization problem.
+ * A non-empty, read-only solution vector used across KNOB.
  *
- * A [Solution] is a read-only, ordered collection of values of type [T], typically used to represent:
- * - Decision variables in a mathematical model.
- * - Genes in an evolutionary algorithm.
- * - Parameters in a machine learning pipeline.
+ * This interface extends [List] for natural integration with Kotlin collection utilities, while enforcing non-emptiness
+ * through companion factories.
  *
- * It extends [List] to provide indexed access and iteration, making it easy to manipulate solutions with standard
- * Kotlin collection utilities while maintaining type safety and immutability.
+ * Implementations of [Solution] apply the delegation pattern: instead of re-implementing [List] operations, they
+ * forward all calls to a backing [NonEmptyList]. This keeps the implementation concise, avoids duplication, and
+ * guarantees consistency with the semantics of [NonEmptyList].
  *
- * This abstraction is central to the framework: [Objective] functions, [Constraint]s, and operators all operate on
- * [Solution]s.
- * You can construct solutions using the provided [invoke] factory methods, or define your own implementations if custom
- * behavior is needed.
- *
- * >[!note]
- * > If you need a custom implementation, prefer [delegation](https://kotlinlang.org/docs/delegation.html) to avoid
- * > re-implementing list behavior.
- *
- * ## Examples
- *
- * ### Example 1: Creating a default solution
- * ```kotlin
- * val solution = Solution(1.0, 2.0, 3.0)
- * println(solution[0]) // Output: 1.0
- * println(solution.sum()) // Output: 6.0 (works as a List)
- * ```
- *
- * ### Example 2: Evaluating an objective function
- * ```kotlin
- * val solution = Solution(1.0, 2.0, 3.0)
- * val objective: Objective<Double> = Objective { it.sum() }
- * println(objective(solution)) // Output: 6.0
- * ```
- *
- * ### Example 3: Defining a custom solution type
- * ```kotlin
- * class BinarySolution(private val bits: List<Boolean>) :
- *         Solution<Boolean>, List<Boolean> by bits {
- *     fun asBitString(): String = joinToString("") { if (it) "1" else "0" }
- * }
- * val binary = BinarySolution(listOf(true, false, true))
- * println(binary.asBitString()) // Output: "101"
- * ```
- *
- * @param T The type of values stored in the solution.
- * @see DelegatedSolution
+ * @param T Element type stored in the solution vector.
  */
-public interface Solution<T> : List<T> {
+public interface Solution<out T> : List<T> {
+
+    /**
+     * Returns the underlying [NonEmptyList] view of this solution.
+     *
+     * The default implementation in KNOB returns the backing instance without copying.
+     */
+    public fun toNonEmptyList(): NonEmptyList<T>
 
     public companion object {
-        /**
-         * Creates a [Solution] from a list of values.
-         *
-         * @param values The list of values to wrap.
-         * @return A [Solution] instance.
-         */
-        public operator fun <T> invoke(values: List<T>): Solution<T> = DelegatedSolution(values)
 
         /**
-         * Creates a [Solution] from a variable number of values.
+         * Creates a [Solution] backed by the given [NonEmptyList].
          *
-         * @param values The values to wrap.
-         * @return A [Solution] instance.
+         * @param values Backing non-empty sequence for this solution.
          */
-        public operator fun <T> invoke(vararg values: T): Solution<T> = invoke(values.toList())
+        @JvmStatic
+        public operator fun <T> invoke(values: NonEmptyList<T>): Solution<T> =
+            DelegatedSolution(values)
+
+        /**
+         * Creates a [Solution] from a mandatory head element and an optional tail.
+         *
+         * Internally constructs a [NonEmptyList] to guarantee non-emptiness.
+         *
+         * @param head First element (ensures non-emptiness).
+         * @param tail Optional remaining elements.
+         */
+        @JvmStatic
+        public fun <T> of(head: T, vararg tail: T): Solution<T> =
+            DelegatedSolution(NonEmptyList(head, tail.asList()))
     }
 }
 
 /**
- * Internal implementation of [Solution] that delegates all operations to an underlying [List].
+ * Concrete implementation of [Solution] that delegates all [List] operations to a backing [NonEmptyList] using Kotlin’s
+ * delegation syntax (`by`).
  *
- * This class provides a minimal, read-only implementation for use by [Solution.invoke].
- * It avoids re-implementing list behavior by using Kotlin's delegation mechanism.
+ * This is an application of the delegation pattern: behavior is reused from the wrapped [NonEmptyList], ensuring
+ * correctness and reducing boilerplate. The class remains lightweight, with no copying of elements.
  *
- * ## Note on `JavaDefaultMethodsNotOverriddenByDelegation`:
- *
- * Kotlin delegation does not override Java default methods like `toArray(IntFunction)` from [java.util.List], which may
- * lead to warnings such as:
- *
- * ```
- * JavaDefaultMethodsNotOverriddenByDelegation
- * ```
- *
- * In this case, the affected method is deprecated and rarely used in Kotlin, so the warning can safely be suppressed.
- *
- * @param T The type of elements stored in the delegated list.
+ * @property values Backing non-empty list. Kept private to preserve invariants.
  */
-@Suppress("JavaDefaultMethodsNotOverriddenByDelegation")
-private class DelegatedSolution<T>(values: List<T>) : Solution<T>, List<T> by values
+private class DelegatedSolution<T>(
+    private val values: NonEmptyList<T>
+) : Solution<T>, List<T> by values {
+
+    override fun toNonEmptyList(): NonEmptyList<T> = values
+
+    // equals/hashCode/toString are not delegated by `by`, so they are overridden explicitly.
+
+    override fun equals(other: Any?): Boolean =
+        this === other || (other is Solution<*> && values == other.toNonEmptyList())
+
+    override fun hashCode(): Int = values.hashCode()
+
+    override fun toString(): String = "Solution(values=$values)"
+}

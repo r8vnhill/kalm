@@ -5,8 +5,8 @@
 
 package api.core.problem.constrained
 
-import cl.ravenhill.knob.repr.Solution
 import cl.ravenhill.knob.problem.constrained.InequalityConstraint
+import cl.ravenhill.knob.repr.Solution
 import cl.ravenhill.knob.utils.InequalityType
 
 /**
@@ -46,7 +46,7 @@ fun main() {
         example1(
             f = { it.first() },          // Left expression: first element
             g = { it.last() },           // Right expression: last element
-            solution = Solution(listOf(1.0, 2.0, 3.0)),
+            solution = Solution(1.0, 2.0, 3.0),
             op = type
         )
     }

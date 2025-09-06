@@ -5,7 +5,9 @@
 
 package cl.ravenhill.knob.generators
 
+import arrow.core.Either
 import cl.ravenhill.knob.utils.size.Size
+import cl.ravenhill.knob.utils.size.SizeError
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.doubleArray
@@ -36,3 +38,15 @@ import io.kotest.property.arbitrary.doubleArray
  */
 fun Arb.Companion.doubleArrayExact(size: Size, content: Arb<Double>): Arb<DoubleArray> =
     Arb.doubleArray(length = Arb.constant(size.toInt()), content = content)
+
+/**
+ * Builds an [Arb] that yields `Either<SizeError, DoubleArray>` using context-provided generators.
+ *
+ * @receiver [Arb.Companion]
+ * @return An [Arb] of `Either<SizeError, DoubleArray>`.
+ */
+context(sizeCtx: Arb<Either<SizeError, Size>>, contentCtx: Arb<Double>)
+fun Arb.Companion.sizedDoubleArrayEither(): Arb<Either<SizeError, DoubleArray>> =
+    sizeCtx.traverseEither { sz ->
+        Arb.doubleArrayExact(sz, contentCtx)
+    }
