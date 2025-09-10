@@ -8,11 +8,8 @@ package cl.ravenhill.knob.repr.gen
 import arrow.core.Either
 import arrow.core.NonEmptyList
 import arrow.core.right
-import cl.ravenhill.knob.generators.doubleArrayExact
 import cl.ravenhill.knob.generators.flatTraverseEither
-import cl.ravenhill.knob.generators.traverseEither
 import cl.ravenhill.knob.repr.Gradient
-import cl.ravenhill.knob.utils.size.Size
 import cl.ravenhill.knob.utils.size.SizeError
 import cl.ravenhill.knob.utils.size.UnsafeSizeCreation
 import io.kotest.property.Arb
@@ -27,7 +24,7 @@ import io.kotest.property.arbitrary.map
 
 /** Either-wrapped [DoubleArray]; Left holds a [cl.ravenhill.knob.utils.size.SizeError]. */
 private typealias ArrayEither = Either<SizeError, DoubleArray>
-/** Either-wrapped pair of a backing [DoubleArray] and its corresponding [Gradient]. */
+/** Either-wrapped pair of a backing [DoubleArray] and its corresponding [cl.ravenhill.knob.repr.Gradient]. */
 private typealias PairEither = Either<SizeError, Pair<DoubleArray, Gradient>>
 /** Kotest arbitrary for [ArrayEither]. */
 private typealias ArrayArb = Arb<ArrayEither>
@@ -48,7 +45,7 @@ internal typealias Index = Int
 //#region Generators
 
 /**
- * Pairs each successful array sample with a freshly **copied** [Gradient] via [Gradient.fromArray].
+ * Pairs each successful array sample with a freshly **copied** [cl.ravenhill.knob.repr.Gradient] via [cl.ravenhill.knob.repr.Gradient.fromArray].
  *
  * The resulting pair is `(originalArray, gradient)`, where the gradient's storage is a **defensive copy**.
  */
@@ -69,7 +66,7 @@ internal fun Arb<PairEither>.withIndex():
     }
 
 /**
- * Pairs each successful array sample with an **aliased** [Gradient] via [Gradient.unsafeFromOwnedArray] (no copy).
+ * Pairs each successful array sample with an **aliased** [cl.ravenhill.knob.repr.Gradient] via [cl.ravenhill.knob.repr.Gradient.unsafeFromOwnedArray] (no copy).
  * Mutations to the array are visible through the gradient.
  */
 @UnsafeSizeCreation
@@ -79,13 +76,13 @@ internal fun ArrayArb.pairedWithAliasedGradient(): PairArb =
     }
 
 /**
- * Pairs each generated [NonEmptyList] of [Double] values with a [Gradient] built from those same values.
+ * Pairs each generated [NonEmptyList] of [Double] values with a [cl.ravenhill.knob.repr.Gradient] built from those same values.
  */
 internal fun Arb<NonEmptyList<Double>>.withGradient(): Arb<NELGradientPair> =
     map { nel -> nel to Gradient(nel) }
 
 /**
- * Pairs each generated [NonEmptyList] with an **aliased** [Gradient] that reuses the same [DoubleArray] storage.
+ * Pairs each generated [NonEmptyList] with an **aliased** [cl.ravenhill.knob.repr.Gradient] that reuses the same [DoubleArray] storage.
  */
 @UnsafeSizeCreation
 internal fun Arb<NonEmptyList<Double>>.withAliasedGradient(): Arb<ArrayGradientPair> =
@@ -180,7 +177,7 @@ internal fun Arb<ArrayGradientPair>.withOutOfBoundsIndex(
 //#region Data classes
 
 /**
- * Represents a [Gradient] together with its original components and a valid index.
+ * Represents a [cl.ravenhill.knob.repr.Gradient] together with its original components and a valid index.
  *
  * @property components The non-empty list of doubles from which the gradient was created.
  * @property gradient The gradient instance corresponding to [components].
@@ -195,7 +192,7 @@ internal data class GradientNelWithIndex(
 /**
  * Triple-like container for property-based tests holding:
  * - A raw [DoubleArray] of component values.
- * - The associated [Gradient].
+ * - The associated [cl.ravenhill.knob.repr.Gradient].
  * - An [Index] for lookup.
  *
  * ### Suppression notice:

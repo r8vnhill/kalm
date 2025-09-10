@@ -18,8 +18,6 @@ import cl.ravenhill.knob.repr.gen.withValidIndex
 import cl.ravenhill.knob.utils.size.Size
 import cl.ravenhill.knob.utils.size.SizeError
 import cl.ravenhill.knob.utils.size.UnsafeSizeCreation
-import cl.ravenhill.knob.utils.size.gen.size
-import cl.ravenhill.knob.utils.size.gen.validSize
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.throwables.shouldThrow

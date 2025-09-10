@@ -18,7 +18,7 @@ import cl.ravenhill.knob.utils.size.UnsafeSizeCreation
  * steepest descent, quasi-Newton) and hybrid strategies.
  *
  * ## Performance notes
- * - **Objectives**: the provided [NonEmptyList] is stored **as-is** (no copy).
+ * - **Objectives**: the provided [arrow.core.NonEmptyList] is stored **as-is** (no copy).
  * - **Constraints**: stored **as-is** (no defensive copy) to avoid allocations. If external mutation is a concern,
  *   callers should pass an immutable collection.
  * - **Vararg path:** `of(head, vararg tail)` uses the JVM vararg array; building the `NonEmptyList` from it avoids

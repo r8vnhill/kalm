@@ -73,6 +73,8 @@ include(
     ":utils:math",              // Efficient math utilities (JVM-only, uses Math.fma, Vector API)
 
     ":core",                    // Core Knob library; contains the main Problem-solving API
+    ":analytical",              // Analytical search algorithms
+    ":local-search",            // Local search algorithms
 
     ":benchmark",               // Benchmarking utilities for Knob
 

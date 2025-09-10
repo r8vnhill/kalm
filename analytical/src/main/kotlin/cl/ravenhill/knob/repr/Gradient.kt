@@ -25,6 +25,8 @@ import kotlin.math.sqrt
 
 public class Gradient private constructor(private val components: DoubleArray) : Iterable<Double>, HasSize {
 
+    public typealias Result = Either<GradientError, Gradient>
+
     public override val size: Size = Size.ofOrThrow(components.size) // Non-negative by construction, never throws
 
     //#region element access
