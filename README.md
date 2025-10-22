@@ -4,6 +4,7 @@
 [![Gradle](https://img.shields.io/badge/Gradle-8.14-blue?logo=gradle)](https://gradle.org/)
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD--2--Clause-blue.svg)](LICENSE)
 [![Pre-Alpha](https://img.shields.io/badge/status-pre--alpha-orange)](#)
+[![Pipeline status](https://gitlab.com/r8vnhill/knob/badges/main/pipeline.svg)](https://gitlab.com/r8vnhill/knob/-/pipelines)
 
 **KNOB** aims to be a flexible and extensible optimization framework for solving a wide range of optimization problems, including combinatorial, numerical, and multi-objective domains.
 
