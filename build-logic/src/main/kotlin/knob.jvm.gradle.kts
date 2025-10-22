@@ -24,6 +24,7 @@
  *  - Example: `./gradlew build -Pknob.java.default=21`
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import utils.jvmTargetFor
 import utils.resolveDefaultJavaVersion
 import utils.setLanguageVersion
@@ -58,11 +59,11 @@ kotlin {
         freeCompilerArgs.addAll(
             "-Xcontext-parameters", // Enable context parameters
             "-Xjsr305=strict",      // Enable strict nullability checks
-            "-Xjvm-default=all",    // Enable default methods in interfaces
             "-Xnested-type-aliases",
             "-Xjavac-arguments=$moduleAdditionFlag=$vectorModule",
             "-Xreturn-value-checker=full"
         )
+        jvmDefault.set(JvmDefaultMode.ENABLE)
 
         val wError = providers.gradleProperty("kotlin.warningsAsErrors")
             .map(String::toBoolean).orElse(false)

@@ -5,8 +5,9 @@
 
 package api.core.solver
 
-import cl.ravenhill.knob.benchmark.sphereProblem
 import cl.ravenhill.knob.repr.Solution
+import cl.ravenhill.knob.benchmark.sphereProblem
+import cl.ravenhill.knob.problem.Problem
 import cl.ravenhill.knob.solver.Solver
 
 /**
@@ -24,17 +25,17 @@ fun example1() {
 
     // Generate candidates: x = -10, -8, ..., 0, ..., 10
     val candidates = (-10..10 step 2)
-        .map { Solution(it.toDouble()) }
+        .map { Solution.of(it.toDouble()) }
 
     // Define a naive solver that evaluates a fixed set of candidate solutions
-    val solver = Solver {
+    val solver: Solver<Double, Problem<Double>> = Solver { problem ->
         // Solver logic: pick the solution with the minimum objective value
         candidates
             .minByOrNull { candidate ->
                 // Evaluate the first (and only) objective function
                 problem.objectives.first().invoke(candidate)
             }
-            ?: Solution(Double.POSITIVE_INFINITY) // Fallback in case the list was empty (not possible here)
+            ?: Solution.of(Double.POSITIVE_INFINITY) // Fallback in case the list was empty (not possible here)
     }
 
     // Run the solver to find the best solution

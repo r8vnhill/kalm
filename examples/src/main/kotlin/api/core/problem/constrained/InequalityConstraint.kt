@@ -46,7 +46,7 @@ fun main() {
         example1(
             f = { it.first() },          // Left expression: first element
             g = { it.last() },           // Right expression: last element
-            solution = Solution(1.0, 2.0, 3.0),
+            solution = Solution.of(1.0, 2.0, 3.0),
             op = type
         )
     }

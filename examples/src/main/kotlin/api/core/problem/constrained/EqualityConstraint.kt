@@ -73,7 +73,7 @@ fun main() {
         example1(
             { it[0] + it[1] }, // f: sum of the first two elements
             { it[0] * it[1] }, // g: product of the first two elements
-            Solution(1.0, 2.0) // solution
+            Solution.of(1.0, 2.0) // solution
         )
     }
 
@@ -81,7 +81,7 @@ fun main() {
     example2(
         { it[0] },               // left side is 1.0
         { it[1] },               // right side is 1.0000000001 (within tolerance)
-        Solution(1.0, 1.0000000001)
+    Solution.of(1.0, 1.0000000001)
     ).recover<_, InvalidThresholdException, _> {
         // Handles any invalid threshold construction
         println("Error: ${it.message}")
@@ -92,7 +92,7 @@ fun main() {
         example3(
             { it[0] + it[1] },    // sum
             { it[0] * it[1] },    // product
-            Solution(1.0, 2.0),
+            Solution.of(1.0, 2.0),
             EqualityThreshold(1e-9).bind() // Validated creation
         )
     }.recover<_, InvalidThresholdException, _> {

@@ -9,11 +9,11 @@ import arrow.core.nonEmptyListOf
 import arrow.core.raise.either
 import arrow.core.recover
 import cl.ravenhill.knob.KnobException
-import cl.ravenhill.knob.repr.Solution
-import cl.ravenhill.knob.problem.objective.Objective
 import cl.ravenhill.knob.problem.Problem
 import cl.ravenhill.knob.problem.constrained.EqualityConstraint
 import cl.ravenhill.knob.problem.constrained.InequalityConstraint
+import cl.ravenhill.knob.problem.objective.Objective
+import cl.ravenhill.knob.repr.Solution
 import cl.ravenhill.knob.utils.EqualityThreshold
 import cl.ravenhill.knob.utils.InequalityType
 
@@ -70,7 +70,7 @@ private fun example1() = either {
         )
 
         // Sample solution $x = (1, 2, 3, 4)$
-        val solution = Solution(1.0, 2.0, 3.0, 4.0)
+    val solution = Solution.of(1.0, 2.0, 3.0, 4.0)
 
         // Evaluate objectives: $(f_1, f_2)$
         val result = problem.objectives.let { (sumObj, prodObj) ->
