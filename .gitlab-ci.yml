@@ -33,7 +33,7 @@ lint:
     when: always
     paths:
       - build/reports/detekt
-      - */build/reports/detekt
+      - "*/build/reports/detekt"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH'
@@ -48,13 +48,13 @@ verify:
     when: always
     reports:
       junit:
-        - **/build/test-results/test/*.xml
+        - "**/build/test-results/test/*.xml"
       coverage_report:
         coverage_format: cobertura
         path: build/reports/kover/xml/report.xml
     paths:
       - build/reports/kover
-      - */build/reports/kover
+      - "*/build/reports/kover"
     expire_in: 1 week
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
