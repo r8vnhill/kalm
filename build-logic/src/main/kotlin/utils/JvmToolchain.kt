@@ -51,7 +51,7 @@ interface ProviderFactoryRef {
             logger.lifecycle(
                 """
                 ⚠ No '$PROP_JAVA_DEFAULT' property found${if (blank) " (value was blank)" else ""}.
-                   Falling back to the Gradle JVM version ($gradleJvm) or framework default ($example).
+                   Falling back to framework default ($example).
 
                 How to set it:
                   • Root gradle.properties:
@@ -71,7 +71,7 @@ interface ProviderFactoryRef {
         const val PROP_JAVA_DEFAULT: String = "knob.java.default"
 
         /** Framework default when the property is absent. */
-        const val DEFAULT_JAVA_VERSION: Int = 22
+        const val DEFAULT_JAVA_VERSION: Int = 21
 
         /** Acceptable major version range. */
         val VALID_RANGE: IntRange = 8..99
