@@ -13,14 +13,7 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.arbitrary
-import io.kotest.property.arbitrary.bind
-import io.kotest.property.arbitrary.choice
-import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.list
-import io.kotest.property.arbitrary.withEdgecases
-import io.kotest.property.arbitrary.zip
+import io.kotest.property.arbitrary.*
 import io.kotest.property.arrow.core.nel
 import io.kotest.property.checkAll
 import io.mockk.mockk
@@ -64,6 +57,19 @@ class ProblemFreeSpecTest : FreeSpec({
                         p.objectives.shouldContainExactly(f)
                         p.constraints shouldContainExactly constraints
                     }
+                }
+
+                "then mutating the original constraints does not affect the problem" {
+                    val objective = Objective<Int> { it.size.toDouble() }
+                    // relaxed=true → MockK returns harmless defaults without explicit stubs
+                    val originalConstraints = mutableListOf(mockk<Constraint<Int>>(relaxed = true))
+
+                    val problem = Problem(objective, constraints = originalConstraints)
+                    val expectedConstraints = problem.constraints.toList()
+
+                    originalConstraints.clear()
+
+                    problem.constraints shouldContainExactly expectedConstraints
                 }
             }
         }

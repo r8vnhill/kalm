@@ -8,6 +8,7 @@ package cl.ravenhill.knob.problem.constrained
 import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.left
+import arrow.core.nonEmptyListOf
 import arrow.core.right
 import arrow.core.tail
 import cl.ravenhill.knob.repr.Solution
@@ -152,35 +153,35 @@ class EqualityConstraintTest : FreeSpec({
                             threshold = 0.0,
                             leftFn   = { it.first().toDouble() },
                             rightFn  = { it.first().toDouble() },
-                            solution = Solution(listOf(7))
+                            solution = Solution(nonEmptyListOf(7))
                         ),
                         /* 2️⃣ Off-by-epsilon, inside a tiny tolerance */
                         Case(
                             threshold = 1e-6,
                             leftFn   = { it.first().toDouble() },
                             rightFn  = { it.first().toDouble() + 9e-7 },   // diff = 0.0000009 < 1e-6
-                            solution = Solution(listOf(42))
+                            solution = Solution(nonEmptyListOf(42))
                         ),
                         /* 3️⃣ Aggregate (sum) with modest tolerance */
                         Case(
                             threshold = 0.5,
                             leftFn   = { it.sumOf(Int::toDouble) },
                             rightFn  = { it.sumOf(Int::toDouble) + 0.3 },  // diff = 0.3 < 0.5
-                            solution = Solution(listOf(1, 2, 3, 4))
+                            solution = Solution(nonEmptyListOf(1, 2, 3, 4))
                         ),
                         /* 4️⃣ Negative numbers – average comparison */
                         Case(
                             threshold = 0.25,
                             leftFn   = { it.map(Int::toDouble).average() },
                             rightFn  = { it.map(Int::toDouble).average() + 0.2 },
-                            solution = Solution(listOf(-10, -20, -30))
+                            solution = Solution(nonEmptyListOf(-10, -20, -30))
                         ),
                         /* 5️⃣ Large magnitude values with larger tolerance */
                         Case(
                             threshold = 2.0,
                             leftFn   = { it[0].toDouble() },
                             rightFn  = { it[0].toDouble() + 1.9 },         // diff = 1.9 < 2.0
-                            solution = Solution(listOf(10_000, 20_000))
+                            solution = Solution(nonEmptyListOf(10_000, 20_000))
                         )
                     ) { (threshold, leftFn, rightFn, solution) ->
                         with(EqualityThreshold(threshold)) {
@@ -200,35 +201,35 @@ class EqualityConstraintTest : FreeSpec({
                             threshold = 0.0,
                             leftFn    = { it.first().toDouble() },
                             rightFn   = { it.first().toDouble() + 1.0 },
-                            solution  = Solution(listOf(10))
+                            solution  = Solution(nonEmptyListOf(10))
                         ),
                         /* 2️⃣ Difference *just* above a tiny tolerance */
                         Case(
                             threshold = 1e-6,
                             leftFn    = { it.first().toDouble() },
                             rightFn   = { it.first().toDouble() + 1.1e-6 }, // diff = 1.1 µ > tol
-                            solution  = Solution(listOf(3))
+                            solution  = Solution(nonEmptyListOf(3))
                         ),
                         /* 3️⃣ Sum deviates beyond tolerance */
                         Case(
                             threshold = 0.5,
                             leftFn    = { it.sumOf(Int::toDouble) },
                             rightFn   = { it.sumOf(Int::toDouble) + 0.6 },
-                            solution  = Solution(listOf(2, 4, 6))
+                            solution  = Solution(nonEmptyListOf(2, 4, 6))
                         ),
                         /* 4️⃣ Negative numbers, average outside threshold */
                         Case(
                             threshold = 0.25,
                             leftFn    = { it.map(Int::toDouble).average() },
                             rightFn   = { it.map(Int::toDouble).average() - 0.3 }, // |diff| = 0.3 > 0.25
-                            solution  = Solution(listOf(-5, -10, -15))
+                            solution  = Solution(nonEmptyListOf(-5, -10, -15))
                         ),
                         /* 5️⃣ Large magnitude: diff bigger than tolerance */
                         Case(
                             threshold = 2.0,
                             leftFn    = { it[0].toDouble() },
                             rightFn   = { it[0].toDouble() + 2.1 }, // diff = 2.1 > 2.0
-                            solution  = Solution(listOf(50_000, 1))
+                            solution  = Solution(nonEmptyListOf(50_000, 1))
                         )
                     ) { (threshold, leftFn, rightFn, solution) ->
 

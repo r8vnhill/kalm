@@ -5,7 +5,6 @@
 
 package cl.ravenhill.knob.problem
 
-import arrow.core.NonEmptyCollection
 import arrow.core.NonEmptyList
 import arrow.core.nonEmptyListOf
 import cl.ravenhill.knob.repr.Solution
@@ -68,10 +67,13 @@ public interface Problem<T> {
          */
         public operator fun <T> invoke(
             objectives: NonEmptyList<Objective<T>>,
-            constraints: Collection<Constraint<T>> = listOf()
-        ): Problem<T> = object : Problem<T> {
-            override val objectives = objectives
-            override val constraints = constraints
+            constraints: Collection<Constraint<T>> = emptyList()
+        ): Problem<T> {
+            val constraintList = constraints.toList()
+            return object : Problem<T> {
+                override val objectives = objectives
+                override val constraints: List<Constraint<T>> = constraintList
+            }
         }
 
         /**
@@ -85,7 +87,7 @@ public interface Problem<T> {
         public operator fun <T> invoke(
             objective: Objective<T>,
             vararg objectives: Objective<T>,
-            constraints: Collection<Constraint<T>> = listOf()
+            constraints: Collection<Constraint<T>> = emptyList()
         ): Problem<T> = Problem(nonEmptyListOf(objective, *objectives), constraints)
     }
 }

@@ -74,33 +74,33 @@ class InequalityConstraintTest : FreeSpec({
             withData(
                 // region satisfied (true)
                 // 1 < 2
-                case(InequalityType.LESS_THAN, Solution(1, 2), head, maxVal, expect = true),
+                case(InequalityType.LESS_THAN, Solution.of(1, 2), head, maxVal, expect = true),
                 // 6 <= 6
-                case(InequalityType.LESS_THAN_OR_EQUAL, Solution(3, 2), { head() * 2 }, { tailSum() * 3 }, expect = true),
+                case(InequalityType.LESS_THAN_OR_EQUAL, Solution.of(3, 2), { head() * 2 }, { tailSum() * 3 }, expect = true),
                 // 21 > 10
-                case(InequalityType.GREATER_THAN, Solution(10, 5, 6), total, head, expect = true),
+                case(InequalityType.GREATER_THAN, Solution.of(10, 5, 6), total, head, expect = true),
                 // 5 >= 5
-                case(InequalityType.GREATER_THAN_OR_EQUAL, Solution(3, 7), average, { 5.0 }, expect = true),
+                case(InequalityType.GREATER_THAN_OR_EQUAL, Solution.of(3, 7), average, { 5.0 }, expect = true),
                 // 10 < -5
-                case(InequalityType.LESS_THAN, Solution(-10, -5, -7), minVal, maxVal, expect = true),
+                case(InequalityType.LESS_THAN, Solution.of(-10, -5, -7), minVal, maxVal, expect = true),
                 // 10001 > 10000
-                case(InequalityType.GREATER_THAN, Solution(10000, 10000), { head() + 1 }, head, expect = true),
+                case(InequalityType.GREATER_THAN, Solution.of(10000, 10000), { head() + 1 }, head, expect = true),
                 // endregion
                 // region violated (false)
                 // 3 < 3
-                case(InequalityType.LESS_THAN, Solution(3, 1), head, maxVal, expect = false),
+                case(InequalityType.LESS_THAN, Solution.of(3, 1), head, maxVal, expect = false),
                 // 5 < 5
-                case(InequalityType.LESS_THAN, Solution(5, 5), head, maxVal, expect = false),
+                case(InequalityType.LESS_THAN, Solution.of(5, 5), head, maxVal, expect = false),
                 // 4 >= 5
-                case(InequalityType.GREATER_THAN_OR_EQUAL, Solution(2, 6), average, { average() + 1 }, expect = false),
+                case(InequalityType.GREATER_THAN_OR_EQUAL, Solution.of(2, 6), average, { average() + 1 }, expect = false),
                 // 7 > 7
-                case(InequalityType.GREATER_THAN, Solution(5, 9), { total() / 2 }, { 7.0 }, expect = false),
+                case(InequalityType.GREATER_THAN, Solution.of(5, 9), { total() / 2 }, { 7.0 }, expect = false),
                 // -15 > -5
-                case(InequalityType.GREATER_THAN, Solution(-15, -10, -5), minVal, maxVal, expect = false),
+                case(InequalityType.GREATER_THAN, Solution.of(-15, -10, -5), minVal, maxVal, expect = false),
                 // 20_000 <= 19_999
                 case(
                     InequalityType.LESS_THAN_OR_EQUAL,
-                    Solution(20_000, 20_000),
+                    Solution.of(20_000, 20_000),
                     { tailSum() },
                     { head() - 1 },
                     expect = false

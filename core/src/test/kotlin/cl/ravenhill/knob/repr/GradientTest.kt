@@ -7,19 +7,9 @@ package cl.ravenhill.knob.repr
 
 import arrow.core.Either
 import cl.ravenhill.knob.generators.finiteDouble
-import cl.ravenhill.knob.repr.gen.pairedWithAliasedGradient
-import cl.ravenhill.knob.repr.gen.pairedWithGradient
-import cl.ravenhill.knob.repr.gen.sizedDoubleArrayEither
-import cl.ravenhill.knob.repr.gen.withAliasedGradient
-import cl.ravenhill.knob.repr.gen.withGradient
-import cl.ravenhill.knob.repr.gen.withIndex
-import cl.ravenhill.knob.repr.gen.withOutOfBoundsIndex
-import cl.ravenhill.knob.repr.gen.withValidIndex
-import cl.ravenhill.knob.utils.size.Size
-import cl.ravenhill.knob.utils.size.SizeError
-import cl.ravenhill.knob.utils.size.UnsafeSizeCreation
-import cl.ravenhill.knob.utils.size.gen.size
-import cl.ravenhill.knob.utils.size.gen.validSize
+import cl.ravenhill.knob.generators.sizedDoubleArrayEither
+import cl.ravenhill.knob.repr.gen.*
+import cl.ravenhill.knob.utils.size.*
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.assertions.throwables.shouldThrow

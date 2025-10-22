@@ -1,16 +1,16 @@
 [versions]
 arrow = "2.1.2"
-ben-manes-versions = "0.52.0"
+ben-manes-versions = "0.53.0"
 detekt = "1.23.8"
-doctor = "0.11.0"
-dokka = "2.0.0"
-kotest = "6.0.0.M17"
+doctor = "0.12.1"
+dokka = "2.1.0"
+kotest = "6.0.4"
 kotest-arrow = "2.0.0"
-kotlin = "2.2.20-Beta2"
+kotlin = "2.3.0-Beta1"
 kotlin-bin-compatibility-validator = "0.18.1"
-kover = "0.9.1"
-mockk = "1.14.5"
-version-catalog-update = "1.0.0"
+kover = "0.9.3"
+mockk = "1.14.6"
+version-catalog-update = "1.0.1"
 
 [libraries]
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }

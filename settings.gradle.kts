@@ -76,5 +76,9 @@ include(
 
     ":benchmark",               // Benchmarking utilities for Knob
 
-    ":examples"                 // Example applications using Knob
+    ":examples",                // Example applications using Knob
+
+    // Evolutionary computation algorithms
+    ":ec:production",           // Production-ready EC algorithms (e.g., GA)
+    ":ec:academic"              // Academic/illustrative EC algorithms (depends on :ec:production)
 )

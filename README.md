@@ -20,6 +20,12 @@
 - ✅ Kotlin + Gradle project setup
 - ❌ No functional optimization features implemented yet
 
+### Modules (selected)
+- `:core` — Core KNOB primitives (Problem, Solution, Objectives, Constraints)
+- `:utils:*` — Domain/math/test utilities
+- `:ec:production` — Production-ready EC algorithms (e.g., genetic algorithms)
+- `:ec:academic` — Academic/illustrative EC algorithms (may depend on `:ec:production`)
+
 ## 🛠️ Getting Started
 
 You can clone and build the project to explore the current structure:

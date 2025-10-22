@@ -60,7 +60,8 @@ kotlin {
             "-Xjsr305=strict",      // Enable strict nullability checks
             "-Xjvm-default=all",    // Enable default methods in interfaces
             "-Xnested-type-aliases",
-            "-Xjavac-arguments=$moduleAdditionFlag=$vectorModule"
+            "-Xjavac-arguments=$moduleAdditionFlag=$vectorModule",
+            "-Xreturn-value-checker=full"
         )
 
         val wError = providers.gradleProperty("kotlin.warningsAsErrors")
