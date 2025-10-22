@@ -78,8 +78,6 @@ release:
   stage: release
   script:
     - ./gradlew assemble
-  only:
-    - tags
   artifacts:
     when: on_success
     paths:
