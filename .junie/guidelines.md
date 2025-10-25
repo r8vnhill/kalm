@@ -53,7 +53,7 @@ Workarounds:
 - Place tests under `<module>/src/test/kotlin` using the production package structure.
 - Kotest styles are supported (e.g., StringSpec, FunSpec). The JUnit5 runner is on the classpath via the Kotest bundle.
 - Example minimal test (validated locally during guideline authoring):
-  - Location: `core/src/test/kotlin/cl/ravenhill/keen/engine/SimpleHillClimberTest.kt`
+  - Location: `core/src/test/kotlin/cl/ravenhill/kalm/engine/SimpleHillClimberTest.kt`
   - Content:
     
     ```kotlin
@@ -72,8 +72,8 @@ Workarounds:
     ```
     
     Required imports (add at the top of the test file):
-    - `cl.ravenhill.keen.engine.SimpleHillClimber`
-    - `cl.ravenhill.keen.repr.ScalarFeature`
+  - `cl.ravenhill.kalm.engine.SimpleHillClimber`
+  - `cl.ravenhill.kalm.repr.ScalarFeature`
     - `io.kotest.core.spec.style.StringSpec`
     - `io.kotest.matchers.doubles.shouldBeExactly`
 

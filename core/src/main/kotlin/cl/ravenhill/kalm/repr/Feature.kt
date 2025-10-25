@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.repr
+package cl.ravenhill.kalm.repr
 
 interface Feature<T, F> where F : Feature<T, F> {
 

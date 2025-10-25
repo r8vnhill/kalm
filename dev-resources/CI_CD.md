@@ -12,7 +12,7 @@
     - [🧪 Before Drafting](#-before-drafting)
     - [✍️ How to Create a Release Draft](#️-how-to-create-a-release-draft)
       - [In GitLab (🔐 Primary Source of Truth)](#in-gitlab--primary-source-of-truth)
-      - [In GitHub (🌐 Public Mirror at `r8vnhill/keen-op`)](#in-github--public-mirror-at-r8vnhillkeen-op)
+  - [In GitHub (🌐 Public Mirror at `r8vnhill/kalm`)](#in-github--public-mirror-at-r8vnhillkeen-op)
     - [🧾 Changelog Guidelines](#-changelog-guidelines)
     - [🏷️ Tagging the Release](#️-tagging-the-release)
 
@@ -120,7 +120,7 @@ To ensure traceability and consistency across GitLab and GitHub, releases are dr
 6. Optionally link related merge requests or issues.
 7. Click **Save Release**.
 
-#### In GitHub (🌐 Public Mirror at [`r8vnhill/keen-op`](https://github.com/r8vnhill/keen-op))
+#### In GitHub (🌐 Public Mirror at [`r8vnhill/kalm`](https://github.com/r8vnhill/keen-op))
 
 If desired, you may also publish a matching release in the GitHub mirror:
 

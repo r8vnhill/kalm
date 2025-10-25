@@ -3,7 +3,7 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.repr
+package cl.ravenhill.kalm.repr
 
 data class ScalarFeature(val x: Double) : Feature<Double, ScalarFeature> {
 

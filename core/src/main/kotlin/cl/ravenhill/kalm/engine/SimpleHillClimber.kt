@@ -3,9 +3,9 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.engine
+package cl.ravenhill.kalm.engine
 
-import cl.ravenhill.keen.repr.ScalarFeature
+import cl.ravenhill.kalm.repr.ScalarFeature
 
 class SimpleHillClimber(
     override val objectiveFunction: (ScalarFeature) -> Double,

@@ -29,7 +29,7 @@ dependencyResolutionManagement {
 }
 
 // Root project name used in logs and outputs
-rootProject.name = "keen-op"
+rootProject.name = "kalm"
 
 // Include project modules
 include(":core")

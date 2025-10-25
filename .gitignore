@@ -46,3 +46,5 @@ node_modules/
 
 # === VS Code === (optional if contributors use it)
 .vscode/
+
+todo.md

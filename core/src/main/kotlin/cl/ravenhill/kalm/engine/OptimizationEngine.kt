@@ -3,9 +3,9 @@
  * 2-Clause BSD License.
  */
 
-package cl.ravenhill.keen.engine
+package cl.ravenhill.kalm.engine
 
-import cl.ravenhill.keen.repr.Feature
+import cl.ravenhill.kalm.repr.Feature
 
 
 interface OptimizationEngine<F>  where F : Feature<*, F> {
