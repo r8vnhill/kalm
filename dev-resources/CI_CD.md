@@ -120,7 +120,7 @@ To ensure traceability and consistency across GitLab and GitHub, releases are dr
 6. Optionally link related merge requests or issues.
 7. Click **Save Release**.
 
-#### In GitHub (🌐 Public Mirror at [`r8vnhill/kalm`](https://github.com/r8vnhill/keen-op))
+#### In GitHub (🌐 Public Mirror at [`r8vnhill/kalm`](https://github.com/r8vnhill/kalm))
 
 If desired, you may also publish a matching release in the GitHub mirror:
 

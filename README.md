@@ -23,11 +23,11 @@
 
 You can clone and build the project to explore the current structure.
 
-Note: the repository remote is still named `knob` — consider renaming the remote repo if you want full consistency.
+Note: the repository remote may still be named `knob` — consider renaming the remote repo to `kalm` if you want full consistency.
 
 ```bash
-git clone https://gitlab.com/r8vnhill/knob.git
-cd knob
+git clone https://gitlab.com/r8vnhill/kalm.git
+cd kalm
 ./gradlew build
 ```
 
