@@ -1,8 +1,8 @@
-public abstract interface class cl/ravenhill/keen/engine/OptimizationEngine {
-	public abstract fun optimize (Lcl/ravenhill/keen/state/State;)Lcl/ravenhill/keen/state/State;
+public abstract interface class cl/ravenhill/kalm/engine/OptimizationEngine {
+	public abstract fun optimize (Lcl/ravenhill/kalm/state/State;)Lcl/ravenhill/kalm/state/State;
 }
 
-public abstract interface class cl/ravenhill/keen/state/State {
+public abstract interface class cl/ravenhill/kalm/state/State {
 	public abstract fun getSolution ()Ljava/lang/Object;
 }
 

@@ -5,7 +5,7 @@
 
 // Apply shared conventions and quality tools at the root level.
 plugins {
-    id("keen.reproducible")                         // Ensures byte-for-byte reproducible archives
+    id("kalm.reproducible")                         // Ensures byte-for-byte reproducible archives
     alias { libs.plugins.kotlin.bin.compatibility } // Kotlin binary compatibility validator
     alias { libs.plugins.detekt }                   // Static code analysis tool
 }

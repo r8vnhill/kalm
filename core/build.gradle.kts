@@ -4,8 +4,8 @@
  */
 
 plugins {
-    id("keen.library")
-    id("keen.jvm")
+    id("kalm.library")
+    id("kalm.jvm")
     alias { libs.plugins.detekt }
 }
 

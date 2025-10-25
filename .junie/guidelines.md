@@ -7,7 +7,7 @@ This document captures practical, project-specific knowledge for building, testi
 ### Gradle and convention plugins
 - The repository is a Gradle multi-project with custom convention plugins under `build-logic`:
   - `keen.jvm`: standardizes the Java/Kotlin toolchain (see `build-logic/src/main/kotlin/utils/JvmToolchain.kt`). The toolchain must be available locally; Gradle can download matching JDKs if configured to do so.
-  - `keen.library`: enforces unified test configuration for all modules (JUnit Platform with verbose logging of passed/skipped/failed). No per-module duplication is required.
+  - `kalm.library`: enforces unified test configuration for all modules (JUnit Platform with verbose logging of passed/skipped/failed). No per-module duplication is required.
   - `keen.reproducible`: configures reproducible archives. Avoid adding non-deterministic metadata to artifacts.
 - Root `build.gradle.kts` enables:
   - Binary compatibility validation (`org.jetbrains.kotlinx.binary-compatibility-validator`). API dump files live under `core/api/*`. Keep them in sync when public APIs are changed.
@@ -25,7 +25,7 @@ This document captures practical, project-specific knowledge for building, testi
 ## 2. Testing
 
 ### Framework and platform
-- Kotest 6 (milestone) is used with the JUnit Platform. The `keen.library` convention applies `useJUnitPlatform()` to all Test tasks, and enables detailed logging including stdout.
+-- Kotest 6 (milestone) is used with the JUnit Platform. The `kalm.library` convention applies `useJUnitPlatform()` to all Test tasks, and enables detailed logging including stdout.
 
 ### Running tests
 From the repository root:
@@ -108,7 +108,7 @@ Guidelines:
 - Additional rules are found in `dev-resources/*`. Keep `dev-resources/CI_CD.md` in mind when modifying build logic or adding tasks.
 
 ### Common pitfalls
-- If tests don’t discover Kotest specs, ensure `useJUnitPlatform()` is applied (it is via `keen.library`) and that the Kotest runner dependency is present (it is included in the Kotest bundle). Also verify your test class is in `src/test/kotlin` and ends with `Test` or is a public class recognized by Kotest.
+- If tests don’t discover Kotest specs, ensure `useJUnitPlatform()` is applied (it is via `kalm.library`) and that the Kotest runner dependency is present (it is included in the Kotest bundle). Also verify your test class is in `src/test/kotlin` and ends with `Test` or is a public class recognized by Kotest.
 - The toolchain is required; Gradle may download a matching JDK for you. If your environment blocks downloads, pre-install the target JDK and point Gradle to it via `org.gradle.java.installations` or by adjusting `utils/JvmToolchain.kt`.
 - The binary compatibility validator requires keeping `core/api/core.api` in sync. If you see `apiCheck` failures after public API changes, run `apiDump` and review differences before committing.
 
