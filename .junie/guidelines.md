@@ -101,8 +101,8 @@ Guidelines:
 ### Code style
 - Kotlin style is defined in `dev-resources/KeenCodeStyle.xml`. Import into your IDE to match formatter/wrapping preferences used in this project.
 
-### Git workflow helpers (PowerShell)
-- Utility scripts exist under `scripts/git/ps1` with a module `Keen.Git.psm1` and commands like `Invoke-GitSync` and `Invoke-GitCheckout` to standardize branch hygiene. Enable or disable with `scripts/EnableGitUtilities.ps1` and `scripts/DisableGitUtilities.ps1`. See `dev-resources/GIT_STANDARD.md` for the branching and sync policy.
+### Git workflow helpers
+- Use standard `git` commands for local and CI workflows. See `dev-resources/GIT_STANDARD.md` for recommended patterns and examples. If you want to add language- or shell-specific helpers (Bash/Zsh/etc.), place them under `scripts/git/<shell>/` and document them in `dev-resources/GIT_STANDARD.md`.
 
 ### Documentation and CI/CD
 - Additional rules are found in `dev-resources/*`. Keep `dev-resources/CI_CD.md` in mind when modifying build logic or adding tasks.

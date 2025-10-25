@@ -2,7 +2,6 @@
 // This is a minimal, non-language-specific plugin useful for convention logic.
 plugins {
     base
-    id("keen.base")
 }
 
 // Configure all archive-producing tasks (Jar, Zip, Tar, etc.) to support reproducible builds.

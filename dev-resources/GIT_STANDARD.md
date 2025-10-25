@@ -1,11 +1,7 @@
 # Git Command Usage Standard
 
 > [!tip]
-> We **_strongly_** recommend using **PowerShell** (even on macOS or Linux) to ensure full compatibility with the Git utility wrappers provided in this project.
->
-> - [Install PowerShell on Linux](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux)
-> - [Install PowerShell on macOS](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-macos)
-> - [Install PowerShell on ARM](https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-on-arm)
+> Use whichever shell you prefer (sh, bash, zsh, PowerShell). This document shows portable git examples that work across platforms.
 
 ## 📖 Table of Contents
 
@@ -25,55 +21,42 @@
 
 ## 💼 Overview
 
-To ensure **consistency, maintainability, and portability** across environments and CI/CD pipelines, this project provides Git utilities as **PowerShell wrapper functions**. These wrappers encapsulate common patterns and validation logic that enhance developer experience and reduce errors.
-
-### 🤔 Why Wrappers?
-
-These wrappers abstract away common logic such as:
-
-- Branch existence checks (local/remote)
-- Remote tracking and fetch behavior
-- Error messaging and logging
-- Argument parsing and validation
-
-This reduces friction for new contributors and helps teams work with Git more safely and consistently.
-
-> [!warning]
-> Avoid using raw `git` commands unless strictly necessary. Instead, use the standardized wrappers described below.
+This document explains recommended git workflows for contributors and CI. It focuses on direct, portable `git` commands and small reproducible patterns you can run in any shell. The examples here are shell-agnostic and should work on Windows, macOS, and Linux.
 
 
-## ⚙️ Enabling Git Utilities
+## ⚙️ Recommended git workflows
 
-Before using the wrapped Git commands, import the utility module into your session:
+We prefer using standard `git` commands directly. Below are small, repeatable patterns that are portable and suitable for both local use and CI.
 
-```powershell
-.\scripts\EnableGitUtilities.ps1
+- Fetch and prune remotes:
+
+```sh
+git fetch --all --prune
 ```
 
-This script loads the `Keen.Git` module and makes all Git-related functions available.
+- Create a tracking branch if a remote-only branch exists:
 
-> [!note]
-> If you're running PowerShell for the first time or on macOS/Linux, you may need to allow script execution:
->
-> ```powershell
-> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-> ```
+```sh
+# if origin/feature/xyz exists, create a local tracking branch
+git checkout -b feature/xyz origin/feature/xyz 2>/dev/null || git checkout feature/xyz
+```
 
-Or follow your organization’s security policies.
+- Push a branch and set upstream:
+
+```sh
+git push --set-upstream origin feature/xyz
+```
+
+If you find yourself repeating complex sequences often, add small shell helper scripts under `scripts/git/<shell>/` and document them in this file.
 
 
 ## 🧰 Available Git Commands
 
-After running `EnableGitUtilities.ps1`, all commands from the `Keen.Git` module become available. To see the full list:
+Run raw `git` commands directly. Example verification:
 
-```powershell
-Get-Command -Module Keen.Git
-```
-
-To verify the module is loaded:
-
-```powershell
-Get-Module Keen.Git
+```sh
+git --version
+git status
 ```
 
 Each command is designed to:
@@ -85,69 +68,50 @@ Each command is designed to:
 
 ## 📚 Getting Help
 
-Each command is fully documented. You can view command help like this:
+Use the standard git help and man pages:
 
-```powershell
-Get-Help <Command> -Detailed
+```sh
+git help <command>
+# or
+man git
 ```
 
-For example:
+For quick usage details:
 
-```powershell
-Get-Help Git-Checkout -Detailed
-```
-
-This will show:
-
-- A description of the command
-- Parameters and options
-- Exit codes and examples
-
-Alternate help views:
-
-```powershell
-Get-Help Git-Checkout -Examples
-Get-Help Git-Checkout -Full
+```sh
+git <command> --help
 ```
 
 
 ## 🚀 Example Usage
 
-```powershell
-# Enable the utilities
-.\scripts\EnableGitUtilities.ps1
+Use the usual Git commands directly. Example:
 
-# Check out a branch (local or remote)
-Git-Checkout iss2/ci-cd
+```sh
+# Fetch remote updates
+git fetch --all --prune
+
+# Check out a branch (create local tracking branch if needed)
+git checkout -b feature/xyz origin/feature/xyz 2>/dev/null || git checkout feature/xyz
+
+# Push branch
+git push --set-upstream origin feature/xyz
 ```
 
-This example will automatically:
 
-- Check if the branch exists locally
-- Fetch remotes if needed
-- Track the branch if it's remote-only
+## 🛑 Note on unloading helpers
 
-
-## 🛑 Disabling Git Utilities
-
-To unload the Git utility functions from your session:
-
-```powershell
-.\scripts\DisableGitUtilities.ps1
-```
-
-This removes all `Keen.Git` commands from your current shell to prevent conflicts with global or system modules.
+There are no included shell helpers to unload. If you created your own helper module in the `scripts/git/` folder, remove or unload it according to your shell's conventions.
 
 
 ## 🔧 When to Use Raw `git` Commands
 
-Use raw `git` commands only when needed, such as:
+Use raw `git` commands for advanced operations or when scripting in environments that do not provide helper scripts. Examples:
 
-- Performing advanced operations (`git rebase`, `git bisect`)
-- Using scripts in environments that don’t support PowerShell
-- Debugging Git internals or experimenting with custom aliases
+- `git rebase`, `git bisect`
+- Small, self-contained scripts for CI or local automation
 
-In all other cases, prefer the standardized PowerShell wrappers.
+Use standard `git` commands or small, well-documented helpers you maintain locally.
 
 
 ## 👩‍💻 Contributing Additional Shell Support
@@ -155,12 +119,10 @@ In all other cases, prefer the standardized PowerShell wrappers.
 We welcome community contributions for Bash, Zsh, or other shells. To contribute:
 
 - Place your shell-specific functions in `scripts/git/<shell>/`, e.g., `scripts/git/bash/`
-- Use consistent naming conventions (e.g., `git_checkout.sh` for `Git-Checkout`)
-- Follow the same documentation and logging structure as the PowerShell wrappers
-- Clearly indicate any limitations or behavioral differences
+- Use consistent naming conventions (e.g., `git_checkout.sh`)
+- Document behavior, supported shells, and any limitations in this file
 
-> [!important]
-> Only PowerShell wrappers are **officially maintained** by this project. Shell-based alternatives will be reviewed and accepted as **best-effort community support**.
+If you contribute shell helpers, open a PR and document usage and supported shells.
 
 
 ## 📌 Notes
