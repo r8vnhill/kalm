@@ -14,6 +14,7 @@ import arrow.core.tail
 import cl.ravenhill.knob.repr.Solution
 import cl.ravenhill.knob.exceptions.InvalidThresholdException
 import cl.ravenhill.knob.matchers.shouldBeCloseTo
+import cl.ravenhill.knob.repr.map
 import cl.ravenhill.knob.utils.EqualityThreshold
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight

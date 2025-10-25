@@ -6,6 +6,7 @@
 package cl.ravenhill.knob.problem.constrained
 
 import cl.ravenhill.knob.repr.Solution
+import cl.ravenhill.knob.repr.map
 import cl.ravenhill.knob.utils.InequalityType
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.datatest.withData

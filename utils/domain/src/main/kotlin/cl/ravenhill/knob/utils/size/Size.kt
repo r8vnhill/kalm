@@ -109,8 +109,8 @@ public value class Size private constructor(public val value: Int) : Comparable<
          */
         @JvmStatic
         public fun ofOrNull(n: Int): Size? =
-            if (n >= 0) Size(n)
-            else null
+                if (n >= 0) Size(n)
+                else null
 
         /**
          * Returns a [Size] if `n >= 0`; otherwise throws [SizeError.NonNegativeExpected].

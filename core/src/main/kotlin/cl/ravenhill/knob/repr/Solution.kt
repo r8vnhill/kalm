@@ -5,75 +5,71 @@
 
 package cl.ravenhill.knob.repr
 
+import arrow.core.Either
 import arrow.core.NonEmptyList
+import arrow.core.nonEmptyListOf
+import arrow.core.raise.either
+import arrow.core.raise.ensure
+import arrow.core.toNonEmptyListOrNull
+import cl.ravenhill.knob.utils.size.SizeError
 
-/**
- * A non-empty, read-only solution vector used across KNOB.
- *
- * This interface extends [List] for natural integration with Kotlin collection utilities, while enforcing non-emptiness
- * through companion factories.
- *
- * Implementations of [Solution] apply the delegation pattern: instead of re-implementing [List] operations, they
- * forward all calls to a backing [NonEmptyList]. This keeps the implementation concise, avoids duplication, and
- * guarantees consistency with the semantics of [NonEmptyList].
- *
- * @param T Element type stored in the solution vector.
- */
-public interface Solution<out T> : List<T> {
-
-    /**
-     * Returns the underlying [NonEmptyList] view of this solution.
-     *
-     * The default implementation in KNOB returns the backing instance without copying.
-     */
+public interface Solution<out T> {
     public fun toNonEmptyList(): NonEmptyList<T>
 
     public companion object {
-
-        /**
-         * Creates a [Solution] backed by the given [NonEmptyList].
-         *
-         * @param values Backing non-empty sequence for this solution.
-         */
         @JvmStatic
         public operator fun <T> invoke(values: NonEmptyList<T>): Solution<T> =
             DelegatedSolution(values)
 
-        /**
-         * Creates a [Solution] from a mandatory head element and an optional tail.
-         *
-         * Internally constructs a [NonEmptyList] to guarantee non-emptiness.
-         *
-         * @param head First element (ensures non-emptiness).
-         * @param tail Optional remaining elements.
-         */
         @JvmStatic
         public fun <T> of(head: T, vararg tail: T): Solution<T> =
-            DelegatedSolution(NonEmptyList(head, tail.asList()))
+            DelegatedSolution(nonEmptyListOf(head, *tail))
+
+        @JvmStatic
+        public fun <T> fromValidatedList(list: List<T>): Either<SizeError, Solution<T>> = either {
+            ensure(list.isNotEmpty()) { SizeError.StrictlyPositiveExpected(list.size) }
+            Solution(NonEmptyList(list.first(), list.drop(1)))
+        }
+
+        @JvmStatic
+        public fun <T> fromListOrNull(list: List<T>): Solution<T>? =
+            list.toNonEmptyListOrNull()?.let(::invoke)
+
+        @JvmStatic
+        public fun <T> fromListOrThrow(list: List<T>): Solution<T> =
+            fromListOrNull(list) ?: throw SizeError.StrictlyPositiveExpected(list.size)
+
+        @JvmStatic
+        public fun <T> fromIterableOrNull(values: Iterable<T>): Solution<T>? =
+            values.toList().toNonEmptyListOrNull()?.let(::invoke)
+
+        @JvmStatic
+        public fun <T> fromSequenceOrNull(values: Sequence<T>): Solution<T>? =
+            values.firstOrNull()?.let { first ->
+                val rest = values.drop(1).toList()
+                Solution(NonEmptyList(first, rest))
+            }
     }
 }
 
-/**
- * Concrete implementation of [Solution] that delegates all [List] operations to a backing [NonEmptyList] using Kotlin’s
- * delegation syntax (`by`).
- *
- * This is an application of the delegation pattern: behavior is reused from the wrapped [NonEmptyList], ensuring
- * correctness and reducing boilerplate. The class remains lightweight, with no copying of elements.
- *
- * @property values Backing non-empty list. Kept private to preserve invariants.
- */
 private class DelegatedSolution<T>(
     private val values: NonEmptyList<T>
-) : Solution<T>, List<T> by values {
+) : Solution<T> {
+    override fun toNonEmptyList(): NonEmptyList<T> =
+        values
 
-    override fun toNonEmptyList(): NonEmptyList<T> = values
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        return when (other) {
+            is Solution<*> -> values == other.toNonEmptyList()
+            is List<*> -> values == other
+            else -> false
+        }
+    }
 
-    // equals/hashCode/toString are not delegated by `by`, so they are overridden explicitly.
+    override fun hashCode(): Int =
+        values.hashCode()
 
-    override fun equals(other: Any?): Boolean =
-        this === other || (other is Solution<*> && values == other.toNonEmptyList())
-
-    override fun hashCode(): Int = values.hashCode()
-
-    override fun toString(): String = "Solution(values=$values)"
+    override fun toString(): String =
+        "Solution${values.joinToString(", ", "[", "]")}"
 }
