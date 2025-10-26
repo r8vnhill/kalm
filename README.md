@@ -31,6 +31,19 @@ cd kalm
 ./gradlew build
 ```
 
+### Running Gradle with a specific JDK
+
+Prefer configuring the IDE first. When that is not possible (e.g., CI pipelines or remote shells), invoke Gradle via the helper scripts in this order:
+
+1. PowerShell (recommended even on Unix when available)
+	```powershell
+	.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build', '--no-daemon'
+	```
+2. Bash / POSIX shells (fallback compatibility)
+	```bash
+	./scripts/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build --no-daemon
+	```
+
 ---
 
 *This project is maintained by [Ignacio Slater-Muñoz](https://www.ravenhill.cl).*
