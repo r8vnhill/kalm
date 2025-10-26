@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
+
 // Apply the base plugin, which provides core lifecycle tasks like `clean` and `assemble`.
 // This is a minimal, non-language-specific plugin useful for convention logic.
 plugins {

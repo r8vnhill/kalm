@@ -1,4 +1,5 @@
-```gradle-kotlin-dsl
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
+
 // Apply the base plugin, which provides core lifecycle tasks like `clean` and `assemble`.
 // This is a minimal, non-language-specific plugin useful for convention logic.
 plugins {
@@ -24,5 +25,3 @@ tasks.withType<AbstractArchiveTask>().configureEach {
     // File ordering may otherwise vary across platforms and filesystems.
     isReproducibleFileOrder = true
 }
-
-```

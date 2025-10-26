@@ -3,6 +3,8 @@
  * 2-Clause BSD License.
  */
 
+import org.gradle.api.tasks.testing.Test
+
 // region TEST CONFIGURATION
 
 // Configure testing behavior for all tasks of type Test.

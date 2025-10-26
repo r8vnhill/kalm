@@ -15,9 +15,20 @@ pluginManagement {
         mavenCentral()                    // For dependencies from Maven Central
         gradlePluginPortal()              // For resolving external Gradle plugins
     }
+
+    plugins {
+        val foojayResolverVersion = providers.gradleProperty("plugin.foojay-resolver.version")
+            .getOrElse("1.0.0")
+
+        id("org.gradle.toolchains.foojay-resolver-convention") version foojayResolverVersion
+    }
 }
 
 // endregion
+
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention")
+}
 
 @Suppress("UnstableApiUsage") // Incubating API used for repository mode and dependency resolution config
 dependencyResolutionManagement {

@@ -1,4 +1,3 @@
-```gradle-kotlin-dsl
 /*
  * Copyright (c) 2025, Ignacio Slater M.
  * 2-Clause BSD License.
@@ -27,5 +26,3 @@ kotlin.jvmToolchain {
     setDefaultJavaVersion() // Applies the same version for Kotlin JVM compilation
 }
 // endregion
-
-```

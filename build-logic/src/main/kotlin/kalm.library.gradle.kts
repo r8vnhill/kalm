@@ -1,8 +1,9 @@
-```gradle-kotlin-dsl
 /*
  * Copyright (c) 2025, Ignacio Slater M.
  * 2-Clause BSD License.
  */
+
+import org.gradle.api.tasks.testing.Test
 
 // region TEST CONFIGURATION
 
@@ -22,5 +23,3 @@ tasks.withType<Test>().all {
     }
 }
 // endregion
-
-```

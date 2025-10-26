@@ -12,7 +12,7 @@
     - [🧪 Before Drafting](#-before-drafting)
     - [✍️ How to Create a Release Draft](#️-how-to-create-a-release-draft)
       - [In GitLab (🔐 Primary Source of Truth)](#in-gitlab--primary-source-of-truth)
-  - [In GitHub (🌐 Public Mirror at `r8vnhill/kalm`)](#in-github--public-mirror-at-r8vnhillkeen-op)
+      - [In GitHub (🌐 Public Mirror at `r8vnhill/kalm`)](#in-github--public-mirror-at-r8vnhillkalm)
     - [🧾 Changelog Guidelines](#-changelog-guidelines)
     - [🏷️ Tagging the Release](#️-tagging-the-release)
 
@@ -30,15 +30,15 @@ To apply centralized versioning, subprojects must apply the base convention plug
 
 ```kotlin
 plugins {
-    id("keen.base")
+  id("kalm.base")
 }
 ```
 
-For example, the `keen.reproducible` plugin automatically inherits the version through:
+For example, the `kalm.reproducible` plugin automatically inherits the version through:
 
 ```kotlin
 plugins {
-    id("keen.base")
+  id("kalm.base")
 }
 ```
 
