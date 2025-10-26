@@ -4,6 +4,8 @@ kotlin-bin-compatibility-validator = "0.17.0"
 detekt = "1.23.8"
 kotest = "6.0.0.M4"
 kotest-framework-datatest = "5.9.1"
+ben-manes-versions = "0.52.0"
+version-catalog-update = "1.0.0"
 
 [libraries]
 # Core Kotlin Gradle plugin (required for all Kotlin projects)
@@ -24,6 +26,8 @@ kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-va
 
 # Static analysis plugin for Kotlin codebases
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+dependency-updates = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
+version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "version-catalog-update" }
 
 [bundles]
 kotest = ["kotest-assertions-core", "kotest-framework-datatest", "kotest-framework-engine", "kotest-property", "kotest-runner-junit5"]
