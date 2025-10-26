@@ -1,5 +1,6 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
-import nl.littlerobots.gradle.versioncatalogupdate.VersionCatalogUpdateExtension
+import org.gradle.kotlin.dsl.withType
+import java.util.Locale
 
 /*
  * Copyright (c) 2025, Ignacio Slater M.
@@ -11,8 +12,9 @@ plugins {
     id("kalm.reproducible")                         // Ensures byte-for-byte reproducible archives
     alias { libs.plugins.kotlin.bin.compatibility } // Kotlin binary compatibility validator
     alias { libs.plugins.detekt }                   // Static code analysis tool
-    alias { libs.plugins.dependency.updates }       // Reports available dependency upgrades
-    alias { libs.plugins.version.catalog.update }   // Writes updated coordinates to the version catalog
+
+    alias(libs.plugins.version.catalog.update)
+    alias(libs.plugins.ben.manes.versions)
 }
 
 // Configure Kotlin binary compatibility validation
@@ -23,38 +25,30 @@ apiValidation {
     )
 }
 
-extensions.configure<VersionCatalogUpdateExtension>("versionCatalogUpdate") {
+versionCatalogUpdate {
     sortByKey.set(true)
-    catalogFile.set(layout.projectDirectory.file("gradle/libs.versions.toml"))
-    keep {
-        keepUnusedVersions.set(true)
-        keepUnusedLibraries.set(true)
-    }
+    keep { keepUnusedVersions.set(true) }
 }
 
+// Generates JSON/plain reports of available updates; pairs well with VCU.
+// Note: Not config-cache compatible by the nature of its work.
 tasks.withType<DependencyUpdatesTask>().configureEach {
-    checkForGradleUpdate = true
-    gradleReleaseChannel = "current"
-    outputFormatter = "plain"
+    // Accept stable candidates only (mirrors VCU policy).
     rejectVersionIf {
-        val candidateStable = candidate.version.isStable()
-        val currentStable = currentVersion.isStable()
-        candidateStable.not() && currentStable
+        val v = candidate.version.lowercase(Locale.ROOT)
+        listOf("alpha", "beta", "rc", "cr", "m", "milestone", "preview", "eap", "snapshot")
+            .any(v::contains)
     }
+    checkForGradleUpdate = true
+    outputFormatter = "json,plain"
+    outputDir = layout.buildDirectory.dir("dependencyUpdates").get().asFile.toString()
+    reportfileName = "report"
+    notCompatibleWithConfigurationCache("This task inspects configurations, breaking configuration cache.")
 }
 
-tasks.named("versionCatalogUpdate") {
-    mustRunAfter("dependencyUpdates")
-}
-
-tasks.register("updateDependencies") {
-    group = "dependency management"
-    description = "Runs dependency reports and refreshes the version catalog."
-    dependsOn("dependencyUpdates", "versionCatalogUpdate")
-}
-
-private fun String.isStable(): Boolean {
-    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { contains(it, ignoreCase = true) }
-    val regex = "^[0-9,.v-]+(-r)?$".toRegex()
-    return stableKeyword || regex.matches(this)
+// Runs both VCU and the updates report.
+tasks.register("dependencyMaintenance") {
+    group = "dependencies"
+    description = "Runs version catalog updates and dependency update reports."
+    dependsOn("versionCatalogUpdate", "dependencyUpdates")
 }
