@@ -1,0 +1,6 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+org.ow2.asm:asm-tree:9.6=bcv-rt-jvm-cp-resolver
+org.ow2.asm:asm:9.6=bcv-rt-jvm-cp-resolver
+empty=classpath

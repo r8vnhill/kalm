@@ -26,7 +26,7 @@ You can clone and build the project to explore the current structure.
 ```bash
 git clone https://gitlab.com/r8vnhill/kalm.git
 cd kalm
-./gradlew build
+./gradlew preflight
 ```
 
 ### Running Gradle with a specific JDK
@@ -43,5 +43,27 @@ Prefer configuring the IDE first. When that is not possible (e.g., CI pipelines 
 	```
 
 ---
+
+## 📦 Consuming KALM
+
+Once artefacts are published (local or remote Maven repository), import the BOM to keep dependencies aligned:
+
+```kotlin
+dependencies {
+	implementation(platform("cl.ravenhill.kalm:kalm-platform:0.1.0-SNAPSHOT"))
+	implementation("cl.ravenhill.kalm:kalm-core:0.1.0-SNAPSHOT")
+}
+```
+
+Update the coordinates to match the release you consume or your locally published snapshot.
+
+## 🔁 Reproducible builds
+
+Gradle dependency lockfiles (`gradle.lockfile`, `settings-gradle.lockfile`, `<module>/gradle.lockfile`) are version-controlled to guarantee deterministic builds. Regenerate them whenever dependencies change and commit the results:
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-22'
+.\gradlew --write-locks preflight --no-daemon
+```
 
 *This project is maintained by [Ignacio Slater-Muñoz](https://www.ravenhill.cl).*

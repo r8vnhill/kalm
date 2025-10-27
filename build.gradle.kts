@@ -17,6 +17,12 @@ plugins {
     alias(libs.plugins.ben.manes.versions)
 }
 
+allprojects {
+    dependencyLocking {
+        lockAllConfigurations()
+    }
+}
+
 // Configure Kotlin binary compatibility validation
 apiValidation {
     ignoredProjects += listOf(
@@ -51,4 +57,16 @@ tasks.register("dependencyMaintenance") {
     group = "dependencies"
     description = "Runs version catalog updates and dependency update reports."
     dependsOn("versionCatalogUpdate", "dependencyUpdates")
+}
+
+tasks.register("verifyAll") {
+    group = "verification"
+    description = "Runs tests, static analysis, and API compatibility checks in one go."
+    dependsOn("check", "detekt", "apiCheck")
+}
+
+tasks.register("preflight") {
+    group = "verification"
+    description = "Runs verification gates and dependency maintenance helpers."
+    dependsOn("verifyAll", "dependencyMaintenance")
 }

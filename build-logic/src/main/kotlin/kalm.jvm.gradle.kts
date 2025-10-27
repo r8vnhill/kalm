@@ -4,6 +4,8 @@
  */
 
 import utils.JvmToolchain.setDefaultJavaVersion
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 // region SHARED KOTLIN BUILD CONFIGURATION
 // Apply shared Kotlin build configuration via convention plugin.
@@ -25,4 +27,29 @@ java.toolchain {
 kotlin.jvmToolchain {
     setDefaultJavaVersion() // Applies the same version for Kotlin JVM compilation
 }
+// endregion
+
+// region KOTLIN COMPILER OPTIONS
+
+private val warningsAsErrorsSignals = setOf("true", "strict", "enforce", "all")
+
+val warningsAsErrors = project.findProperty("kalm.warningsAsErrors")?.toString()?.lowercase()
+val commonCompilerArgs = listOf("-Xjsr305=strict")
+
+extensions.configure<KotlinJvmProjectExtension>("kotlin") {
+    compilerOptions {
+        freeCompilerArgs.addAll(commonCompilerArgs)
+        if (warningsAsErrors in warningsAsErrorsSignals) {
+            allWarningsAsErrors.set(true)
+        }
+    }
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions.freeCompilerArgs.addAll(commonCompilerArgs)
+    if (warningsAsErrors in warningsAsErrorsSignals) {
+        compilerOptions.allWarningsAsErrors.set(true)
+    }
+}
+
 // endregion

@@ -32,11 +32,19 @@ $env:JAVA_HOME = 'C:\Program Files\Java\jdk-22'
 
 Some versions (e.g., toolchain, Foojay resolver) are defined in `gradle.properties` and must be updated manually when needed.
 
-## 3️⃣ Verify the build
+## 3️⃣ Regenerate lockfiles & verify
+
+Always refresh Gradle lockfiles after updating dependencies and commit the results.
 
 ```powershell
 $env:JAVA_HOME = 'C:\Program Files\Java\jdk-22'
-.\gradlew clean build --no-daemon
+.\gradlew --write-locks preflight --no-daemon
+```
+
+If you only need to sync locks without running the full preflight suite (for example when iterating quickly), you can target a specific task:
+
+```powershell
+.\gradlew --write-locks check --no-daemon
 ```
 
 If plugin accessors need regeneration (after plugin ID/name changes):
@@ -64,7 +72,7 @@ Manual:
 * VCU does **not** modify `gradle.properties`; edit those entries manually.
 * Ben-Manes rejects unstable candidates (`alpha`, `beta`, `rc`, etc.) by default.
 * If Gradle fails with *“Dependency requires at least JVM runtime X”*, rerun with that JDK.
-* Always review diffs in `gradle/libs.versions.toml` and the reports under `build/dependencyUpdates/`.
+* Always review diffs in `gradle/libs.versions.toml`, the generated lockfiles (`gradle.lockfile`, `settings-gradle.lockfile`, `<module>/gradle.lockfile`), and the reports under `build/dependencyUpdates/`.
 
 >[!TIP] That’s it!
 > Run `updateDependencies`, review the reports, and verify with a full build before committing.

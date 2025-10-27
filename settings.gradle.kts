@@ -37,6 +37,7 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
     }
+
 }
 
 // Root project name used in logs and outputs
@@ -44,3 +45,4 @@ rootProject.name = "kalm"
 
 // Include project modules
 include(":core")
+include(":platform")
