@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 7.4
 
 <#
 .SYNOPSIS
@@ -42,15 +42,11 @@ Synchronizes the 'rename/kalm' branch with the 'origin' remote.
 
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param(
-    [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [string]
-    $Remote = 'origin',
+    [ValidateNotNullOrWhiteSpace()]
+    [string]    $Remote = 'origin',
 
-    [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [string]
-    $Branch
+    [ValidateNotNullOrWhiteSpace()]
+    [string]    $Branch
 )
 
 Set-StrictMode -Version 3.0
@@ -61,7 +57,7 @@ $script:SyncRemotesPSCmdlet = $PSCmdlet
 function Get-CurrentBranch {
     $branch = git rev-parse --abbrev-ref HEAD 2>$null
     if ($LASTEXITCODE -ne 0) {
-        throw "Failed to determine current branch. Are you in a git repository?"
+        throw 'Failed to determine current branch. Are you in a git repository?'
     }
     return $branch.Trim()
 }
@@ -69,7 +65,7 @@ function Get-CurrentBranch {
 function Test-WorkingTreeClean {
     $status = git status --porcelain 2>$null
     if ($LASTEXITCODE -ne 0) {
-        throw "Failed to check working tree status."
+        throw 'Failed to check working tree status.'
     }
     return [string]::IsNullOrWhiteSpace($status)
 }
@@ -119,8 +115,8 @@ function Invoke-GitCommand {
 # --- Main script ---
 
 try {
-    Write-Information "==> Git Remote Sync Script"
-    Write-Information ""
+    Write-Information '==> Git Remote Sync Script'
+    Write-Information ''
 
     # Determine branch
     if (-not $Branch) {
@@ -133,17 +129,17 @@ try {
 
     # Check working tree
     if (-not (Test-WorkingTreeClean)) {
-        throw "Working tree has uncommitted changes. Please commit or stash them first."
+        throw 'Working tree has uncommitted changes. Please commit or stash them first.'
     }
 
     # Step 1: Fetch from all remotes
-    Write-Information ""
-    Write-Information "Step 1: Fetching from all remotes..."
+    Write-Information ''
+    Write-Information 'Step 1: Fetching from all remotes...'
     Invoke-GitCommand -Arguments @('fetch', '--all', '--prune') -Description 'Fetching updates from all remotes...' -Target 'all remotes' -Action 'Fetch updates'
 
     # Step 2: Check if remote branch exists
-    Write-Information ""
-    Write-Information "Step 2: Checking remote tracking branch..."
+    Write-Information ''
+    Write-Information 'Step 2: Checking remote tracking branch...'
     $remoteBranch = "$Remote/$Branch"
     git rev-parse --verify "refs/remotes/$remoteBranch" 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) {
@@ -155,14 +151,14 @@ try {
         $remoteCommit = git rev-parse "$remoteBranch" 2>$null
 
         if ($mergeBase -eq $headCommit) {
-            Write-Information "Local branch is behind remote. Fast-forwarding..."
+            Write-Information 'Local branch is behind remote. Fast-forwarding...'
             Invoke-GitCommand -Arguments @('merge', '--ff-only', $remoteBranch) -Description "Fast-forwarding to $remoteBranch..." -Target $remoteBranch -Action 'Fast-forward merge'
         }
         elseif ($mergeBase -eq $remoteCommit) {
-            Write-Information "Local branch is ahead of remote. No pull needed."
+            Write-Information 'Local branch is ahead of remote. No pull needed.'
         }
         else {
-            Write-Warning "Local and remote branches have diverged."
+            Write-Warning 'Local and remote branches have diverged.'
             Write-Information "Attempting to merge $remoteBranch into local branch..."
             Invoke-GitCommand -Arguments @('merge', $remoteBranch, '--no-edit') -Description "Merging $remoteBranch..." -Target $remoteBranch -Action 'Merge remote changes'
         }
@@ -172,8 +168,8 @@ try {
     }
 
     # Step 3: Push to all configured push URLs
-    Write-Information ""
-    Write-Information "Step 3: Pushing to all remotes..."
+    Write-Information ''
+    Write-Information 'Step 3: Pushing to all remotes...'
 
     $pushUrls = @(git remote get-url --push --all $Remote 2>$null)
     if ($pushUrls.Count -eq 0) {
@@ -186,8 +182,8 @@ try {
     Invoke-GitCommand -Arguments @('push', $Remote, $Branch) -Description "Pushing $Branch to $Remote..." -Target $Remote -Action "Push branch '$Branch'"
 
     # Summary
-    Write-Information ""
-    Write-Information "==> Sync completed successfully!"
+    Write-Information ''
+    Write-Information '==> Sync completed successfully!'
     Write-Information "Branch '$Branch' is now synchronized across all remotes."
 }
 catch {
