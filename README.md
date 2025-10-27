@@ -42,6 +42,16 @@ Prefer configuring the IDE first. When that is not possible (e.g., CI pipelines 
 	./scripts/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build --no-daemon
 	```
 
+### Syncing GitLab and GitHub Mirrors
+
+The project maintains GitLab as the primary repository with a GitHub mirror. To synchronize your local branch with both remotes:
+
+```powershell
+.\scripts\Sync-Remotes.ps1
+```
+
+See [dev-resources/SYNC_REMOTES.md](dev-resources/SYNC_REMOTES.md) for detailed usage and troubleshooting.
+
 ---
 
 ## 📦 Consuming KALM
