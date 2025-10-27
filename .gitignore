@@ -1,8 +1,7 @@
 # === Gradle ===
-.gradle/
+**/.gradle/
 !gradle/wrapper/gradle-wrapper.jar  # allow wrapper JAR to be tracked
-!convention-plugins/gradle/wrapper/gradle-wrapper.jar  # allow wrapper JAR to be tracked
-build/
+**/build/
 !**/build.gradle.kts
 !**/settings.gradle.kts
 !**/gradle.properties
@@ -20,10 +19,16 @@ build/
 *.ear
 
 # === Logs / Output / Reports ===
-logs/
-out/
-test-reports/
+**/logs/
+**/out/
+**/test-reports/
 *.log
+
+# === JVM crash dumps ===
+hs_err_pid*
+replay_pid*
+*.hprof
+*.lck
 
 # === OS-generated files ===
 .DS_Store

@@ -6,7 +6,7 @@
 
 // Include local builds that define convention and build logic plugins.
 //
-// This enables the use of precompiled script plugins (e.g., `keen.reproducible`) throughout the project without needing
+// This enables the use of precompiled script plugins (e.g., `kalm.reproducible`) throughout the project without needing
 // to publish them to a remote repository.
 pluginManagement {
     includeBuild("build-logic") // Reusable precompiled Gradle plugins for project modules
