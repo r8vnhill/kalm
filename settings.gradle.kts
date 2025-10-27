@@ -6,7 +6,7 @@
 
 // Include local builds that define convention and build logic plugins.
 //
-// This enables the use of precompiled script plugins (e.g., `keen.reproducible`) throughout the project without needing
+// This enables the use of precompiled script plugins (e.g., `kalm.reproducible`) throughout the project without needing
 // to publish them to a remote repository.
 pluginManagement {
     includeBuild("build-logic") // Reusable precompiled Gradle plugins for project modules
@@ -15,9 +15,20 @@ pluginManagement {
         mavenCentral()                    // For dependencies from Maven Central
         gradlePluginPortal()              // For resolving external Gradle plugins
     }
+
+    plugins {
+        val foojayResolverVersion = providers.gradleProperty("plugin.foojay-resolver.version")
+            .getOrElse("1.0.0")
+
+        id("org.gradle.toolchains.foojay-resolver-convention") version foojayResolverVersion
+    }
 }
 
 // endregion
+
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention")
+}
 
 @Suppress("UnstableApiUsage") // Incubating API used for repository mode and dependency resolution config
 dependencyResolutionManagement {
@@ -26,10 +37,12 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
     }
+
 }
 
 // Root project name used in logs and outputs
-rootProject.name = "keen-op"
+rootProject.name = "kalm"
 
 // Include project modules
 include(":core")
+include(":platform")
