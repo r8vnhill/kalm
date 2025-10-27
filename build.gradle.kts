@@ -9,9 +9,11 @@ import java.util.Locale
 
 // Apply shared conventions and quality tools at the root level.
 plugins {
-    id("kalm.reproducible")                         // Ensures byte-for-byte reproducible archives
-    alias { libs.plugins.kotlin.bin.compatibility } // Kotlin binary compatibility validator
-    alias { libs.plugins.detekt }                   // Static code analysis tool
+    id("kalm.reproducible")                      // Ensures byte-for-byte reproducible archives
+    // Keep binary compatibility validator applied to the root so the `apiValidation` extension is available.
+    alias(libs.plugins.kotlin.bin.compatibility) // Kotlin binary compatibility validator
+    // Register detekt for subprojects without applying it to the root.
+    alias(libs.plugins.detekt) apply false                   // Static code analysis tool
 
     alias(libs.plugins.version.catalog.update)
     alias(libs.plugins.ben.manes.versions)
