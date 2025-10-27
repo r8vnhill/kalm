@@ -64,7 +64,19 @@ tasks.register("dependencyMaintenance") {
 tasks.register("verifyAll") {
     group = "verification"
     description = "Runs tests, static analysis, and API compatibility checks in one go."
-    dependsOn("check", "detekt", "apiCheck")
+    // Run standard verification gates. Detekt may be applied per-subproject (we register detekt with apply=false
+    // at the root), so add detekt dependencies only after projects are evaluated and if the task actually exists.
+    dependsOn("check", "apiCheck")
+}
+
+// Some projects may apply Detekt; wire them into verifyAll only if they exist after project evaluation.
+gradle.projectsEvaluated {
+    val detektPaths = subprojects.mapNotNull { it.tasks.findByName("detekt")?.path }
+    if (detektPaths.isNotEmpty()) {
+        tasks.named("verifyAll").configure {
+            dependsOn(detektPaths)
+        }
+    }
 }
 
 tasks.register("preflight") {
