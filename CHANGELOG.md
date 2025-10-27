@@ -22,8 +22,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Dropped legacy PowerShell Git helper scripts in favor of the consolidated `Sync-Remotes` workflow.
 
-<!--
-Links (update as you tag releases)
 [unreleased]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.1.0...HEAD
 [0.1.0]: https://gitlab.com/r8vnhill/kalm/-/releases/v0.1.0
--->
