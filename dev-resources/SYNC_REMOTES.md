@@ -33,9 +33,9 @@ This will:
 .\scripts\Sync-Remotes.ps1 -Branch main
 ```
 
-### Preview changes without executing (dry run)
+### Preview changes without executing (`WhatIf`)
 ```powershell
-.\scripts\Sync-Remotes.ps1 -DryRun
+.\scripts\Sync-Remotes.ps1 -WhatIf
 ```
 
 ### Sync with verbose output
@@ -120,9 +120,9 @@ Ensure SSH keys are configured for both GitLab and GitHub:
    .\scripts\Sync-Remotes.ps1
    ```
 
-3. **Use dry-run to preview changes**
+3. **Use `-WhatIf` to preview changes**
    ```powershell
-   .\scripts\Sync-Remotes.ps1 -DryRun
+   .\scripts\Sync-Remotes.ps1 -WhatIf
    ```
 
 4. **Verify sync status**
