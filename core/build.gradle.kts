@@ -9,10 +9,9 @@ plugins {
     alias { libs.plugins.detekt }
 }
 
-val detektFormatting = libs.detekt.formatting.get().apply { "$group:$module:$version" }
 val kotestBundle = libs.bundles.kotest
 
 dependencies {
-    detektPlugins(detektFormatting)
+    detektPlugins(libs.detekt.formatting)
     testImplementation(kotestBundle)
 }
