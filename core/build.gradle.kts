@@ -6,10 +6,9 @@
 plugins {
     id("kalm.library")
     id("kalm.jvm")
-    alias(libs.plugins.detekt)
+    id("kalm.detekt")
 }
 
 dependencies {
-    detektPlugins(libs.detekt.formatting)
     testImplementation(libs.bundles.kotest)
 }

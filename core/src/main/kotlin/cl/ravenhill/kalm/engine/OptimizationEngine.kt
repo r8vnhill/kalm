@@ -7,8 +7,7 @@ package cl.ravenhill.kalm.engine
 
 import cl.ravenhill.kalm.repr.Feature
 
-
-interface OptimizationEngine<F>  where F : Feature<*, F> {
+interface OptimizationEngine<F> where F : Feature<*, F> {
 
     val objectiveFunction: (F) -> Double
 

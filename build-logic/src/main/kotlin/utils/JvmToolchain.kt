@@ -22,6 +22,11 @@ object JvmToolchain {
     private const val DEFAULT_JAVA_VERSION = 22
 
     /**
+     * Returns the default language version that build logic should use when configuring toolchains.
+     */
+    fun defaultJavaLanguageVersion(): JavaLanguageVersion = JavaLanguageVersion.of(DEFAULT_JAVA_VERSION)
+
+    /**
      * Sets the language version of the current Java toolchain to [DEFAULT_JAVA_VERSION].
      *
      * Applicable to both [JavaPluginExtension.toolchain] and [KotlinJvmProjectExtension.jvmToolchain].
@@ -29,5 +34,5 @@ object JvmToolchain {
      * @receiver The [JavaToolchainSpec] instance being configured.
      */
     fun JavaToolchainSpec.setDefaultJavaVersion(): Unit =
-        languageVersion.set(JavaLanguageVersion.of(DEFAULT_JAVA_VERSION))
+        languageVersion.set(defaultJavaLanguageVersion())
 }
