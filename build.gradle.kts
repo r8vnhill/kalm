@@ -1,4 +1,5 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import org.gradle.api.artifacts.dsl.LockMode
 import org.gradle.kotlin.dsl.withType
 import java.util.Locale
 
@@ -19,9 +20,25 @@ plugins {
     alias(libs.plugins.ben.manes.versions)
 }
 
-allprojects {
+// Prefer `gradle.allprojects { ... }` instead of the top-level `allprojects { ... }` helper. Using the
+// `gradle` receiver avoids surprising behavior for included builds and gives clearer scoping for
+// configuration. If you only intend to configure subprojects (not the root or included builds), use
+// `subprojects { ... }` or `gradle.subprojects { ... }` together with `configureEach` for lazy
+// configuration:
+//
+// gradle.subprojects.configureEach {
+//     dependencyLocking { lockAllConfigurations() }
+// }
+//
+// We keep the behavior of locking all configurations here, but use the `gradle` scoped form.
+gradle.allprojects {
     dependencyLocking {
+        // Lock every configuration to produce reproducible dependency resolution across CI and local
+        // development. This mirrors the previous behavior of `allprojects { dependencyLocking { ... } }`.
         lockAllConfigurations()
+
+        // Optional: fail fast when someone adds an unlocked dependency by enabling STRICT mode.
+        lockMode.set(LockMode.STRICT)
     }
 }
 
