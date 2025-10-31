@@ -18,7 +18,7 @@ class SimpleHillClimber(
         var bestScore = objectiveFunction(current)
 
         repeat(maxIterations) {
-            val candidate = current.map { it + stepSize }
+            val candidate = current.map { featureValue -> featureValue + stepSize }
             val candidateScore = objectiveFunction(candidate)
             if (candidateScore > bestScore) {
                 current = candidate

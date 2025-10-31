@@ -25,13 +25,6 @@
 
 import io.gitlab.arturbosch.detekt.Detekt
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
-import java.io.File
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.kotlin.dsl.configure
-import org.gradle.kotlin.dsl.dependencies
-import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.withType
 import utils.JvmToolchain
 
 plugins {
@@ -70,6 +63,11 @@ tasks.withType<Detekt>().configureEach {
         ?.getOrElse(JvmToolchain.defaultJavaLanguageVersion())
         ?: JvmToolchain.defaultJavaLanguageVersion()
     jvmTarget = languageVersion.asInt().toString()
+
+    // Wire Detekt's classpath so it sees compiled sources and the detekt configuration itself.
+    val sourceSets = extensions.findByType<SourceSetContainer>()
+    sourceSets?.findByName("main")?.output?.let { classpath.from(it) }
+    configurations.findByName("detekt")?.let { classpath.from(it) }
 
     // Generate multiple report types for IDEs and CI:
     //  - HTML for quick local browsing,
