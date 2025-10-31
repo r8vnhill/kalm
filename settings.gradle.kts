@@ -2,6 +2,8 @@
  * Copyright (c) 2025, Ignacio Slater M.
  * 2-Clause BSD License.
  */
+// Enable typesafe accessors for the version catalog (generated `libs` accessors)
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 // region PLUGIN MANAGEMENT
 
 // Include local builds that define convention and build logic plugins.
