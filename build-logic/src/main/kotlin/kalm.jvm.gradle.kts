@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 // Apply shared Kotlin build configuration via convention plugin.
 plugins {
     kotlin("jvm")
+    id("kalm.dependency-locking")
 }
 // endregion
 

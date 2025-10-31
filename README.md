@@ -72,8 +72,11 @@ Update the coordinates to match the release you consume or your locally publishe
 Gradle dependency lockfiles (`gradle.lockfile`, `settings-gradle.lockfile`, `<module>/gradle.lockfile`) are version-controlled to guarantee deterministic builds. Regenerate them whenever dependencies change and commit the results:
 
 ```powershell
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-22'
-.\gradlew --write-locks preflight --no-daemon
+$env:JAVA_HOME = '/path/to/jdk-22'
+./gradlew --write-locks preflight --no-daemon
 ```
+
+For detailed guidance and troubleshooting on dependency locking (strict mode, writing locks, and common errors), see
+[dev-resources/DEPENDENCY_LOCKING.md](dev-resources/DEPENDENCY_LOCKING.md).
 
 *This project is maintained by [Ignacio Slater-Muñoz](https://www.ravenhill.cl).*

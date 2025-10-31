@@ -54,3 +54,4 @@ node_modules/
 
 todo.md
 *.bak
+.venv

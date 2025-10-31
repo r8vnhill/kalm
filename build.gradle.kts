@@ -1,95 +1,138 @@
-import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
-import org.gradle.api.artifacts.dsl.LockMode
-import org.gradle.kotlin.dsl.withType
-import java.util.Locale
-
 /*
  * Copyright (c) 2025, Ignacio Slater M.
  * 2-Clause BSD License.
  */
 
-// Apply shared conventions and quality tools at the root level.
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import org.gradle.kotlin.dsl.withType
+import java.util.Locale
+
+/**
+ * # Root Build Logic
+ *
+ * This file applies root-level plugins and conventions shared across all subprojects.
+ * It enforces reproducible builds, dependency locking, and version maintenance routines.
+ *
+ * ## Summary
+ * - Enables dependency locking with `LockMode.STRICT` across all projects.
+ * - Configures binary compatibility validation.
+ * - Adds helper tasks for dependency and verification maintenance.
+ * - Restricts unstable dependency updates (alpha, beta, RC, etc.).
+ *
+ * ## Related documentation
+ * - [Gradle Dependency Locking](https://docs.gradle.org/current/userguide/dependency_locking.html)
+ * - [Ben Manes Versions Plugin](https://github.com/ben-manes/gradle-versions-plugin)
+ * - [Version Catalog Update Plugin](https://github.com/littlerobots/version-catalog-update-plugin)
+ * - [Kotlin Binary Compatibility Validator](https://github.com/Kotlin/binary-compatibility-validator)
+ */
+
 plugins {
-    id("kalm.reproducible")                      // Ensures byte-for-byte reproducible archives
-    // Keep binary compatibility validator applied to the root so the `apiValidation` extension is available.
-    alias(libs.plugins.kotlin.bin.compatibility) // Kotlin binary compatibility validator
-    // Register detekt for subprojects without applying it to the root.
-    alias(libs.plugins.detekt) apply false                   // Static code analysis tool
+    // Ensures byte-for-byte reproducible archives and metadata (via kalm.reproducible plugin).
+    id("kalm.reproducible")
 
-    alias(libs.plugins.version.catalog.update)
-    alias(libs.plugins.ben.manes.versions)
+    // Applies dependency locking conventions without relying on allprojects{}.
+    id("kalm.dependency-locking")
+
+    // Provides API compatibility checks for public Kotlin APIs.
+    alias(libs.plugins.kotlin.bin.compatibility)
+
+    // Registers Detekt for subprojects without applying it to the root.
+    alias(libs.plugins.detekt) apply false
+
+    // Adds dependency maintenance helpers:
+    alias(libs.plugins.version.catalog.update) // Version Catalog Update (VCU)
+    alias(libs.plugins.ben.manes.versions) // Ben Manes dependency updates report
 }
 
-// Prefer `gradle.allprojects { ... }` instead of the top-level `allprojects { ... }` helper. Using the
-// `gradle` receiver avoids surprising behavior for included builds and gives clearer scoping for
-// configuration. If you only intend to configure subprojects (not the root or included builds), use
-// `subprojects { ... }` or `gradle.subprojects { ... }` together with `configureEach` for lazy
-// configuration:
-//
-// gradle.subprojects.configureEach {
-//     dependencyLocking { lockAllConfigurations() }
-// }
-//
-// We keep the behavior of locking all configurations here, but use the `gradle` scoped form.
-gradle.allprojects {
-    dependencyLocking {
-        // Lock every configuration to produce reproducible dependency resolution across CI and local
-        // development. This mirrors the previous behavior of `allprojects { dependencyLocking { ... } }`.
-        lockAllConfigurations()
-
-        // Optional: fail fast when someone adds an unlocked dependency by enabling STRICT mode.
-        lockMode.set(LockMode.STRICT)
-    }
-}
-
-// Configure Kotlin binary compatibility validation
+/**
+ * # Kotlin Binary Compatibility Validation
+ *
+ * Ensures that changes to public APIs do not break binary compatibility.
+ * Projects listed in `ignoredProjects` are skipped (e.g., test utilities or examples).
+ */
 apiValidation {
     ignoredProjects += listOf(
-        // Uncomment when needed
+        // Uncomment to exclude optional modules from binary compatibility validation.
         // "test-utils", "examples"
     )
 }
 
+/**
+ * # Version Catalog Update (VCU)
+ *
+ * Automatically sorts version keys alphabetically and preserves unused entries.
+ * This helps maintain a clean, consistent `libs.versions.toml`.
+ */
 versionCatalogUpdate {
     sortByKey.set(true)
-    keep { keepUnusedVersions.set(true) }
+    keep {
+        keepUnusedVersions.set(true)
+    }
 }
 
-// Generates JSON/plain reports of available updates; pairs well with VCU.
-// Note: Not config-cache compatible by the nature of its work.
+/**
+ * # Dependency Updates (Ben Manes)
+ *
+ * Generates reports (JSON and plain text) of available dependency upgrades.
+ * Non–config-cache compatible due to its introspective behavior.
+ */
 tasks.withType<DependencyUpdatesTask>().configureEach {
-    // Accept stable candidates only (mirrors VCU policy).
+    // Reject non-stable versions: alpha, beta, RC, milestones, etc.
     rejectVersionIf {
         val v = candidate.version.lowercase(Locale.ROOT)
         listOf("alpha", "beta", "rc", "cr", "m", "milestone", "preview", "eap", "snapshot")
             .any(v::contains)
     }
+
     checkForGradleUpdate = true
     outputFormatter = "json,plain"
     outputDir = layout.buildDirectory.dir("dependencyUpdates").get().asFile.toString()
     reportfileName = "report"
-    notCompatibleWithConfigurationCache("This task inspects configurations, breaking configuration cache.")
+
+    notCompatibleWithConfigurationCache(
+        "This task inspects configurations, which breaks configuration cache compatibility."
+    )
 }
 
-// Runs both VCU and the updates report.
+/**
+ * # dependencyMaintenance
+ *
+ * Runs both:
+ * - `versionCatalogUpdate` (mutates the version catalog)
+ * - `dependencyUpdates` (reports outdated dependencies)
+ *
+ * Used to keep `libs.versions.toml` and the dependency tree up to date.
+ */
 tasks.register("dependencyMaintenance") {
     group = "dependencies"
     description = "Runs version catalog updates and dependency update reports."
     dependsOn("versionCatalogUpdate", "dependencyUpdates")
 }
 
+/**
+ * # verifyAll
+ *
+ * Aggregates verification tasks (tests, static analysis, API checks).
+ * Detekt is applied per subproject (`apply false` in the root), so the task dynamically adds
+ * dependencies only if those tasks exist.
+ */
 tasks.register("verifyAll") {
     group = "verification"
     description = "Runs tests, static analysis, and API compatibility checks in one go."
-    // Run standard verification gates. Detekt may be applied per-subproject (we register detekt with apply=false
-    // at the root), so add detekt dependencies only after projects are evaluated and if the task actually exists.
+    // Dependencies are attached later after all subprojects are evaluated.
 }
 
-// Some projects may apply Detekt; wire them into verifyAll only if they exist after project evaluation.
+/**
+ * Dynamically wires Detekt and API validation tasks into `verifyAll`.
+ *
+ * This ensures that `verifyAll` runs all verification gates only if the corresponding tasks are present in the
+ * evaluated projects.
+ */
 gradle.projectsEvaluated {
     val detektPaths = subprojects.mapNotNull { it.tasks.findByName("detekt")?.path }
     val apiCheckPaths = subprojects.mapNotNull { it.tasks.findByName("apiCheck")?.path }
     val additional = (detektPaths + apiCheckPaths).distinct()
+
     if (additional.isNotEmpty()) {
         tasks.named("verifyAll").configure {
             dependsOn(additional)
@@ -97,6 +140,12 @@ gradle.projectsEvaluated {
     }
 }
 
+/**
+ * # preflight
+ *
+ * Combines verification and dependency maintenance helpers into a single entry point.
+ * Ideal for CI or pre-release validation workflows.
+ */
 tasks.register("preflight") {
     group = "verification"
     description = "Runs verification gates and dependency maintenance helpers."
