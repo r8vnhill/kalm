@@ -79,6 +79,15 @@ if (-not $SubmoduleOnly) {
         if ($PSCmdlet.ShouldProcess($repoRoot, 'Stage and commit all root changes')) {
             Invoke-Git -GitArgs @('add','-A') -WorkingDirectory $repoRoot -Description 'Staging all changes in root repository...'
 
+            # If for any reason the generic wrapper didn't stage files (rare), fall back to an explicit add
+            if (-not (Test-GitClean -Path $repoRoot)) {
+                # Second-chance: run git add using explicit exe invocation to avoid argument parsing edge-cases
+                Write-Verbose 'Fallback: running explicit git add -A to ensure files are staged.'
+                $exe = 'git'
+                $args = @('-C', $repoRoot, 'add', '-A')
+                & $exe @args
+            }
+
             if (-not (Test-GitClean -Path $repoRoot)) {
                 Invoke-Git -GitArgs @('commit','-m', $RootCommitMessage) -WorkingDirectory $repoRoot -Description 'Committing root repository changes...'
             } else {
