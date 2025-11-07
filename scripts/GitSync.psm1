@@ -127,7 +127,9 @@ function Sync-GitSubmodule {
     # Stage & commit if there are changes
     if (-not (Test-GitClean -Path $path)) {
         Invoke-Git -GitArgs @('add','-A') -WorkingDirectory $path -Description "Staging changes in submodule '$($Submodule.Name)'..."
-        if (-not $CommitMessage) { $CommitMessage = "chore($($Submodule.Name)): update content" }
+        if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
+            throw "Submodule '$($Submodule.Name)' has changes to commit. Please provide a meaningful commit message via -CommitMessage."
+        }
         Invoke-Git -GitArgs @('commit','-m', $CommitMessage) -WorkingDirectory $path -Description "Committing in submodule '$($Submodule.Name)'..."
     }
 
@@ -146,7 +148,7 @@ function Update-GitSubmodulePointers {
         [string[]] $SubmodulePaths,
 
         [Parameter()]
-        [string] $CommitMessage = 'chore(submodules): update pointers'
+        [string] $CommitMessage
     )
 
     if (-not $PSCmdlet.ShouldProcess($RepoRoot, 'Update submodule pointers')) {
@@ -157,8 +159,30 @@ function Update-GitSubmodulePointers {
     $addArgs = @('add') + $SubmodulePaths
     Invoke-Git -GitArgs $addArgs -WorkingDirectory $RepoRoot `
         -Description 'Staging submodule pointer updates in main repo...'
-    
-    if (-not (Test-GitClean -Path $RepoRoot)) {
+
+    # Determine if any of the specified submodule paths have staged pointer changes
+    $relPaths = @()
+    foreach ($p in $SubmodulePaths) {
+        try {
+            $full = (Resolve-Path -LiteralPath $p).Path
+        } catch { $full = $p }
+        if ($full.StartsWith($RepoRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $rel = $full.Substring($RepoRoot.Length).TrimStart([char[]]('\','/'))
+        } else {
+            $rel = $p
+        }
+        $relPaths += $rel
+    }
+
+    $exe = 'git'
+    $args = @('-C', $RepoRoot, 'diff', '--cached', '--quiet', '--') + $relPaths
+    & $exe @args
+    $hasStagedPointerChanges = ($LASTEXITCODE -ne 0)
+
+    if ($hasStagedPointerChanges) {
+        if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
+            throw 'Submodule pointers changed. Please provide a meaningful commit message via -CommitMessage.'
+        }
         Invoke-Git -GitArgs @('commit','-m', $CommitMessage) -WorkingDirectory $RepoRoot `
             -Description 'Committing submodule pointer updates in main repo...'
     }

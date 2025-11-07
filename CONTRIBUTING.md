@@ -14,30 +14,11 @@ Before opening a merge request:
 
 The project wiki (`wiki/` submodule) documents research-oriented content: design rationale, algorithm analysis, and experimental methodology. To contribute:
 
-#### Manual Git Workflow
+#### Wiki initialization & editing (script-first)
 
-1. **Fetch the wiki submodule** (if not already initialized):
-   ```bash
-   git submodule update --init --recursive
-   ```
+If you need to work with the project wiki, prefer the automation provided in `scripts/` rather than manual git commands. Always run the scripts with `-WhatIf` first to preview actions.
 
-2. **Edit wiki content**:
-   ```bash
-   cd wiki
-   git checkout main
-   git pull origin main
-   # Edit files (e.g., vim Design-Decisions.md)
-   git add .
-   git commit -m "📝 docs: clarify feature self-types rationale"
-   git push origin main
-   ```
-
-3. **Update the submodule pointer** in the main repository:
-   ```bash
-   cd ..
-   git add wiki
-   git commit -m "📚 docs: update wiki submodule (feature self-types)"
-   ```
+If the wiki submodule is already initialized, use `Sync-WikiOnly.ps1` or `Sync-RepoAndWiki.ps1` (examples below) to push content and update the pointer. If the submodule is not initialized, the scripts will report the condition and suggest the minimal git submodule initialization step.
 
 #### Automated Sync Tools
 
@@ -100,6 +81,55 @@ When possible, prefer using the PowerShell automation scripts under the `scripts
 - Include code examples from the main repo (reference specific files/lines).
 - Document **alternatives considered** and **why** decisions were made (not just "what").
 - Add benchmark results with reproducible setup (JVM version, problem size, hardware).
+
+### Full add → commit → push workflows (recommended using scripts)
+
+These examples show the recommended, script-driven workflows for common edit scenarios. Always run with `-WhatIf` first to preview the actions.
+
+- Edit only the wiki (preferred):
+
+  1. Edit files under `wiki/`.
+  2. Commit & push using the script (no manual `git add/commit/push` needed):
+
+    ```powershell
+  # Dry-run first: commit wiki changes + update pointer (messages required when commits occur)
+  .\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)" -WhatIf
+
+  # Execute: commit wiki changes, push wiki, update pointer, push root
+  .\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)"
+    ```
+
+  3. Alternatively, if you prefer the script to perform the wiki push and pointer update in one step, use the full sync script (runs submodule push then updates pointer):
+
+    ```powershell
+    .\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "📚 docs: update wiki and pointer (feature X)" -WhatIf
+    .\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "📚 docs: update wiki and pointer (feature X)"
+    ```
+
+- Edit only files in the main repository (docs, scripts, build files):
+
+  ```powershell
+  # Preview staging, commit and push all root changes
+  .\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts" -WhatIf
+
+  # Commit and push
+  .\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts"
+  ```
+
+- Edit both wiki and root (single workflow):
+
+  ```powershell
+  # Dry-run: will fetch/push submodule + stage/commit root changes when -IncludeRootChanges is set
+  .\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -WhatIf
+
+  # Execute (commits and pushes submodule changes, updates pointer, stages/commits root changes, and pushes)
+  .\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "🚀 chore(release): publish docs and scripts"
+  ```
+
+Notes:
+- `-IncludeRootChanges` stages and commits all changes in the repository root (including untracked files). Use with caution and prefer `-WhatIf` first.
+- `-SkipPull` is useful when you want to commit/push local changes without fetching remote updates first.
+- The scripts will respect `-Confirm` and `-WhatIf` where applicable; prefer interactive confirmation for large or risky updates.
 
 We follow the [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html), a code of conduct that fosters an inclusive, respectful, and harassment-free environment. It asks all participants to act with empathy and professionalism, and outlines consequences for unacceptable behavior.
 

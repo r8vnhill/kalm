@@ -22,6 +22,9 @@ Stage and commit updated submodule pointer in root repository.
 .PARAMETER RootCommitMessage
 Custom commit message when updating pointer.
 
+.PARAMETER WikiCommitMessage
+Custom commit message to use when committing changes inside the wiki submodule.
+
 .EXAMPLE
 ./scripts/Sync-WikiOnly.ps1 -UpdatePointer
 
@@ -34,7 +37,8 @@ param(
     [switch] $SkipPull,
     [switch] $SkipPush,
     [switch] $UpdatePointer,
-    [string] $RootCommitMessage = 'chore(wiki): update submodule pointer'
+    [string] $RootCommitMessage,
+    [string] $WikiCommitMessage
 )
 
 Set-StrictMode -Version 3.0
@@ -50,7 +54,7 @@ $wiki = $subs[0]
 Write-Information "Wiki path: $($wiki.Path) (branch: $($wiki.Branch))"
 
 if ($PSCmdlet.ShouldProcess($wiki.Path, 'Sync wiki submodule')) {
-    Sync-GitSubmodule -Submodule $wiki -Remote $Remote -Pull:(-not $SkipPull) -Push:(-not $SkipPush) -CommitMessage 'docs(wiki): update content'
+    Sync-GitSubmodule -Submodule $wiki -Remote $Remote -Pull:(-not $SkipPull) -Push:(-not $SkipPush) -CommitMessage $WikiCommitMessage
 }
 
 if ($UpdatePointer) {

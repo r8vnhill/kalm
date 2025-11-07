@@ -74,8 +74,11 @@ Wiki-focused sync: operate only on the wiki submodule.
 # Preview pointer update
 .\scripts\Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
 
-# Custom commit message for pointer
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer -RootCommitMessage "docs: update wiki (new benchmark)"
+# Custom commit messages (required when commits are needed)
+# - Wiki commit (inside wiki submodule)
+.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X"
+# - Pointer commit (in main repo)
+.\scripts\Sync-WikiOnly.ps1 -UpdatePointer -RootCommitMessage "📚 docs: update wiki (new benchmark)"
 ```
 
 **Parameters:**
@@ -83,7 +86,8 @@ Wiki-focused sync: operate only on the wiki submodule.
 - `-UpdatePointer`: Also stage and commit pointer in main repo
 - `-SkipPull`: Don't fetch from remote
 - `-SkipPush`: Don't push to remote
-- `-RootCommitMessage <msg>`: Custom commit message for pointer update
+ - `-RootCommitMessage <msg>`: Custom commit message for pointer update (required if a pointer commit is made)
+ - `-WikiCommitMessage <msg>`: Custom commit message for wiki submodule changes (required if wiki has changes to commit)
 - `-WhatIf`, `-Confirm`, `-Verbose`: Standard PowerShell parameters
 
 **When to use:**
@@ -175,23 +179,10 @@ All scripts follow these principles:
 
 ### Typical Wiki Workflow
 ```powershell
-# 1. Edit wiki content
-cd wiki
-# (make changes to markdown files)
-
-# 2. Sync wiki and update pointer in one command
-cd ..
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer
-
-# Equivalent manual workflow:
-# cd wiki
-# git add .
-# git commit -m "docs: update design decisions"
-# git push origin main
-# cd ..
-# git add wiki
-# git commit -m "docs: update wiki submodule"
-# git push origin main
+# Edit wiki content locally (edit files under `wiki/` using your editor)
+# Then use the script to push changes and update the pointer (dry-run first):
+.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)" -WhatIf
+.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)"
 ```
 
 ### Full Project Sync
@@ -202,6 +193,40 @@ cd ..
 # Execute full sync
 .\scripts\Sync-RepoAndWiki.ps1 -Verbose
 ```
+
+### Full add → commit → push workflows (script-first)
+
+The repository provides script-driven workflows to safely stage, commit and push changes. These examples show the common scenarios.
+
+- Edit only the wiki (preferred):
+
+	```powershell
+	# Use the script-first approach to push wiki content and update pointer (dry-run first)
+	.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)" -WhatIf
+	.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)"
+	```
+
+- Edit only root files (docs, scripts, build files):
+
+	```powershell
+	# Preview
+	.\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts" -WhatIf
+
+	# Commit & push
+	.\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts"
+	```
+
+- Edit both wiki and root (single command):
+
+	```powershell
+	.\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -WhatIf
+	.\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "🚀 chore(release): publish docs and scripts"
+	```
+
+Notes:
+- Always run with `-WhatIf` first to preview actions.
+- `-IncludeRootChanges` will stage and commit untracked files in the root repository — use cautiously.
+- Use `-SkipPull` when you intentionally don't want to fetch remote updates before committing.
 
 ### Run Gradle with Specific JDK
 ```powershell
