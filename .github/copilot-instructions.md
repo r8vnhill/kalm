@@ -42,6 +42,11 @@ Purpose: give agents the minimum, precise context to work productively here. Kee
 - DO: run verification locally (e.g., `:core:detekt` or `verifyAll`) and summarize results.
 - AVOID: bumping versions, regenerating lockfiles, or altering CI without explicit user request.
 
+Agent Git & automation guidance
+- DO: prefer using the repository's tested automation scripts under `scripts/` (for example `Sync-RepoAndWiki.ps1`, `Sync-WikiOnly.ps1`, and `Invoke-GradleWithJdk.ps1`) when performing repetitive Git or submodule tasks. These scripts encapsulate safety checks, support `-WhatIf`/`-Confirm`, and are validated by PSScriptAnalyzer — they reduce risk and improve reproducibility across contributors.
+- DO: when you need to stage/commit/push as part of a user's explicit request, run the scripts rather than invoking raw `git` directly. If you must construct git commands, explain why the script could not be used and document the exact command you will run.
+- DO NOT: stage, commit, or push changes unless the user explicitly requests it in a message. Even when using the scripts, ask for explicit permission before making changes that will be committed or pushed.
+
 ## Quick references
 - Root build: `build.gradle.kts` (defines `verifyAll`, `preflight`).
 - Convention plugins: `build-logic/src/main/kotlin/*.gradle.kts`.
