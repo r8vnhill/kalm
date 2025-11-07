@@ -1,0 +1,53 @@
+# AI Assistant Guide for this Repo (KALM)
+
+Purpose: give agents the minimum, precise context to work productively here. Keep answers concrete and aligned with how this project is structured and built.
+
+## Hard rules (must follow)
+1) Never stage, commit, push, or open PRs unless the user explicitly asks in a message.
+2) Explain intended multi-file changes before applying them; keep diffs minimal and scoped.
+3) Preserve existing style and public API unless a change is requested or required by tests/fixes.
+
+## Big picture architecture
+- Multi-project Gradle Kotlin build:
+  - `core`: domain model + minimal optimization abstractions (e.g., `OptimizationEngine`, `Feature`, `ScalarFeature`, `SimpleHillClimber`).
+  - `platform`: BOM/platform alignment for consumers.
+  - `build-logic`: precompiled convention plugins (applied by modules):
+    - `kalm.detekt`: shared static-analysis setup.
+    - `kalm.dependency-locking`: strict dependency locking policy.
+- Source examples:
+  - `core/src/main/kotlin/cl/ravenhill/kalm/engine/OptimizationEngine.kt` (engine contract)
+  - `core/src/main/kotlin/cl/ravenhill/kalm/repr/Feature.kt` (representation contract)
+  - `core/src/main/kotlin/cl/ravenhill/kalm/engine/SimpleHillClimber.kt` (example implementation)
+
+## Developer workflows (use these)
+- Aggregated verification:
+  - `./gradlew verifyAll` runs tests, Detekt, and API checks (dynamically wires subproject tasks).
+  - `./gradlew preflight` runs `verifyAll` plus dependency maintenance helpers.
+- Static analysis (Detekt) is applied via `kalm.detekt` and configured once:
+  - Multi-format reports enabled per task: HTML (dev), SARIF (code scanning), TXT (CI logs).
+  - Type-aware analysis: classpath includes `main` outputs and the `detekt` configuration; `jvmTarget` derives from the module toolchain.
+- Reproducible builds via strict dependency locking (convention plugin `kalm.dependency-locking`):
+  - Lock mode is STRICT; missing lock state must be written explicitly with `--write-locks` (only when the user asks).
+  - See `dev-resources/DEPENDENCY_LOCKING.md` for exact commands and troubleshooting.
+- Running Gradle with a specific JDK: prefer IDE; otherwise use `scripts/Invoke-GradleWithJdk.ps1` or `scripts/invoke_gradle_with_jdk.sh`.
+
+## Project conventions and patterns
+- Prefer convention plugins over `allprojects/subprojects` cross-configuration.
+- Use the version catalog (libs.versions.toml) and provider-safe accessors; avoid eager resolution in build scripts.
+- Detekt thresholds are intentionally modest to encourage short, focused code (e.g., CyclomaticComplexMethod=10, LongMethod=40, TooManyFunctions stricter for objects). Relax only when tests justify it.
+- API surface is validated with the binary-compatibility validator (`apiCheck`/`apiDump`); API dumps under `<module>/api/*.api` are source-of-truth.
+
+## What to do / avoid when editing
+- DO: propose diffs, cite exact files/symbols (e.g., `core/.../OptimizationEngine.kt`).
+- DO: run verification locally (e.g., `:core:detekt` or `verifyAll`) and summarize results.
+- AVOID: bumping versions, regenerating lockfiles, or altering CI without explicit user request.
+
+## Quick references
+- Root build: `build.gradle.kts` (defines `verifyAll`, `preflight`).
+- Convention plugins: `build-logic/src/main/kotlin/*.gradle.kts`.
+- Detekt config: `config/detekt/detekt.yml` (baseline optional under same folder).
+- Dependency locking guide: `dev-resources/DEPENDENCY_LOCKING.md`.
+
+— Keep responses terse and actionable. Ask one clarifying question only if truly blocked.
+
+Last updated: 2025-11-07

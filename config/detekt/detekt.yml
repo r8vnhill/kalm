@@ -14,6 +14,11 @@ config:
   # when writing own rules with new properties, exclude the property path e.g.: 'my_rule_set,.*>.*>[my_property]'
   excludes: ''
 
+# Shared policy for this repository
+# - Keep functions short and focused; prefer composition over branching.
+# - The thresholds below are modest by intent; only relax them when tests clearly demonstrate the need.
+# - A baseline (config/detekt/baseline.xml) is optional and should be trimmed, not a blanket suppression.
+
 processors:
   active: true
   exclude:
@@ -43,7 +48,7 @@ console-reports:
 
 output-reports:
   active: true
-  exclude:
+  exclude: []
   # - 'TxtOutputReport'
   # - 'XmlOutputReport'
   # - 'HtmlOutputReport'
@@ -107,7 +112,7 @@ complexity:
     ignoreOverloaded: false
   CyclomaticComplexMethod:
     active: true
-    threshold: 15
+    threshold: 10
     ignoreSingleWhenExpression: false
     ignoreSimpleWhenEntries: false
     ignoreNestingFunctions: false
@@ -129,7 +134,7 @@ complexity:
     threshold: 600
   LongMethod:
     active: true
-    threshold: 60
+    threshold: 40
   LongParameterList:
     active: true
     functionThreshold: 6
@@ -168,10 +173,10 @@ complexity:
   TooManyFunctions:
     active: true
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
-    thresholdInFiles: 11
-    thresholdInClasses: 11
-    thresholdInInterfaces: 11
-    thresholdInObjects: 11
+    thresholdInFiles: 12
+    thresholdInClasses: 12
+    thresholdInInterfaces: 12
+    thresholdInObjects: 8
     thresholdInEnums: 11
     ignoreDeprecated: false
     ignorePrivate: false

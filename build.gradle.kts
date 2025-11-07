@@ -5,7 +5,9 @@
 
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.gradle.kotlin.dsl.withType
+import org.gradle.process.ExecOperations
 import java.util.Locale
+import javax.inject.Inject
 
 /**
  * # Root Build Logic
@@ -131,7 +133,8 @@ tasks.register("verifyAll") {
 gradle.projectsEvaluated {
     val detektPaths = subprojects.mapNotNull { it.tasks.findByName("detekt")?.path }
     val apiCheckPaths = subprojects.mapNotNull { it.tasks.findByName("apiCheck")?.path }
-    val additional = (detektPaths + apiCheckPaths).distinct()
+    val testPaths = subprojects.mapNotNull { it.tasks.findByName("test")?.path }
+    val additional = (detektPaths + apiCheckPaths + testPaths).distinct()
 
     if (additional.isNotEmpty()) {
         tasks.named("verifyAll").configure {
@@ -150,4 +153,53 @@ tasks.register("preflight") {
     group = "verification"
     description = "Runs verification gates and dependency maintenance helpers."
     dependsOn("verifyAll", "dependencyMaintenance")
+}
+
+/**
+ * # syncWiki
+ *
+ * Updates the wiki submodule to latest master and stages the pointer in the main repo.
+ * After running this task, commit the submodule update with an appropriate message.
+ */
+abstract class SyncWikiTask @Inject constructor(
+    private val execOps: ExecOperations
+) : DefaultTask() {
+    
+    @get:InputDirectory
+    abstract val wikiDirectory: DirectoryProperty
+    
+    @get:InputDirectory
+    abstract val rootDirectory: DirectoryProperty
+    
+    @TaskAction
+    fun sync() {
+        val wikiDir = wikiDirectory.asFile.get()
+        
+        if (!wikiDir.exists()) {
+            throw GradleException(
+                "Wiki submodule not initialized. Run: git submodule update --init --recursive"
+            )
+        }
+        
+        // Pull latest wiki changes
+        execOps.exec {
+            workingDir(wikiDir)
+            commandLine("git", "pull", "origin", "main")
+        }
+        
+        // Stage the submodule pointer
+        execOps.exec {
+            workingDir(rootDirectory.asFile.get())
+            commandLine("git", "add", "wiki")
+        }
+        
+        println("✓ Wiki synced to latest. Run 'git commit -m \"📚 docs: update wiki submodule\"' to finalize.")
+    }
+}
+
+tasks.register<SyncWikiTask>("syncWiki") {
+    group = "documentation"
+    description = "Pulls latest wiki changes and stages the submodule pointer."
+    wikiDirectory.set(rootProject.layout.projectDirectory.dir("wiki"))
+    rootDirectory.set(rootProject.layout.projectDirectory)
 }

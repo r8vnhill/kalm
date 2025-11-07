@@ -23,6 +23,61 @@
 
 This document explains recommended git workflows for contributors and CI. It focuses on direct, portable `git` commands and small reproducible patterns you can run in any shell. The examples here are shell-agnostic and should work on Windows, macOS, and Linux.
 
+> Recommendation: When working in an environment that supports PowerShell 7.4+, prefer the project's tested PowerShell automation scripts in the `scripts/` directory for common Git and submodule workflows (for example, `Sync-RepoAndWiki.ps1` and `Sync-WikiOnly.ps1`). These scripts implement safety checks, `-WhatIf`/`-Confirm` support, and handle submodule pointer updates — reducing manual errors and making the workflow reproducible across contributors.
+
+### PowerShell Automation Toolkit
+
+For PowerShell 7.4+ users, the `scripts/` directory includes automation tools for common Git and submodule operations:
+
+**`GitSync.psm1` Module** - Reusable functions for Git/submodule operations:
+- `Invoke-Git`: Safe git command wrapper with error handling
+- `Get-GitCurrentBranch`: Get current branch name
+- `Test-GitClean`: Check if working directory is clean
+- `Get-GitSubmodules`: Parse `.gitmodules` dynamically
+- `Sync-GitSubmodule`: Pull, commit, and push a submodule
+- `Update-GitSubmodulePointers`: Stage and commit pointer updates in main repo
+
+**`Sync-RepoAndWiki.ps1`** - Full repository + submodule sync:
+```powershell
+# Sync everything (fetch, commit, push)
+.\scripts\Sync-RepoAndWiki.ps1
+
+# Preview without changes
+.\scripts\Sync-RepoAndWiki.ps1 -WhatIf
+
+# Only commit/push (skip fetch)
+.\scripts\Sync-RepoAndWiki.ps1 -SkipPull
+
+# Sync only submodules
+.\scripts\Sync-RepoAndWiki.ps1 -SubmoduleOnly
+```
+
+**`Sync-WikiOnly.ps1`** - Wiki-focused sync:
+```powershell
+# Sync wiki content only
+.\scripts\Sync-WikiOnly.ps1
+
+# Sync wiki and update pointer in main repo
+.\scripts\Sync-WikiOnly.ps1 -UpdatePointer
+
+# Preview changes
+.\scripts\Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
+```
+
+**Common Parameters:**
+- `-Remote <name>`: Target remote (default: `origin`)
+- `-SkipPull`: Don't fetch from remote
+- `-SkipPush`: Don't push to remote
+- `-WhatIf`: Preview operations without executing
+- `-Confirm`: Prompt before state-changing operations
+- `-Verbose`: Show detailed git commands
+
+**Design Principles:**
+- **Extensible**: Module pattern with reusable functions (no duplication)
+- **Safe**: `SupportsShouldProcess` for `-WhatIf`/`-Confirm` on state changes
+- **Dynamic**: Parses `.gitmodules` to support arbitrary submodules and branches
+- **Validated**: All scripts pass PSScriptAnalyzer with strict rules
+
 
 ## ⚙️ Recommended git workflows
 
