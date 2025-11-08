@@ -95,6 +95,29 @@ $env:JAVA_HOME = '/path/to/jdk-22'
 For detailed guidance and troubleshooting on dependency locking (strict mode, writing locks, and common errors), see
 [dev-resources/DEPENDENCY_LOCKING.md](dev-resources/DEPENDENCY_LOCKING.md).
 
+## 🧹 Static analysis
+
+Run all verification in one go:
+
+```powershell
+./gradlew verifyAll
+```
+
+This aggregates tests, Detekt static analysis, and API surface checks across modules. For focused static analysis and formatting (powered by the RedMadRobot Detekt plugin via the `kalm.detekt-redmadrobot` convention):
+
+```powershell
+# Run Detekt across all modules
+./gradlew detektAll
+
+# Check only changes vs. main (faster local and CI diffs)
+./gradlew detektDiff
+
+# Auto-format Kotlin sources
+./gradlew detektFormat
+```
+
+Advanced configuration examples (e.g., diff branch selection, file extensions) live in `dev-resources/DOCUMENTATION_RULES.md` under “RedMadRobot Detekt Plugin”.
+
 ## 📚 Research Documentation
 
 For algorithm design rationale, complexity analysis, experimental methodology, and design decisions, see the [**project wiki**](https://gitlab.com/r8vnhill/kalm/-/wikis/home).

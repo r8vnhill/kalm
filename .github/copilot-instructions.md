@@ -12,7 +12,7 @@ Purpose: give agents the minimum, precise context to work productively here. Kee
   - `core`: domain model + minimal optimization abstractions (e.g., `OptimizationEngine`, `Feature`, `ScalarFeature`, `SimpleHillClimber`).
   - `platform`: BOM/platform alignment for consumers.
   - `build-logic`: precompiled convention plugins (applied by modules):
-    - `kalm.detekt`: shared static-analysis setup.
+    - `kalm.detekt-redmadrobot`: shared Detekt workflow with RedMadRobot tasks.
     - `kalm.dependency-locking`: strict dependency locking policy.
 - Source examples:
   - `core/src/main/kotlin/cl/ravenhill/kalm/engine/OptimizationEngine.kt` (engine contract)
@@ -23,7 +23,7 @@ Purpose: give agents the minimum, precise context to work productively here. Kee
 - Aggregated verification:
   - `./gradlew verifyAll` runs tests, Detekt, and API checks (dynamically wires subproject tasks).
   - `./gradlew preflight` runs `verifyAll` plus dependency maintenance helpers.
-- Static analysis (Detekt) is applied via `kalm.detekt` and configured once:
+- Static analysis (Detekt) is applied via `kalm.detekt-redmadrobot` and configured once:
   - Multi-format reports enabled per task: HTML (dev), SARIF (code scanning), TXT (CI logs).
   - Type-aware analysis: classpath includes `main` outputs and the `detekt` configuration; `jvmTarget` derives from the module toolchain.
 - Reproducible builds via strict dependency locking (convention plugin `kalm.dependency-locking`):

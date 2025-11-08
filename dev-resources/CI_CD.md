@@ -86,6 +86,7 @@ To ensure traceability and consistency across GitLab and GitHub, releases are dr
 1. Ensure that all pull/merge requests for the milestone have been merged.
 2. Confirm that `Versions.kt` has been updated to the intended version (e.g., `1.2.3`).
 3. Validate that CI pipelines pass on the **default branch** (`main` unless otherwise configured).
+4. Ensure multi-module static analysis passes (`./gradlew detektAll`) or a full `./gradlew verifyAll` run is clean (tests + Detekt + API checks). Incremental checks (`detektDiff`) are acceptable for PR validation, but a release requires a full pass.
 
 ### ✍️ How to Create a Release Draft
 

@@ -6,7 +6,7 @@
 plugins {
     id("kalm.library")
     id("kalm.jvm")
-    id("kalm.detekt")
+    id("kalm.detekt-redmadrobot")
 }
 
 dependencies {

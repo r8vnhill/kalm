@@ -8,7 +8,8 @@ Contributions and ideas are welcome! If you're planning to contribute, please:
 
 Before opening a merge request:
 
-- Run `./gradlew preflight` (or `preflight --write-locks`) to execute tests, static analysis, and refresh Gradle lockfiles.
+- Run `./gradlew verifyAll` for routine contributions (tests + static analysis + API checks).
+- Use `./gradlew preflight --write-locks` only when dependency versions change and lockfiles must be regenerated.
 - Commit lockfile changes (`gradle.lockfile`, `settings-gradle.lockfile`, `<module>/gradle.lockfile`) alongside any dependency updates.
 
 ### Wiki Updates
@@ -135,3 +136,15 @@ Notes:
 We follow the [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html), a code of conduct that fosters an inclusive, respectful, and harassment-free environment. It asks all participants to act with empathy and professionalism, and outlines consequences for unacceptable behavior.
 
 By contributing to this project, you agree to uphold these values.
+
+### Static Analysis & Code Quality
+
+Static analysis is powered by the RedMadRobot Detekt Gradle plugin applied via the `kalm.detekt-redmadrobot` convention plugin. Common tasks:
+
+```bash
+./gradlew detektAll       # Full multi-module scan
+./gradlew detektDiff      # Only changed files vs main (faster incremental check)
+./gradlew detektFormat    # Auto-format Kotlin sources
+```
+
+Run `./gradlew verifyAll` before pushing to ensure Detekt, tests, and API checks all pass. Advanced configuration (e.g., configuring `checkOnlyDiffWithBranch`) is documented in `dev-resources/DOCUMENTATION_RULES.md`.
