@@ -4,6 +4,7 @@ Contributions and ideas are welcome! If you're planning to contribute, please:
 
 - Read the documentation and contribution guidelines under [`dev-resources/`](./dev-resources/)
 - Familiarize yourself with our [Code of Conduct](./CODE_OF_CONDUCT.md)
+ - Review the repository's agent guidance and hard rules in `.github/copilot-instructions.md` (these contain important agent policies and workflow expectations).
 
 Before opening a merge request:
 

@@ -14,6 +14,7 @@ dependencies {
     // Adds the Kotlin Gradle Plugin to enable use in custom build logic and DSL extensions
     implementation(libs.kotlin.gradle.plugin)
     implementation(libs.detekt.gradle.plugin)
+    implementation("com.github.ben-manes:gradle-versions-plugin:0.53.0")
 }
 
 // Configure toolchains to consistently use Java 22 across both

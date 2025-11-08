@@ -51,6 +51,8 @@ Agent Git & automation guidance
 - DO: when you need to stage/commit/push as part of a user's explicit request, run the scripts rather than invoking raw `git` directly. If you must construct git commands, explain why the script could not be used and document the exact command you will run.
 - DO NOT: stage, commit, or push changes unless the user explicitly requests it in a message. Even when using the scripts, ask for explicit permission before making changes that will be committed or pushed.
 
+Note: This repository may include a workspace-local reminder file at `dev-resources/AGENT_GUIDELINES.md` containing small run-time hints for agents (for example, shell/wrapper usage). Please read that file when starting interactive sessions — it complements but does not replace these core instructions.
+
 ## Quick references
 - Root build: `build.gradle.kts` (defines `verifyAll`, `preflight`).
 - Convention plugins: `build-logic/src/main/kotlin/*.gradle.kts`.
