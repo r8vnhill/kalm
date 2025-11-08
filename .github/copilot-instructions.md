@@ -37,6 +37,10 @@ Purpose: give agents the minimum, precise context to work productively here. Kee
 - Detekt thresholds are intentionally modest to encourage short, focused code (e.g., CyclomaticComplexMethod=10, LongMethod=40, TooManyFunctions stricter for objects). Relax only when tests justify it.
 - API surface is validated with the binary-compatibility validator (`apiCheck`/`apiDump`); API dumps under `<module>/api/*.api` are source-of-truth.
 
+PowerShell/path portability
+- When editing or adding PowerShell scripts, prefer cross-platform path helpers (for example: `Join-Path`, `Split-Path`, and `[IO.Path]` helpers) over hard-coded separators like `\` or `/`.
+- Dot-sourcing or building paths should use `Join-Path -Path $PSScriptRoot -ChildPath 'lib'` and then `Join-Path` again for file names. This keeps scripts portable on Windows, macOS and Linux and avoids subtle bugs with path trimming or string concatenation.
+
 ## What to do / avoid when editing
 - DO: propose diffs, cite exact files/symbols (e.g., `core/.../OptimizationEngine.kt`).
 - DO: run verification locally (e.g., `:core:detekt` or `verifyAll`) and summarize results.

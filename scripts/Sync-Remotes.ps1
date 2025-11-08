@@ -54,20 +54,23 @@ $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 $script:SyncRemotesPSCmdlet = $PSCmdlet
 
+# Import the shared Git helpers which include the DryRun singleton API and helpers
+Import-Module -Force (Join-Path $PSScriptRoot 'GitSync.psm1')
+
+# If invoked with -WhatIf set the shared dry-run singleton so helper functions can avoid git execution
+if ($PSBoundParameters.ContainsKey('WhatIf')) { Set-KalmDryRun $true }
+
 function Get-CurrentBranch {
-    $branch = git rev-parse --abbrev-ref HEAD 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Failed to determine current branch. Are you in a git repository?'
-    }
-    return $branch.Trim()
+    $out = Invoke-GitCommand -Arguments @('rev-parse','--abbrev-ref','HEAD') -Description 'Determining current branch' -CaptureOutput
+    if (-not $out) { throw 'Failed to determine current branch. Are you in a git repository?' }
+    $line = if ($out -is [array]) { $out[0] } else { $out }
+    return ([string]$line).Trim()
 }
 
 function Test-WorkingTreeClean {
-    $status = git status --porcelain 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        throw 'Failed to check working tree status.'
-    }
-    return [string]::IsNullOrWhiteSpace($status)
+    $out = Invoke-GitCommand -Arguments @('status','--porcelain') -Description 'Checking working tree status' -CaptureOutput -NoThrow
+    if ($null -eq $out) { throw 'Failed to check working tree status.' }
+    return -not ($out -and ($out -join '').Trim())
 }
 
 function Invoke-GitCommand {
@@ -88,10 +91,22 @@ function Invoke-GitCommand {
         [Parameter()]
         [string]
         $Action
+        ,
+        [Parameter()]
+        [switch]
+        $CaptureOutput,
+        [Parameter()]
+        [switch]
+        $NoThrow
     )
 
     if ($Description) {
         Write-Information $Description
+    }
+
+    # Respect global -WhatIf even when ShouldProcess propagation is unreliable
+    if ($WhatIfPreference -eq 'Continue') {
+        return $null
     }
 
     $commandLine = "git $($Arguments -join ' ')"
@@ -101,14 +116,25 @@ function Invoke-GitCommand {
     $targetLabel = if ($Target) { $Target } else { 'repository' }
 
     if (-not $script:SyncRemotesPSCmdlet.ShouldProcess($targetLabel, $actionLabel)) {
-        return
+        return $null
     }
 
-    & git @Arguments
-    $exitCode = $LASTEXITCODE
-
-    if ($exitCode -ne 0) {
-        throw "Command failed with exit code ${exitCode}: $commandLine"
+    if ($CaptureOutput) {
+        $output = & git @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0 -and -not $NoThrow) {
+            throw "Command failed with exit code ${exitCode}: $commandLine`nOutput: $($output -join "`n")"
+        }
+        if ($exitCode -ne 0 -and $NoThrow) { return $null }
+        return ,$output
+    }
+    else {
+        & git @Arguments
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0) {
+            throw "Command failed with exit code ${exitCode}: $commandLine"
+        }
+        return $null
     }
 }
 
@@ -171,8 +197,8 @@ try {
     Write-Information ''
     Write-Information 'Step 3: Pushing to all remotes...'
 
-    $pushUrls = @(git remote get-url --push --all $Remote 2>$null)
-    if ($pushUrls.Count -eq 0) {
+    $pushUrls = Invoke-GitCommand -Arguments @('remote','get-url','--push','--all',$Remote) -Description 'Listing push URLs' -CaptureOutput -NoThrow
+    if (-not $pushUrls -or $pushUrls.Count -eq 0) {
         throw "No push URLs configured for remote '$Remote'."
     }
 

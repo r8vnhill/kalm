@@ -46,6 +46,9 @@ $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 
 Import-Module -Force (Join-Path $PSScriptRoot 'GitSync.psm1')
+
+# If this script was invoked with -WhatIf, set the shared dry-run singleton for nested helpers
+if ($PSBoundParameters.ContainsKey('WhatIf')) { Set-KalmDryRun $true }
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
 $subs = Get-GitSubmodules -RepoRoot $repoRoot -DefaultBranch 'main' | Where-Object { $_.Name -match 'wiki' -or $_.Path -match 'wiki' }

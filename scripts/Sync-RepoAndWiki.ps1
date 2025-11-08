@@ -39,7 +39,9 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 
+# Import Git helpers first so the dry-run singleton API is available, then set the top-level WhatIf flag
 Import-Module -Force (Join-Path $PSScriptRoot 'GitSync.psm1')
+if ($PSBoundParameters.ContainsKey('WhatIf')) { Set-KalmDryRun $true }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $branch = Get-GitCurrentBranch -Path $repoRoot
@@ -81,11 +83,9 @@ if (-not $SubmoduleOnly) {
 
             # If for any reason the generic wrapper didn't stage files (rare), fall back to an explicit add
             if (-not (Test-GitClean -Path $repoRoot)) {
-                # Second-chance: run git add using explicit exe invocation to avoid argument parsing edge-cases
+                # Second-chance: run git add using the guarded Invoke-Git to ensure WhatIf is respected
                 Write-Verbose 'Fallback: running explicit git add -A to ensure files are staged.'
-                $exe = 'git'
-                $args = @('-C', $repoRoot, 'add', '-A')
-                & $exe @args
+                Invoke-Git -GitArgs @('add','-A') -WorkingDirectory $repoRoot -Description 'Fallback explicit git add -A' -Quiet
             }
 
             if (-not (Test-GitClean -Path $repoRoot)) {
