@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dynamic wiring of subproject `apiCheck` and `detekt` tasks in `verifyAll` (1ef72a767c39, 9ef0de174e81).
 - Agent runtime & interaction guidelines (`.github/copilot-instructions.md` and workspace reminders) (ef1c5df8a116, 59301a98cad3, c242c2bc5f3a).
 
+### Documentation
+- Formatted markdown files under `wiki/` with `dprint` and updated `wiki/.dprint.json` to a working plugin version (commit 240e6755a709e06e63eb543c59590b53af0e7f96).
+
 ### Changed
 - Centralized repository declarations in `settings.gradle.kts` for plugins & dependencies (59301a98cad3).
 - Enforced strict dependency locking & regenerated lock states (0725233d875b, c504f84fe656, 6324b4b25cd1).
@@ -31,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Clean working tree detection logic for empty `git status` output (9832ac5c49d2).
 - Detekt configuration correctness & JVM target derivation (925efefea358).
+
+### Changed
+- Added `-PullStrategy` to sync scripts (`Sync-GitSubmodule`, `Sync-WikiOnly.ps1`, `Sync-RepoAndWiki.ps1`) to support `ff-only|merge|rebase`. Documented usage in `scripts/README.md` and agent docs (commit c67072ecfed56d0998a0c427c6c8561e5fdfe3ff).
 
 ### Removed
 - Obsolete commented changelog links and redundant pre-`0.1.0` script placeholders (6afde41b10e7).
