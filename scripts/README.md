@@ -54,6 +54,7 @@ Full repository sync: main repo + all submodules (pull → commit → push).
 - `-SkipPush`: Don't push to remote
 - `-SubmoduleOnly`: Operate only on submodules
 - `-RootCommitMessage <msg>`: Custom commit message for pointer updates
+- `-PullStrategy <ff-only|merge|rebase>`: How to resolve remote divergence when a fast-forward pull is not possible for the root repo and submodules. Default `ff-only` (fail). Use `merge` to auto-merge or `rebase` to rebase local commits.
 - `-WhatIf`: Preview operations without executing
 - `-Confirm`: Prompt before state-changing operations
 - `-Verbose`: Show detailed git commands
@@ -88,12 +89,24 @@ Wiki-focused sync: operate only on the wiki submodule.
 - `-SkipPush`: Don't push to remote
  - `-RootCommitMessage <msg>`: Custom commit message for pointer update (required if a pointer commit is made)
  - `-WikiCommitMessage <msg>`: Custom commit message for wiki submodule changes (required if wiki has changes to commit)
+- `-PullStrategy <ff-only|merge|rebase>`: How to resolve divergence if a fast-forward pull isn't possible. Default `ff-only` (fail). Use `merge` to auto-merge or `rebase` to rebase local commits.
 - `-WhatIf`, `-Confirm`, `-Verbose`: Standard PowerShell parameters
 
 **When to use:**
 - Use after editing wiki content locally
 - Use with `-UpdatePointer` to reflect wiki changes in main repo
 - Prefer over `Sync-RepoAndWiki.ps1` when only wiki changed
+
+**Handling diverged wiki branches:**
+If the wiki has diverged from the remote (fast-forward not possible), run with a strategy:
+
+```powershell
+# Auto-merge remote/main into local main (no prompt, creates a merge commit if needed)
+./scripts/Sync-WikiOnly.ps1 -PullStrategy merge -SkipPush
+
+# Or rebase local commits on top of remote/main
+./scripts/Sync-WikiOnly.ps1 -PullStrategy rebase -SkipPush
+```
 
 ## Gradle with JDK
 

@@ -32,7 +32,8 @@ param(
     [switch] $SkipPull,
     [switch] $SubmoduleOnly,
     [switch] $IncludeRootChanges,
-    [string] $RootCommitMessage = 'chore(repo): sync submodule pointers'
+    [string] $RootCommitMessage = 'chore(repo): sync submodule pointers',
+    [ValidateSet('ff-only','merge','rebase')] [string] $PullStrategy = 'ff-only'
 )
 
 Set-StrictMode -Version 3.0
@@ -51,7 +52,22 @@ Write-Information "Main repo branch: $branch"
 if (-not $SkipPull -and -not $SubmoduleOnly) {
     if (-not (Test-GitClean -Path $repoRoot)) { throw 'Root working tree dirty. Commit or stash before sync.' }
     Invoke-Git -GitArgs @('fetch','--all','--prune') -WorkingDirectory $repoRoot -Description 'Fetching root remotes...'
-    Invoke-Git -GitArgs @('pull','--ff-only',$Remote,$branch) -WorkingDirectory $repoRoot -Description "Fast-forward root repo ($branch)..." -ErrorAction Continue
+
+    # Try fast-forward first; fall back to configured strategy when ff fails
+    $ffCode = Invoke-Git -GitArgs @('pull','--ff-only',$Remote,$branch) -WorkingDirectory $repoRoot -Description "Pulling root repo ($branch) (ff-only)..." -NoThrow -ReturnExitCode
+    if ($ffCode -ne 0) {
+        switch ($PullStrategy) {
+            'merge' {
+                Invoke-Git -GitArgs @('pull','--no-rebase','--no-edit',$Remote,$branch) -WorkingDirectory $repoRoot -Description "Fast-forward failed; merging remote $branch into local (auto-resolve divergence)..."
+            }
+            'rebase' {
+                Invoke-Git -GitArgs @('pull','--rebase',$Remote,$branch) -WorkingDirectory $repoRoot -Description "Fast-forward failed; rebasing local $branch onto remote..."
+            }
+            default {
+                throw "Fast-forward pull for root repo failed and PullStrategy is 'ff-only'. Re-run with -PullStrategy merge or rebase to resolve divergence."
+            }
+        }
+    }
 }
 
 # Enumerate submodules
@@ -61,8 +77,8 @@ if ($subs.Count -eq 0) { Write-Information 'No submodules detected.'; return }
 Write-Information "Detected submodules:"; $subs | ForEach-Object { Write-Information " - $($_.Name) [$($_.Branch)]" }
 
 foreach ($s in $subs) {
-    if ($PSCmdlet.ShouldProcess($s.Path, "Sync submodule '$($s.Name)'")) {
-        Sync-GitSubmodule -Submodule $s -Remote $Remote -Pull:(-not $SkipPull) -Push:(-not $SkipPush) -CommitMessage "chore($($s.Name)): update content"
+    if ($PSCmdlet.ShouldProcess($s.Path, "Sync submodule '$($s.Name)'") ) {
+        Sync-GitSubmodule -Submodule $s -Remote $Remote -Pull:(-not $SkipPull) -Push:(-not $SkipPush) -CommitMessage "chore($($s.Name)): update content" -PullStrategy $PullStrategy
     }
 }
 

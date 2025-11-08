@@ -31,7 +31,8 @@ function Sync-GitSubmodule {
         [Parameter()] [string] $Remote = 'origin',
         [Parameter()] [switch] $Pull,
         [Parameter()] [switch] $Push,
-        [Parameter()] [string] $CommitMessage
+        [Parameter()] [string] $CommitMessage,
+        [Parameter()] [ValidateSet('ff-only','merge','rebase')] [string] $PullStrategy = 'ff-only'
     )
     $path = $Submodule.Path
     $branch = $Submodule.Branch
@@ -41,7 +42,22 @@ function Sync-GitSubmodule {
         # Ensure branch exists locally
         try { Invoke-Git -GitArgs @('rev-parse', '--verify', "$branch") -WorkingDirectory $path -Quiet } catch { }
         Invoke-Git -GitArgs @('checkout', $branch) -WorkingDirectory $path -Description "Checking out $branch in '$($Submodule.Name)'..."
-        Invoke-Git -GitArgs @('pull', '--ff-only', $Remote, $branch) -WorkingDirectory $path -Description "Pulling $branch in '$($Submodule.Name)'..."
+
+        # First try a fast-forward pull; if it fails and a fallback strategy is provided, apply it
+        $ffCode = Invoke-Git -GitArgs @('pull', '--ff-only', $Remote, $branch) -WorkingDirectory $path -Description "Pulling $branch in '$($Submodule.Name)' (ff-only)..." -NoThrow -ReturnExitCode
+        if ($ffCode -ne 0) {
+            switch ($PullStrategy) {
+                'merge' {
+                    Invoke-Git -GitArgs @('pull', '--no-rebase', '--no-edit', $Remote, $branch) -WorkingDirectory $path -Description "Fast-forward failed; merging remote $branch into local (auto-resolve divergence)..."
+                }
+                'rebase' {
+                    Invoke-Git -GitArgs @('pull', '--rebase', $Remote, $branch) -WorkingDirectory $path -Description "Fast-forward failed; rebasing local $branch onto remote..."
+                }
+                default {
+                    throw "Fast-forward pull failed and PullStrategy is 'ff-only'. Re-run with -PullStrategy merge or rebase to resolve divergence."
+                }
+            }
+        }
     }
 
     # Stage & commit if there are changes

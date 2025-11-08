@@ -24,8 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved PowerShell sync scripts: guarded git wrapper (`Invoke-Git`), output capture & clean status handling (9832ac5c49d2, e71c1b07a28d).
 
 ### Documentation
-- Documented the reproducible CI/wiki workflow, added `dprint` tooling to the wiki, and converted the design entry to Markdown footnotes (14249fa).
-
 - Updated contribution & automation guidelines to prefer script-first workflows (cf04aa30a16f, 338070690435, c242c2bc5f3a).
 - Added / refined dependency locking, agent guidance, and runtime reminders (c504f84fe656, 6324b4b25cd1, 59301a98cad3).
  - Clarified and expanded RedMadRobot Detekt documentation and guidance; added README "Static Analysis" quick-start, updated `CONTRIBUTING.md`, `dev-resources/DOCUMENTATION_RULES.md`, and `dev-resources/CI_CD.md`; adjusted `kalm.detekt-redmadrobot` header and un-ignored functionalTest build outputs for fixture tracking (commit 82052ad).

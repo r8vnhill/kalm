@@ -25,6 +25,9 @@ Custom commit message when updating pointer.
 .PARAMETER WikiCommitMessage
 Custom commit message to use when committing changes inside the wiki submodule.
 
+.PARAMETER PullStrategy
+How to resolve remote divergence when a fast-forward pull is not possible. One of: `ff-only` (default), `merge`, `rebase`.
+
 .EXAMPLE
 ./scripts/Sync-WikiOnly.ps1 -UpdatePointer
 
@@ -38,7 +41,8 @@ param(
     [switch] $SkipPush,
     [switch] $UpdatePointer,
     [string] $RootCommitMessage,
-    [string] $WikiCommitMessage
+    [string] $WikiCommitMessage,
+    [ValidateSet('ff-only','merge','rebase')] [string] $PullStrategy = 'ff-only'
 )
 
 Set-StrictMode -Version 3.0
@@ -57,7 +61,7 @@ $wiki = $subs[0]
 Write-Information "Wiki path: $($wiki.Path) (branch: $($wiki.Branch))"
 
 if ($PSCmdlet.ShouldProcess($wiki.Path, 'Sync wiki submodule')) {
-    Sync-GitSubmodule -Submodule $wiki -Remote $Remote -Pull:(-not $SkipPull) -Push:(-not $SkipPush) -CommitMessage $WikiCommitMessage
+    Sync-GitSubmodule -Submodule $wiki -Remote $Remote -Pull:(-not $SkipPull) -Push:(-not $SkipPush) -CommitMessage $WikiCommitMessage -PullStrategy $PullStrategy
 }
 
 if ($UpdatePointer) {
