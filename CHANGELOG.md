@@ -7,36 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - TBD
 
+> This section summarizes the net state of the project since `0.1.0`. Entries reflect current functionality only (removed or superseded items are omitted). Commit hashes are included for traceability.
+
 ### Added
-- PowerShell automation scripts for Git, Gradle, and project workflows:
-  - `scripts/GitSync.psm1` module (loader) with reusable Git/submodule helpers split into `scripts/lib/` (`GitInvoke.ps1`, `GitHelpers.ps1`, `GitSubmodule.ps1`, `DryRunState.ps1`).
-  - `scripts/Sync-RepoAndWiki.ps1`, `scripts/Sync-WikiOnly.ps1`, `scripts/Sync-Remotes.ps1` for syncing repo and wiki submodules with `-WhatIf` support.
-  - `scripts/Invoke-GradleWithJdk.ps1` and Bash equivalent for running Gradle with a specific JDK.
-  - `scripts/Invoke-PSSA.ps1` for PSScriptAnalyzer linting.
-  - `scripts/README.md` documenting usage, examples, and the script-first workflow.
-- `syncWiki` Gradle task to sync wiki submodule via PowerShell script.
-- `.github/copilot-instructions.md` providing concise AI agent guidance for the repo.
-- `dev-resources/DEPENDENCY_LOCKING.md` documenting strict dependency locking usage, commands, and troubleshooting.
-- `kalm.dependency-locking` convention plugin enforcing `LockMode.STRICT` and `lockAllConfigurations()` for reproducible builds.
+- Singleton dry-run state for PowerShell automation (`DryRunState.ps1`) — prevents any git invocation during `-WhatIf` (9832ac5c49d2).
+- Explicit commit message parameters (`-WikiCommitMessage`, `-RootCommitMessage`) required for sync scripts (e71c1b07a28d).
+- Type-aware Detekt configuration and improved plugin usage (925efefea358, ef1c5df8a116).
+- Dynamic wiring of subproject `apiCheck` and `detekt` tasks in `verifyAll` (1ef72a767c39, 9ef0de174e81).
+- Agent runtime & interaction guidelines (`.github/copilot-instructions.md` and workspace reminders) (ef1c5df8a116, 59301a98cad3, c242c2bc5f3a).
 
 ### Changed
-- Build system improvements:
-  - Detekt tasks now perform type-aware analysis by including `main` outputs and `detekt` configuration in classpath; `jvmTarget` derived from Java toolchain instead of hard-coded.
-  - Plugin declarations use canonical `alias(...)` form; detekt registered with `apply false` in root for subproject opt-in.
-  - `verifyAll` task wires subproject `apiCheck` and `detekt` tasks dynamically after project evaluation.
-  - Enabled `TYPESAFE_PROJECT_ACCESSORS` and made catalog lookups provider-safe using `orElseThrow()` instead of eager `.get()`.
-  - Replaced legacy `allprojects` dependency locking with `gradle.allprojects` and enabled strict mode.
-- Documentation updates:
-  - `CONTRIBUTING.md`, `dev-resources/GIT_STANDARD.md`, `README.md` recommend PowerShell scripts over raw git commands.
-  - Added usage examples and workflows for sync scripts, Gradle with JDK, and dependency locking.
-- PowerShell script enhancements:
-  - Sync scripts require explicit commit messages via `-WikiCommitMessage` and `-RootCommitMessage` parameters (no defaults).
-  - `Invoke-Git` wrapper supports `-CaptureOutput`, `-ReturnExitCode`, `-NoThrow` and respects singleton dry-run state.
-  - Top-level sync scripts set shared dry-run singleton when invoked with `-WhatIf` to short-circuit nested git execution.
+- Centralized repository declarations in `settings.gradle.kts` for plugins & dependencies (59301a98cad3).
+- Enforced strict dependency locking & regenerated lock states (0725233d875b, c504f84fe656, 6324b4b25cd1).
+- Adopted canonical plugin alias form and provider-safe catalog lookups (7940104d8480, bf97e26e76b3).
+- Enhanced build reproducibility and documentation of locking & automation (c504f84fe656, 6324b4b25cd1, c242c2bc5f3a).
+- Improved PowerShell sync scripts: guarded git wrapper (`Invoke-Git`), output capture & clean status handling (9832ac5c49d2, e71c1b07a28d).
+
+### Documentation
+- Updated contribution & automation guidelines to prefer script-first workflows (cf04aa30a16f, 338070690435, c242c2bc5f3a).
+- Added / refined dependency locking, agent guidance, and runtime reminders (c504f84fe656, 6324b4b25cd1, 59301a98cad3).
 
 ### Fixed
-- `NoNameShadowing` violation in `SimpleHillClimber` by naming lambda parameter to avoid implicit `it` shadowing.
-- Empty output from `git status --porcelain` now treated as clean working tree (avoids false failures during dry-run).
+- Clean working tree detection logic for empty `git status` output (9832ac5c49d2).
+- Detekt configuration correctness & JVM target derivation (925efefea358).
+
+### Removed
+- Obsolete commented changelog links and redundant pre-`0.1.0` script placeholders (6afde41b10e7).
+
+### Notes
+- Future release will bundle these changes; consider tagging once wiki & CLI test harness land.
+
 
 ## [0.1.0] - 2025-10-27
 
