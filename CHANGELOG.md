@@ -15,9 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type-aware Detekt configuration and improved plugin usage (925efefea358, ef1c5df8a116).
 - Dynamic wiring of subproject `apiCheck` and `detekt` tasks in `verifyAll` (1ef72a767c39, 9ef0de174e81).
 - Agent runtime & interaction guidelines (`.github/copilot-instructions.md` and workspace reminders) (ef1c5df8a116, 59301a98cad3, c242c2bc5f3a).
+- Git staging preview helper (`Show-GitChangesToStage`) and standardized commit script (`Invoke-Commit.ps1`) for automated workflow (85484ac0b210).
 
 ### Documentation
 - Formatted markdown files under `wiki/` with `dprint` and updated `wiki/.dprint.json` to a working plugin version (commit 240e6755a709e06e63eb543c59590b53af0e7f96).
+- Updated contribution & automation guidelines to prefer script-first workflows (cf04aa30a16f, 338070690435, c242c2bc5f3a).
+- Added / refined dependency locking, agent guidance, and runtime reminders (c504f84fe656, 6324b4b25cd1, 59301a98cad3).
+- Clarified and expanded RedMadRobot Detekt documentation and guidance; added README "Static Analysis" quick-start, updated `CONTRIBUTING.md`, `dev-resources/DOCUMENTATION_RULES.md`, and `dev-resources/CI_CD.md`; adjusted `kalm.detekt-redmadrobot` header and un-ignored functionalTest build outputs for fixture tracking (commit 82052ad).
+- Adjusted wiki line wrapping and commit examples for consistency (d6108e1, f17c92b).
 
 ### Changed
 - Centralized repository declarations in `settings.gradle.kts` for plugins & dependencies (59301a98cad3).
@@ -25,18 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adopted canonical plugin alias form and provider-safe catalog lookups (7940104d8480, bf97e26e76b3).
 - Enhanced build reproducibility and documentation of locking & automation (c504f84fe656, 6324b4b25cd1, c242c2bc5f3a).
 - Improved PowerShell sync scripts: guarded git wrapper (`Invoke-Git`), output capture & clean status handling (9832ac5c49d2, e71c1b07a28d).
-
-### Documentation
-- Updated contribution & automation guidelines to prefer script-first workflows (cf04aa30a16f, 338070690435, c242c2bc5f3a).
-- Added / refined dependency locking, agent guidance, and runtime reminders (c504f84fe656, 6324b4b25cd1, 59301a98cad3).
- - Clarified and expanded RedMadRobot Detekt documentation and guidance; added README "Static Analysis" quick-start, updated `CONTRIBUTING.md`, `dev-resources/DOCUMENTATION_RULES.md`, and `dev-resources/CI_CD.md`; adjusted `kalm.detekt-redmadrobot` header and un-ignored functionalTest build outputs for fixture tracking (commit 82052ad).
+- Added `-PullStrategy` to sync scripts (`Sync-GitSubmodule`, `Sync-WikiOnly.ps1`, `Sync-RepoAndWiki.ps1`) to support `ff-only|merge|rebase`. Documented usage in `scripts/README.md` and agent docs (commit c67072ecfed56d0998a0c427c6c8561e5fdfe3ff).
+- Integrated staging preview into sync scripts before git add operations (85484ac0b210).
 
 ### Fixed
 - Clean working tree detection logic for empty `git status` output (9832ac5c49d2).
 - Detekt configuration correctness & JVM target derivation (925efefea358).
-
-### Changed
-- Added `-PullStrategy` to sync scripts (`Sync-GitSubmodule`, `Sync-WikiOnly.ps1`, `Sync-RepoAndWiki.ps1`) to support `ff-only|merge|rebase`. Documented usage in `scripts/README.md` and agent docs (commit c67072ecfed56d0998a0c427c6c8561e5fdfe3ff).
 
 ### Removed
 - Obsolete commented changelog links and redundant pre-`0.1.0` script placeholders (6afde41b10e7).
