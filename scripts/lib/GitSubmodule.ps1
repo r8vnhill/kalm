@@ -62,6 +62,7 @@ function Sync-GitSubmodule {
 
     # Stage & commit if there are changes
     if (-not (Test-GitClean -Path $path)) {
+        Show-GitChangesToStage -Path $path
         Invoke-Git -GitArgs @('add', '-A') -WorkingDirectory $path -Description "Staging changes in submodule '$($Submodule.Name)'..."
         if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
             throw "Submodule '$($Submodule.Name)' has changes to commit. Please provide a meaningful commit message via -CommitMessage."
@@ -93,6 +94,11 @@ function Update-GitSubmodulePointers {
 
     # Build args array explicitly to avoid parsing issues when the message or paths contain tokens
     $addArgs = @('add') + $SubmodulePaths
+    
+    # Preview what would be staged
+    Write-Information "Submodule pointers to stage:"
+    $SubmodulePaths | ForEach-Object { Write-Information "  $_" }
+    
     Invoke-Git -GitArgs $addArgs -WorkingDirectory $RepoRoot `
         -Description 'Staging submodule pointer updates in main repo...'
 

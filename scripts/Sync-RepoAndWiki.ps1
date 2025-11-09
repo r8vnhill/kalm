@@ -95,6 +95,9 @@ if (-not $SubmoduleOnly) {
     # Optionally stage & commit any remaining root changes (docs, scripts, config)
     if ($IncludeRootChanges) {
         if ($PSCmdlet.ShouldProcess($repoRoot, 'Stage and commit all root changes')) {
+            # Preview what would be staged
+            Show-GitChangesToStage -Path $repoRoot
+            
             Invoke-Git -GitArgs @('add','-A') -WorkingDirectory $repoRoot -Description 'Staging all changes in root repository...'
 
             # If for any reason the generic wrapper didn't stage files (rare), fall back to an explicit add
