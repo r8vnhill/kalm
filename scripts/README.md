@@ -177,6 +177,41 @@ Run PSScriptAnalyzer on PowerShell scripts with project-specific rules.
 
 **Settings:** `scripts/PSScriptAnalyzerSettings.psd1`
 
+### Invoke-PesterWithConfig.ps1
+
+Run Pester using the repository's canonical configuration file. This helper loads
+`scripts/tests/pester.runsettings.psd1`, constructs a `PesterConfiguration` and
+invokes `Invoke-Pester` so tests run consistently on developer machines and CI.
+
+Requirements:
+- Pester 5.x (the script uses `New-PesterConfiguration`)
+- PowerShell 7.4+
+
+Usage:
+```powershell
+# From the repository root
+.\scripts\Invoke-PesterWithConfig.ps1
+
+# Explicit pwsh invocation (useful in CI)
+# pwsh -NoProfile -Command "./scripts/Invoke-PesterWithConfig.ps1"
+```
+
+Notes:
+- The script will report a clear error if `scripts/tests/pester.runsettings.psd1`
+	is missing.
+- Use `-Verbose` when troubleshooting test runs to see the resolved settings path
+	and Pester invocation details.
+
+**CI/CD Integration:**
+
+The Pester test job is automatically executed in GitLab CI/CD on:
+- Merge request events
+- Commits to the default branch
+- Git tag pushes
+
+Test results are published as JUnit XML artifacts for pipeline reporting. See `.gitlab-ci.yml` and `dev-resources/CI_CD.md` for pipeline configuration details.
+
+
 ## Design Principles
 
 All scripts follow these principles:

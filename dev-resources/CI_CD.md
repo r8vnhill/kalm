@@ -4,6 +4,8 @@
 
 - [CI/CD and Release Guide](#cicd-and-release-guide)
   - [Table of Contents](#table-of-contents)
+  - [CI/CD Pipeline Overview](#cicd-pipeline-overview)
+    - [🧪 Pester Tests (PowerShell Scripts)](#-pester-tests-powershell-scripts)
   - [Versioning and Tagging Strategy](#versioning-and-tagging-strategy)
     - [🔖 Centralized Version Management](#-centralized-version-management)
     - [🧭 Semantic Versioning and Git Tagging](#-semantic-versioning-and-git-tagging)
@@ -15,6 +17,40 @@
       - [In GitHub (🌐 Public Mirror at `r8vnhill/kalm`)](#in-github--public-mirror-at-r8vnhillkalm)
     - [🧾 Changelog Guidelines](#-changelog-guidelines)
     - [🏷️ Tagging the Release](#️-tagging-the-release)
+
+## CI/CD Pipeline Overview
+
+The project uses GitLab CI/CD (`.gitlab-ci.yml`) to automate testing and verification. The pipeline consists of multiple stages:
+
+1. **test** — Runs unit and integration tests for scripts and code modules
+2. **build** — Compiles and packages project artifacts (Gradle builds)
+3. **verify** — Executes static analysis, API compatibility checks, and comprehensive verification tasks
+
+### 🧪 Pester Tests (PowerShell Scripts)
+
+The `pester:tests` job validates PowerShell automation scripts using [Pester 5.x](https://pester.dev):
+
+- **Stage:** `test`
+- **Image:** `mcr.microsoft.com/powershell:7.4-alpine-3.20`
+- **Script:** `./scripts/Invoke-PesterWithConfig.ps1`
+- **Artifacts:** Test results are published as JUnit XML reports under `build/test-results/pester/`
+
+**When it runs:**
+- On merge request events
+- On commits to the default branch (`main`)
+- When a Git tag is pushed
+
+**Local testing:**
+```powershell
+# Run Pester tests locally using the same configuration as CI
+./scripts/Invoke-PesterWithConfig.ps1
+```
+
+**Configuration:**
+The Pester job loads its settings from `scripts/tests/pester.runsettings.psd1`. To add new tests, place them under `scripts/tests/` and update the runsettings file accordingly.
+
+> [!tip]
+> Use `-Verbose` to see detailed output during local runs: `./scripts/Invoke-PesterWithConfig.ps1 -Verbose`
 
 ## Versioning and Tagging Strategy
 

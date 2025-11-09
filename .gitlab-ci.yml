@@ -1,0 +1,65 @@
+# GitLab CI/CD Pipeline Configuration for KALM
+#
+# This pipeline validates PowerShell scripts, runs Gradle builds, and executes tests.
+# For project details, see: https://gitlab.com/r8vnhill/kalm
+
+stages:
+  - test
+  - build
+  - verify
+
+# Default settings applied to all jobs unless overridden
+default:
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
+# ============================================================================
+# PowerShell Script Tests (Pester)
+# ============================================================================
+
+pester:tests:
+  stage: test
+  image: mcr.microsoft.com/powershell:7.4-alpine-3.20
+  before_script:
+    - pwsh -NoProfile -Command "Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -Scope CurrentUser -ErrorAction Stop"
+  script:
+    - pwsh -NoProfile -Command "./scripts/Invoke-PesterWithConfig.ps1"
+  artifacts:
+    when: always
+    reports:
+      junit: build/test-results/pester/*.xml
+    paths:
+      - build/test-results/pester/*.xml
+    expire_in: 7 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# ============================================================================
+# Gradle Build and Verification
+# ============================================================================
+# 
+# Placeholder jobs for Gradle-based build and verification tasks.
+# Uncomment and configure these when integrating Gradle CI steps.
+#
+# gradle:build:
+#   stage: build
+#   image: eclipse-temurin:22-jdk-alpine
+#   script:
+#     - ./gradlew build --no-daemon --stacktrace
+#   artifacts:
+#     paths:
+#       - build/libs/
+#     expire_in: 1 week
+#
+# gradle:verify:
+#   stage: verify
+#   image: eclipse-temurin:22-jdk-alpine
+#   script:
+#     - ./gradlew verifyAll --no-daemon --stacktrace
+#   dependencies:
+#     - gradle:build
