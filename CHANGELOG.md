@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dynamic wiring of subproject `apiCheck` and `detekt` tasks in `verifyAll` (1ef72a767c39, 9ef0de174e81).
 - Agent runtime & interaction guidelines (`.github/copilot-instructions.md` and workspace reminders) (ef1c5df8a116, 59301a98cad3, c242c2bc5f3a).
 - Git staging preview helper (`Show-GitChangesToStage`) and standardized commit script (`Invoke-Commit.ps1`) for automated workflow (85484ac0b210).
+- GitLab CI/CD pipeline with Pester test automation (9d06352):
+  - `.gitlab-ci.yml` with `pester:tests` job (PowerShell 7.4 Alpine, Pester 5.7.1)
+  - `Invoke-PesterWithConfig.ps1` helper for consistent test execution
+  - Pester tests for `DryRunState.ps1` (`scripts/tests/DryRunState.Tests.ps1`)
+  - Pester configuration file (`scripts/tests/pester.runsettings.psd1`)
 
 ### Documentation
 - Formatted markdown files under `wiki/` with `dprint` and updated `wiki/.dprint.json` to a working plugin version (commit 240e6755a709e06e63eb543c59590b53af0e7f96).
@@ -24,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarified and expanded RedMadRobot Detekt documentation and guidance; added README "Static Analysis" quick-start, updated `CONTRIBUTING.md`, `dev-resources/DOCUMENTATION_RULES.md`, and `dev-resources/CI_CD.md`; adjusted `kalm.detekt-redmadrobot` header and un-ignored functionalTest build outputs for fixture tracking (commit 82052ad).
 - Adjusted wiki line wrapping and commit examples for consistency (d6108e1, f17c92b).
 - Synced wiki submodule to d1b4831 (parent d063502) — adds new docs and PDFs; updates wiki `.gitignore`.
+- Added CI/CD pipeline documentation in `dev-resources/CI_CD.md` with Pester test job details and local testing instructions (9d06352).
+- Updated `scripts/README.md` with Pester helper usage, CI integration notes, and test execution examples (9d06352).
 
 ### Changed
 - Centralized repository declarations in `settings.gradle.kts` for plugins & dependencies (59301a98cad3).
