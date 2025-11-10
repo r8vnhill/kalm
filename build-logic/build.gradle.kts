@@ -14,11 +14,11 @@ dependencies {
     // Adds the Kotlin Gradle Plugin to enable use in custom build logic and DSL extensions
     implementation(libs.kotlin.gradle.plugin)
     implementation(libs.detekt.gradle.plugin)
-    implementation("com.github.ben-manes:gradle-versions-plugin:0.53.0")
+    implementation(libs.ben.manes.versions.plugin)
     // Add RedMadRobot Detekt plugin for the kalm.detekt-redmadrobot convention
     // Note: This plugin must be applied from Gradle Plugin Portal in consuming projects
     // We declare it here so the convention plugin can reference it
-    implementation("com.redmadrobot.detekt:com.redmadrobot.detekt.gradle.plugin:0.19.1")
+    implementation(libs.detekt.redmadrobot.plugin)
 }
 
 // Register a Gradle TestKit-based functional test suite to validate convention plugins end-to-end.
@@ -45,40 +45,30 @@ tasks.named("check").configure {
 
 // Configure toolchains to consistently use Java 22 across both
 // Java and Kotlin compiler settings.
-with(JvmToolchain) {
-    java {
-        toolchain {
-            setDefaultJavaVersion()
-        }
-    }
+// Read default Java version from a project property so it can be centralized in gradle.properties.
+val BUILDLOGIC_DEFAULT_JAVA_VERSION: Int = (findProperty("buildlogic.java.version") as String?)?.toInt() ?: 22
 
-    kotlin {
-        jvmToolchain {
-            setDefaultJavaVersion()
-        }
+java {
+    toolchain {
+        setDefaultJavaVersion()
     }
 }
 
-// Toolchain configuration utility for Gradle builds.
-// Defines a reusable extension to consistently apply a Java version.
-/**
- * Utility for configuring a consistent Java toolchain version across Gradle builds logic.
- *
- * Provides a reusable extension to set the default Java language version used across both Java and Kotlin toolchains.
- *
- * @property DEFAULT_JAVA_VERSION The Java language version applied across all build logic (Java 22).
- */
-object JvmToolchain {
-    private const val DEFAULT_JAVA_VERSION = 22
+kotlin {
+    jvmToolchain {
+        setDefaultJavaVersion()
+    }
+}
 
-    /**
-     * Sets the language version of the current Java toolchain to [DEFAULT_JAVA_VERSION].
-     *
-     * Applicable to both [JavaPluginExtension.toolchain] and
-     * [org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension.jvmToolchain].
-     *
-     * @receiver The [JavaToolchainSpec] instance being configured.
-     */
-    fun JavaToolchainSpec.setDefaultJavaVersion(): Unit =
-        languageVersion.set(JavaLanguageVersion.of(DEFAULT_JAVA_VERSION))
+/**
+ * Extension function to set the Java language version for a JavaToolchainSpec.
+ *
+ * This reads the project property `buildlogic.java.version` at execution time
+ * (not script compilation time), falling back to 22 when not provided. Using
+ * an extension function avoids capturing the script instance in an object
+ * initializer, which is disallowed in Gradle Kotlin script compilation.
+ */
+fun JavaToolchainSpec.setDefaultJavaVersion(): Unit {
+    val defaultJavaVersion = (project.findProperty("buildlogic.java.version") as String?)?.toInt() ?: 22
+    languageVersion.set(JavaLanguageVersion.of(defaultJavaVersion))
 }

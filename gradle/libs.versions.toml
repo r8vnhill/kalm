@@ -11,6 +11,9 @@ kotlin-bin-compatibility-validator = "0.18.1"
 version-catalog-update = "1.0.1"
 
 [libraries]
+# Gradle plugins used in build-logic dependencies
+ben-manes-versions-plugin = { module = "com.github.ben-manes:gradle-versions-plugin", version.ref = "ben-manes-versions" }
+detekt-redmadrobot-plugin = { module = "com.redmadrobot.detekt:com.redmadrobot.detekt.gradle.plugin", version.ref = "detekt-redmadrobot" }
 # Optional formatting plugin for Detekt (requires detekt CLI/tooling)
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
