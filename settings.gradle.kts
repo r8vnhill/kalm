@@ -2,6 +2,7 @@
  * Copyright (c) 2025, Ignacio Slater M.
  * 2-Clause BSD License.
  */
+import org.gradle.api.GradleException
 // Enable typesafe accessors for the version catalog (generated `libs` accessors)
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 // region PLUGIN MANAGEMENT
@@ -20,7 +21,11 @@ pluginManagement {
 
     plugins {
         val foojayResolverVersion = providers.gradleProperty("plugin.foojay-resolver.version")
-            .getOrElse("1.0.0")
+            .orNull
+            ?: throw GradleException(
+                "Property 'plugin.foojay-resolver.version' is required. " +
+                    "Run ':syncVersionProperties' to mirror the 'foojay-resolver' alias from gradle/libs.versions.toml."
+            )
 
         id("org.gradle.toolchains.foojay-resolver-convention") version foojayResolverVersion
     }

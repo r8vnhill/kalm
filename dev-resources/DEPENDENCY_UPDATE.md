@@ -30,7 +30,18 @@ $env:JAVA_HOME = 'C:\Program Files\Java\jdk-22'
 
 ## 2️⃣ Apply manual edits
 
-Some versions (e.g., toolchain, Foojay resolver) are defined in `gradle.properties` and must be updated manually when needed.
+Some versions are mirrored from the version catalog to `gradle.properties` files for use in `settings.gradle.kts` (e.g., `foojay-resolver`). These are automatically synchronized by the `:syncVersionProperties` and `:syncBuildLogicVersionProperties` tasks, which run as part of `preflight`.
+
+If you need to manually sync after updating the version catalog:
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-22'
+.\gradlew syncVersionProperties syncBuildLogicVersionProperties --no-daemon
+```
+
+This ensures that:
+- `gradle.properties` → `plugin.foojay-resolver.version` matches the catalog
+- `build-logic/gradle.properties` → `plugin.foojay-resolver.version` matches the catalog
 
 ## 3️⃣ Regenerate lockfiles & verify
 
@@ -62,17 +73,15 @@ If plugin accessors need regeneration (after plugin ID/name changes):
 
 Updated:
 - org.jetbrains.kotlin:kotlin-gradle-plugin 2.2.0-RC → 2.2.20-Beta2
-
-Manual:
-- gradle.properties: plugin.foojay-resolver.version 1.0.0 → 1.1.0
+- foojay-resolver 1.0.0 → 1.1.0 (auto-synced to gradle.properties)
 ```
 
 ## Notes
 
-* VCU does **not** modify `gradle.properties`; edit those entries manually.
+* The `:syncVersionProperties` and `:syncBuildLogicVersionProperties` tasks automatically keep property versions synchronized with the version catalog.
 * Ben-Manes rejects unstable candidates (`alpha`, `beta`, `rc`, etc.) by default.
-* If Gradle fails with *“Dependency requires at least JVM runtime X”*, rerun with that JDK.
-* Always review diffs in `gradle/libs.versions.toml`, the generated lockfiles (`gradle.lockfile`, `settings-gradle.lockfile`, `<module>/gradle.lockfile`), and the reports under `build/dependencyUpdates/`.
+* If Gradle fails with *"Dependency requires at least JVM runtime X"*, rerun with that JDK.
+* Always review diffs in `gradle/libs.versions.toml`, the `gradle.properties` files, the generated lockfiles (`gradle.lockfile`, `settings-gradle.lockfile`, `<module>/gradle.lockfile`), and the reports under `build/dependencyUpdates/`.
 
 >[!TIP] That’s it!
 > Run `updateDependencies`, review the reports, and verify with a full build before committing.

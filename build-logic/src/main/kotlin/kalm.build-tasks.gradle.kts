@@ -13,6 +13,7 @@ import org.gradle.kotlin.dsl.withType
 import org.gradle.process.ExecOperations
 import java.io.File
 import javax.inject.Inject
+import tasks.SyncVersionPropertiesTask
 
 /**
  * Shared wiki sync task used by the root project.
@@ -67,6 +68,10 @@ tasks.withType<DependencyUpdatesTask>().configureEach {
     )
 }
 
+val versionPropertyMappings = mapOf(
+    "plugin.foojay-resolver.version" to "foojay-resolver"
+)
+
 val dependencyMaintenance = tasks.register("dependencyMaintenance") {
     group = "dependencies"
     description = "Runs version catalog updates and dependency update reports."
@@ -76,6 +81,20 @@ val dependencyMaintenance = tasks.register("dependencyMaintenance") {
 val verifyAll = tasks.register("verifyAll") {
     group = "verification"
     description = "Runs tests, static analysis, and API compatibility checks in one go."
+}
+
+val syncVersionProperties = tasks.register<SyncVersionPropertiesTask>("syncVersionProperties") {
+    propertyMappings.set(versionPropertyMappings)
+    versionCatalogFile.set(rootProject.layout.projectDirectory.file("gradle/libs.versions.toml"))
+    propertiesFile.set(rootProject.layout.projectDirectory.file("gradle.properties"))
+    mustRunAfter("versionCatalogUpdate")
+}
+
+val syncBuildLogicVersionProperties = tasks.register<SyncVersionPropertiesTask>("syncBuildLogicVersionProperties") {
+    propertyMappings.set(versionPropertyMappings)
+    versionCatalogFile.set(rootProject.layout.projectDirectory.file("gradle/libs.versions.toml"))
+    propertiesFile.set(rootProject.layout.projectDirectory.file("build-logic/gradle.properties"))
+    mustRunAfter("versionCatalogUpdate", "syncVersionProperties")
 }
 
 gradle.projectsEvaluated {
@@ -94,7 +113,7 @@ gradle.projectsEvaluated {
 tasks.register("preflight") {
     group = "verification"
     description = "Runs verification gates and dependency maintenance helpers."
-    dependsOn(verifyAll, dependencyMaintenance)
+    dependsOn(verifyAll, dependencyMaintenance, syncVersionProperties, syncBuildLogicVersionProperties)
 }
 
 tasks.register<SyncWikiTask>("syncWiki") {

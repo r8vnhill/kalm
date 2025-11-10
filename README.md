@@ -21,6 +21,11 @@
 
 ## 🛠️ Getting Started
 
+### Requirements
+
+- **JDK 22 or newer** (JDK 25 is not yet supported by Detekt; use JDK 22 or 23)
+- Gradle 8.14+ (included via wrapper)
+
 You can clone and build the project to explore the current structure.
 
 ```bash

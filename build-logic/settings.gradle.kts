@@ -3,24 +3,22 @@
  * 2-Clause BSD License.
  */
 
-// region ROOT PROJECT NAME
+import org.gradle.api.GradleException
+
+// # ROOT PROJECT NAME
 // This name appears in IDEs, build output, and when publishing artifacts.
 rootProject.name = "build-logic"
-// endregion
 
-// region PLUGIN RESOLUTION MANAGEMENT
-// Controls how Gradle locates plugins declared in `plugins {}` blocks,
-// such as those in convention plugins or build logic scripts.
+// # PLUGIN RESOLUTION MANAGEMENT
+// Controls how Gradle locates plugins declared in `plugins {}` blocks, such as those in convention plugins or build logic scripts.
 pluginManagement {
     repositories {
         gradlePluginPortal() // Primary source for official and community Gradle plugins
         mavenCentral()       // Fallback for plugins published to Maven Central
     }
 }
-// endregion
 
-// region DEPENDENCY RESOLUTION MANAGEMENT
-
+// # DEPENDENCY RESOLUTION MANAGEMENT
 // Configures central repository resolution and version catalogs.
 // Ensures consistent dependency resolution across all modules.
 @Suppress("UnstableApiUsage") // Needed for `repositoriesMode`, which is still incubating
@@ -40,16 +38,18 @@ dependencyResolutionManagement {
         }
     }
 }
-// endregion
 
-// region TOOLCHAIN RESOLUTION
-
-// Toolchain resolution support via Foojay API
-//
+// # TOOLCHAIN RESOLUTION
 // Adds automatic resolution of JDKs from Foojay when using toolchains.
 // Recommended in clean environments or CI where the JDK must be downloaded.
 // See: https://docs.gradle.org/current/userguide/toolchains.html#sub:download_repositories
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
+    val foojayResolverVersion = providers.gradleProperty("plugin.foojay-resolver.version")
+        .orNull
+        ?: throw GradleException(
+            "Property 'plugin.foojay-resolver.version' is required. " +
+                "Define it in gradle.properties or run ':syncVersionProperties' to sync from gradle/libs.versions.toml."
+        )
+
+    id("org.gradle.toolchains.foojay-resolver-convention") version foojayResolverVersion
 }
-// endregion

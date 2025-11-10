@@ -6,7 +6,7 @@ PowerShell automation tools for Git, Gradle, and project maintenance workflows.
 
 - **PowerShell 7.4+** (cross-platform)
 - **Git 2.20+**
-- **JDK** (for Gradle scripts)
+- **JDK 22 or newer** (for Gradle scripts; JDK 25 not yet supported by Detekt)
 
 ## Git & Submodule Sync
 
@@ -122,8 +122,8 @@ Run Gradle with a specific JDK version (bypasses JAVA_HOME).
 # Pass through gradle arguments after JdkPath
 .\scripts\Invoke-GradleWithJdk.ps1 -JdkPath '/usr/lib/jvm/java-22-openjdk' -GradleArgument '--no-daemon', 'verifyAll'
 
-# Example: run tests with JDK 21
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-21' -GradleArgument 'test', '--rerun'
+# Example: run preflight with JDK 22
+.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'preflight', '--no-parallel'
 ```
 
 **Parameters:**
@@ -246,8 +246,8 @@ Notes:
 # Verify build with JDK 22
 .\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'verifyAll'
 
-# Run benchmarks with JDK 21
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-21' -GradleArgument ':benchmark:jmh'
+# Run benchmarks with JDK 22
+.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument ':benchmark:jmh'
 ```
 
 ## Troubleshooting

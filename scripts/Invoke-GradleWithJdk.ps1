@@ -79,7 +79,8 @@ function Invoke-GradleWithJdk {
     )
 
     $resolvedWorkingDirectory = (Resolve-Path -Path $WorkingDirectory -ErrorAction Stop).ProviderPath
-    $gradleExecutable = Join-Path -Path $resolvedWorkingDirectory -ChildPath 'gradlew'
+    $gradleWrapperName = if ($IsWindows) { 'gradlew.bat' } else { 'gradlew' }
+    $gradleExecutable = Join-Path -Path $resolvedWorkingDirectory -ChildPath $gradleWrapperName
     if (-not (Test-Path -Path $gradleExecutable -PathType Leaf)) {
         throw [System.IO.FileNotFoundException]::new("Gradle wrapper not found at '$gradleExecutable'.")
     }
@@ -109,19 +110,29 @@ function Invoke-GradleWithJdk {
     $startedAt = Get-Date
     $exitCode = 0
     $errorRecord = $null
+    $process = $null
 
     try {
         Write-Verbose ('Invoking {0} {1}' -f $gradleExecutable, ($GradleArgument -join ' '))
         Push-Location -Path $resolvedWorkingDirectory
         try {
-            & $gradleExecutable @GradleArgument
-            $lastExitCodeVar = Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue
-            if ($null -ne $lastExitCodeVar) {
-                $exitCode = [int]$lastExitCodeVar.Value
+            $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+            $startInfo.FileName = $gradleExecutable
+            $startInfo.WorkingDirectory = $resolvedWorkingDirectory
+            $startInfo.UseShellExecute = $false
+            $startInfo.CreateNoWindow = $true
+            foreach ($arg in $GradleArgument) {
+                $startInfo.ArgumentList.Add($arg)
             }
-            else {
-                $exitCode = 0
+
+            $process = [System.Diagnostics.Process]::new()
+            $process.StartInfo = $startInfo
+            if (-not $process.Start()) {
+                throw [System.ComponentModel.Win32Exception]::new('Failed to start the Gradle wrapper.')
             }
+
+            $process.WaitForExit()
+            $exitCode = $process.ExitCode
         }
         finally {
             Pop-Location
@@ -129,16 +140,25 @@ function Invoke-GradleWithJdk {
     }
     catch {
         $errorRecord = $_
-        $lastExitCodeVar = Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue
-        if ($null -ne $lastExitCodeVar) {
-            $exitCode = [int]$lastExitCodeVar.Value
+        if ($null -ne $process -and $process.HasExited) {
+            $exitCode = $process.ExitCode
         }
         else {
-            $exitCode = -1
+            $lastExitCodeVar = Get-Variable -Name LASTEXITCODE -ErrorAction SilentlyContinue
+            if ($null -ne $lastExitCodeVar) {
+                $exitCode = [int]$lastExitCodeVar.Value
+            }
+            else {
+                $exitCode = -1
+            }
         }
         $PSCmdlet.WriteError($errorRecord)
     }
     finally {
+        if ($null -ne $process) {
+            $process.Dispose()
+        }
+
         if ($PSBoundParameters.ContainsKey('JdkPath')) {
             if ($null -ne $originalJavaHome) {
                 $env:JAVA_HOME = $originalJavaHome
