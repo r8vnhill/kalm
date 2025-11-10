@@ -47,10 +47,13 @@ catch {
 }
 
 # Resolve expected configuration file path
-$settingsPath = Join-Path $PSScriptRoot 'tests/pester.runsettings.psd1'
+$settingsPath = Join-Path $PSScriptRoot tests pester.runsettings.psd1
 if (-not (Test-Path -LiteralPath $settingsPath)) {
-	Write-Error "Pester settings file not found: $settingsPath`nCreate a 'pester.runsettings.psd1' under 'scripts/tests' or run Invoke-Pester manually."
-	throw "Missing Pester runsettings file"
+	Write-Error @(
+		"Pester settings file not found: $settingsPath",
+		"Create a 'pester.runsettings.psd1' under 'scripts/tests' or run Invoke-Pester manually."
+	) -join [Environment]::NewLine
+	throw 'Missing Pester runsettings file'
 }
 
 # Load configuration and execute tests
