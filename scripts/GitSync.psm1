@@ -13,7 +13,14 @@ $ErrorActionPreference = 'Stop'
 
 # Dot-source component scripts (keep load order: low-level helpers first)
 $libDir = Join-Path -Path $PSScriptRoot -ChildPath 'lib'
-. (Join-Path -Path $libDir -ChildPath 'DryRunState.ps1')
+# Load DryRunState as a module (prefer module import over dot-sourcing)
+$dryRunModule = Join-Path -Path $libDir -ChildPath 'DryRunState.psm1'
+if (Test-Path $dryRunModule) {
+	Import-Module $dryRunModule -Force
+}
+else {
+	Throw "Missing module: $dryRunModule"
+}
 . (Join-Path -Path $libDir -ChildPath 'GitInvoke.ps1')
 . (Join-Path -Path $libDir -ChildPath 'GitHelpers.ps1')
 . (Join-Path -Path $libDir -ChildPath 'GitSubmodule.ps1')

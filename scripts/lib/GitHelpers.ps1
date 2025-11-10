@@ -74,3 +74,33 @@ function Show-GitChangesToStage {
     Write-Information "Files that would be staged in ${Path}:"
     $outArray | ForEach-Object { Write-Information "  $_" }
 }
+
+function Ensure-GitSubmodulesInitialized {
+    <#
+    .SYNOPSIS
+    Initialize git submodules if a `.gitmodules` file exists in the repository root.
+
+    .DESCRIPTION
+    Runs `git submodule update --init --recursive` from the repository root. This
+    function is safe under `-WhatIf` and respects the repository-wide dry-run
+    singleton (`Get-KalmDryRun`) because it delegates to `Invoke-Git` which
+    checks those conditions.
+
+    .PARAMETER RepoRoot
+    Path to repository root. Defaults to current location.
+    #>
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param([string] $RepoRoot = (Get-Location).Path)
+
+    $gitmodules = Join-Path -Path $RepoRoot -ChildPath '.gitmodules'
+    if (-not (Test-Path $gitmodules)) {
+        # No submodules declared, nothing to do.
+        return
+    }
+
+    $description = 'Initialize and update git submodules (recursive)'
+    $target = "git submodule update --init --recursive in $RepoRoot"
+    if (-not $PSCmdlet.ShouldProcess($target, 'git submodule update')) { return }
+
+    Invoke-Git -GitArgs @('submodule','update','--init','--recursive') -WorkingDirectory $RepoRoot -Description $description -NoThrow
+}

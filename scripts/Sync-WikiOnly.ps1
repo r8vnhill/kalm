@@ -55,6 +55,9 @@ Import-Module -Force (Join-Path $PSScriptRoot 'GitSync.psm1')
 if ($PSBoundParameters.ContainsKey('WhatIf')) { Set-KalmDryRun $true }
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
+# Ensure submodules are initialized before attempting wiki operations
+Ensure-GitSubmodulesInitialized -RepoRoot $repoRoot
+
 $subs = Get-GitSubmodules -RepoRoot $repoRoot -DefaultBranch 'main' | Where-Object { $_.Name -match 'wiki' -or $_.Path -match 'wiki' }
 if ($subs.Count -eq 0) { Write-Warning 'Wiki submodule not found.'; return }
 $wiki = $subs[0]
