@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved PowerShell sync scripts: guarded git wrapper (`Invoke-Git`), output capture & clean status handling (9832ac5c49d2, e71c1b07a28d).
 - Added `-PullStrategy` to sync scripts (`Sync-GitSubmodule`, `Sync-WikiOnly.ps1`, `Sync-RepoAndWiki.ps1`) to support `ff-only|merge|rebase`. Documented usage in `scripts/README.md` and agent docs (commit c67072ecfed56d0998a0c427c6c8561e5fdfe3ff).
 - Integrated staging preview into sync scripts before git add operations (85484ac0b210).
+- Centralized foojay-resolver version using version catalog; added build-logic/gradle.properties sync task; required JDK 22+ for build-logic (ed626f3).
+- Centralized plugin versions (ben-manes, detekt-redmadrobot) into version catalog; added `buildlogic.java.version` property (default 22) to gradle.properties; updated build-logic to use catalog references for plugins and toolchain configuration (e696534).
+- Updated Gradle wrapper from 9.1.0 to 9.2.0; sorted detekt dependencies alphabetically in libs.versions.toml for consistency (49a0b35).
 
 ### Fixed
 - Clean working tree detection logic for empty `git status` output (9832ac5c49d2).
