@@ -106,4 +106,4 @@ Plugins in `build-logic/src/main/kotlin/`:
 - Detekt fails on new config? → `./gradlew :core:detekt --write-locks`
 - Wiki diverged? → `./scripts/Sync-WikiOnly.ps1 -PullStrategy merge -WhatIf` (preview first)
 
-Last updated: 2025-11-09
+Last updated: 2025-11-11

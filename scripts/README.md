@@ -8,6 +8,21 @@ PowerShell automation tools for Git, Gradle, and project maintenance workflows.
 - **Git 2.20+**
 - **JDK** (for Gradle scripts)
 
+## Logging
+
+All entry-point scripts initialize the `KalmScriptLogger` class from `scripts/lib/ScriptLogging.psm1`. Logs are written under `logs/<script>.log`, rotated at ~5 MB (five archives kept). Include the module via `using module` at the top of any new script and emit log lines as needed:
+
+```powershell
+#Requires -Version 7.4
+using module ./lib/ScriptLogging.psm1
+
+$logger = [KalmScriptLogger]::Start('MyScript', $null)
+$logger.LogInfo('Script started.','Startup')
+[KalmScriptLogger]::LogIfConfigured([KalmLogLevel]::Debug, 'Detailed trace message', 'Diagnostics')
+```
+
+Logging is enabled even in `-WhatIf` scenarios so CI/local runs share a consistent audit trail.
+
 ## Git & Submodule Sync
 
 ### GitSync.psm1 Module

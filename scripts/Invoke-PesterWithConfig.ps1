@@ -34,15 +34,20 @@ This script accepts no parameters; configuration is pulled from
 
 # Require a recent PowerShell runtime and enable strict mode
 #Requires -Version 7.4
+using module ./lib/ScriptLogging.psm1
 param()
 
 Set-StrictMode -Version 3.0
+
+$logger = [KalmScriptLogger]::Start('Invoke-PesterWithConfig', $null)
+$logger.LogInfo('Starting Pester execution with repo configuration.','Startup')
 
 try {
 	Import-Module Pester -ErrorAction Stop
 }
 catch {
 	Write-Error "Failed to import Pester module. Ensure Pester 5.x is installed and available. $_"
+	$logger.LogError(("Failed to import Pester module: {0}" -f $_.Exception.Message),'Failure')
 	throw
 }
 
@@ -61,4 +66,12 @@ $settings = Import-PowerShellDataFile -Path $settingsPath
 $config = New-PesterConfiguration -Hashtable $settings
 
 Write-Verbose "Invoking Pester with configuration from: $settingsPath"
-Invoke-Pester -Configuration $config
+try {
+	$logger.LogInfo(("Invoking Pester with settings '{0}'." -f $settingsPath),'Execution')
+	Invoke-Pester -Configuration $config
+	$logger.LogInfo('Pester execution complete.','Summary')
+}
+catch {
+	$logger.LogError(("Pester run failed: {0}" -f $_.Exception.Message),'Failure')
+	throw
+}

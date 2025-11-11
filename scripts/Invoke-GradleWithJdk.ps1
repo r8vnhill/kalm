@@ -1,4 +1,5 @@
 #Requires -Version 7.4
+using module ./lib/ScriptLogging.psm1
 
 <#
 .SYNOPSIS
@@ -61,7 +62,8 @@ param(
 )
 Set-StrictMode -Version 3.0
 
-
+$logger = [KalmScriptLogger]::Start('Invoke-GradleWithJdk', $null)
+$logger.LogInfo(("Script started with WorkingDirectory='{0}', GradleArgument='{1}', JdkPath='{2}'" -f $WorkingDirectory, ($GradleArgument -join ' '), ($JdkPath -or '<builtin>')),'Startup')
 function Invoke-GradleWithJdk {
     [CmdletBinding()]
     param(
@@ -112,6 +114,7 @@ function Invoke-GradleWithJdk {
 
     try {
         Write-Verbose ('Invoking {0} {1}' -f $gradleExecutable, ($GradleArgument -join ' '))
+        $logger.LogInfo(("Invoking Gradle: {0} {1}" -f $gradleExecutable, ($GradleArgument -join ' ')),'Execution')
         Push-Location -Path $resolvedWorkingDirectory
         try {
             & $gradleExecutable @GradleArgument
@@ -137,6 +140,7 @@ function Invoke-GradleWithJdk {
             $exitCode = -1
         }
         $PSCmdlet.WriteError($errorRecord)
+        $logger.LogError(("Gradle failed with exit code {0}: {1}" -f $exitCode, $_.Exception.Message),'Execution')
     }
     finally {
         if ($PSBoundParameters.ContainsKey('JdkPath')) {
@@ -162,6 +166,8 @@ function Invoke-GradleWithJdk {
         $PSCmdlet.WriteError($failure)
         $errorRecord = $failure
     }
+
+    $logger.LogInfo(("Gradle finished with exit code {0} (success: {1})" -f $exitCode, ($exitCode -eq 0)),'Summary')
 
     [pscustomobject]@{
         Command          = $gradleExecutable

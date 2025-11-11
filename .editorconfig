@@ -14,3 +14,31 @@ dotnet_style_coalesce_expression = true:suggestion
 dotnet_style_operator_placement_when_wrapping = beginning_of_line:suggestion
 csharp_new_line_before_open_brace = all
 csharp_indent_case_contents = true
+
+[*.ps1]
+indent_style = space
+indent_size = 4
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 100
+
+[*.psm1]
+indent_style = space
+indent_size = 4
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 100
+
+[*.psd1]
+indent_style = space
+indent_size = 4
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 100
+

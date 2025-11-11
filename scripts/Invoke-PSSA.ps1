@@ -1,4 +1,5 @@
 #Requires -Version 7.5
+using module ./lib/ScriptLogging.psm1
 [CmdletBinding()]
 param(
     [string] $Settings = "$PSScriptRoot/PSScriptAnalyzerSettings.psd1",
@@ -10,6 +11,9 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+$logger = [KalmScriptLogger]::Start('Invoke-PSSA', $null)
+$logger.LogInfo(("Starting PSScriptAnalyzer with settings '{0}'." -f $Settings),'Startup')
+
 function Install-PSScriptAnalyzerIfMissing {
     # Already available?
     if (Get-Command Invoke-ScriptAnalyzer -ErrorAction SilentlyContinue) {
@@ -17,6 +21,7 @@ function Install-PSScriptAnalyzerIfMissing {
     }
 
     Write-Output 'PSScriptAnalyzer not found. Installing...' 
+    [KalmScriptLogger]::LogIfConfigured([KalmLogLevel]::Warning, 'PSScriptAnalyzer missing; attempting installation.','Setup')
 
     # Make sure TLS 1.2 is used for PSGallery over HTTPS
     try {
@@ -59,15 +64,17 @@ function Install-PSScriptAnalyzerIfMissing {
 }
 
 # --- main ---
-if (-not (Test-Path -LiteralPath $Settings)) {
-    throw "Settings file not found: $Settings"
-}
+try {
+    if (-not (Test-Path -LiteralPath $Settings)) {
+        throw "Settings file not found: $Settings"
+    }
 
-Write-Output 'Running PSScriptAnalyzer...'
-Write-Output "Settings: $Settings"
-Write-Output "Paths: $($Paths -join ', ')"
+    Write-Output 'Running PSScriptAnalyzer...'
+    Write-Output "Settings: $Settings"
+    Write-Output "Paths: $($Paths -join ', ')"
+    $logger.LogInfo(("Analyzing paths: {0}" -f ($Paths -join ', ')),'Execution')
 
-Install-PSScriptAnalyzerIfMissing
+    Install-PSScriptAnalyzerIfMissing
 
 $allResults = @()
 foreach ($p in $Paths) {
@@ -84,10 +91,22 @@ if ($allResults) {
         Sort-Object Severity, RuleName, ScriptName, Line |
         Format-Table Severity, RuleName, ScriptName, Line, Message -Auto
 
-    if ($allResults.Where({ $_.Severity -eq 'Error' }).Count -gt 0) { exit 1 }
-    else { Write-Warning 'PSScriptAnalyzer found warnings/information.' }
+    if ($allResults.Where({ $_.Severity -eq 'Error' }).Count -gt 0) {
+        $logger.LogWarning('PSScriptAnalyzer reported errors.','Summary')
+        exit 1
+    }
+    else { 
+        Write-Warning 'PSScriptAnalyzer found warnings/information.' 
+        $logger.LogWarning('PSScriptAnalyzer completed with warnings/information.','Summary')
+    }
 }
 else {
     Write-Output 'No issues found. ✅'
+    $logger.LogInfo('PSScriptAnalyzer reported no issues.','Summary')
+}
+}
+catch {
+    $logger.LogError(("Invoke-PSSA failed: {0}" -f $_.Exception.Message),'Failure')
+    throw
 }
 

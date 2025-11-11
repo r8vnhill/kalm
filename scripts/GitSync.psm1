@@ -1,4 +1,5 @@
 #Requires -Version 7.4
+using module ./lib/ScriptLogging.psm1
 <#
 .SYNOPSIS
 Lightweight loader module for Git helper components.

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > This section summarizes the net state of the project since `0.1.0`. Entries reflect current functionality only (removed or superseded items are omitted). Commit hashes are included for traceability.
 
 ### Added
+- Class-based `KalmScriptLogger` (rotating file logger + enum-based levels) with instrumentation across repository PowerShell scripts (`Invoke-Commit`, `Sync-*`, `Invoke-GradleWithJdk`, `Invoke-PesterWithConfig`, `Invoke-PSSA`, and git helpers).
 - Singleton dry-run state for PowerShell automation (`DryRunState.ps1`) — prevents any git invocation during `-WhatIf` (9832ac5c49d2).
 - Explicit commit message parameters (`-WikiCommitMessage`, `-RootCommitMessage`) required for sync scripts (e71c1b07a28d).
 - Type-aware Detekt configuration and improved plugin usage (925efefea358, ef1c5df8a116).
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pester configuration file (`scripts/tests/pester.runsettings.psd1`)
 
 ### Documentation
+- Documented the new logging infrastructure and usage in `scripts/README.md`.
 - Formatted markdown files under `wiki/` with `dprint` and updated `wiki/.dprint.json` to a working plugin version (commit 240e6755a709e06e63eb543c59590b53af0e7f96).
 - Updated contribution & automation guidelines to prefer script-first workflows (cf04aa30a16f, 338070690435, c242c2bc5f3a).
 - Added / refined dependency locking, agent guidance, and runtime reminders (c504f84fe656, 6324b4b25cd1, 59301a98cad3).

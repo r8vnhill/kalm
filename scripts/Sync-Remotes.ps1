@@ -1,4 +1,5 @@
 #Requires -Version 7.4
+using module ./lib/ScriptLogging.psm1
 
 <#
 .SYNOPSIS
@@ -53,6 +54,10 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $InformationPreference = 'Continue'
 $script:SyncRemotesPSCmdlet = $PSCmdlet
+
+$logger = [KalmScriptLogger]::Start('Sync-Remotes', $null)
+$initialBranchLabel = if ($Branch) { $Branch } else { '<auto>' }
+$logger.LogInfo(("Starting sync for remote '{0}' (branch='{1}', WhatIf={2})" -f $Remote, $initialBranchLabel, $PSBoundParameters.ContainsKey('WhatIf')),'Startup')
 
 # Import the shared Git helpers which include the DryRun singleton API and helpers
 Import-Module -Force (Join-Path $PSScriptRoot 'GitSync.psm1')
@@ -148,9 +153,11 @@ try {
     if (-not $Branch) {
         $Branch = Get-CurrentBranch
         Write-Information "Using current branch: $Branch"
+        $logger.LogInfo(("Resolved current branch to '{0}'." -f $Branch),'Branch')
     }
     else {
         Write-Information "Using specified branch: $Branch"
+        $logger.LogInfo(("Using provided branch '{0}'." -f $Branch),'Branch')
     }
 
     # Check working tree
@@ -161,11 +168,13 @@ try {
     # Step 1: Fetch from all remotes
     Write-Information ''
     Write-Information 'Step 1: Fetching from all remotes...'
+    $logger.LogInfo('Fetching updates from all remotes.','Fetch')
     Invoke-GitCommand -Arguments @('fetch', '--all', '--prune') -Description 'Fetching updates from all remotes...' -Target 'all remotes' -Action 'Fetch updates'
 
     # Step 2: Check if remote branch exists
     Write-Information ''
     Write-Information 'Step 2: Checking remote tracking branch...'
+    $logger.LogDebug(("Validating remote branch '{0}'." -f $remoteBranch),'Fetch')
     $remoteBranch = "$Remote/$Branch"
     git rev-parse --verify "refs/remotes/$remoteBranch" 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) {
@@ -178,24 +187,29 @@ try {
 
         if ($mergeBase -eq $headCommit) {
             Write-Information 'Local branch is behind remote. Fast-forwarding...'
+            $logger.LogInfo(("Fast-forwarding local branch from {0}." -f $remoteBranch),'Merge')
             Invoke-GitCommand -Arguments @('merge', '--ff-only', $remoteBranch) -Description "Fast-forwarding to $remoteBranch..." -Target $remoteBranch -Action 'Fast-forward merge'
         }
         elseif ($mergeBase -eq $remoteCommit) {
             Write-Information 'Local branch is ahead of remote. No pull needed.'
+            $logger.LogInfo('Local branch ahead of remote; skipping pull.','Merge')
         }
         else {
             Write-Warning 'Local and remote branches have diverged.'
             Write-Information "Attempting to merge $remoteBranch into local branch..."
+            $logger.LogWarning(("Detected divergence with remote branch '{0}'. Attempting merge." -f $remoteBranch),'Merge')
             Invoke-GitCommand -Arguments @('merge', $remoteBranch, '--no-edit') -Description "Merging $remoteBranch..." -Target $remoteBranch -Action 'Merge remote changes'
         }
     }
     else {
         Write-Information "Remote branch $remoteBranch does not exist yet. Will create on push."
+        $logger.LogWarning(("Remote branch '{0}' missing; will create on push." -f $remoteBranch),'Validation')
     }
 
     # Step 3: Push to all configured push URLs
     Write-Information ''
     Write-Information 'Step 3: Pushing to all remotes...'
+    $logger.LogInfo(("Pushing branch '{0}' to remote '{1}'." -f $Branch, $Remote),'Push')
 
     $pushUrls = Invoke-GitCommand -Arguments @('remote','get-url','--push','--all',$Remote) -Description 'Listing push URLs' -CaptureOutput -NoThrow
     if (-not $pushUrls -or $pushUrls.Count -eq 0) {
@@ -211,8 +225,10 @@ try {
     Write-Information ''
     Write-Information '==> Sync completed successfully!'
     Write-Information "Branch '$Branch' is now synchronized across all remotes."
+    $logger.LogInfo(("Sync finished for branch '{0}'." -f $Branch),'Summary')
 }
 catch {
     Write-Error $_
+    $logger.LogError(("Sync-Remotes failed: {0}" -f $_.Exception.Message),'Failure')
     exit 1
 }

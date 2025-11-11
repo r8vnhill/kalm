@@ -16,7 +16,7 @@ Describe 'DryRunState singleton' {
         Import-Module $modulePath -Force
 
         # Load the unmanaged helper once so we can stress the backing field from multiple CLR threads.
-        try { [Kalm.Tests.DryRunStateThreadHarness] | Out-Null }
+        try { [Kalm.Automation.Tests.DryRunStateThreadHarness] | Out-Null }
         catch {
             # Compile the harness from a dedicated C# source file instead of an inline string.
             $csPath = Join-Path $PSScriptRoot 'DryRunStateThreadHarness.cs'
@@ -30,7 +30,7 @@ Describe 'DryRunState singleton' {
                 'System.Threading.Tasks.Parallel'
             )
 
-            Add-Type -Path $csPath -Language CSharp -CompilerOptions '/unsafe' -ReferencedAssemblies $assemblies
+            Add-Type -Path $csPath -CompilerOptions '/unsafe' -ReferencedAssemblies $assemblies
         }
     }
 
@@ -113,7 +113,7 @@ Describe 'DryRunState singleton' {
                     $pattern = foreach ($i in 0..511) {
                         if (($i % 2) -eq 0) { 1 } else { 0 }
                     }
-                    $history = [Kalm.Tests.DryRunStateThreadHarness]::FireHose($address, $pattern)
+            $history = [Kalm.Automation.Tests.DryRunStateThreadHarness]::FireHose($address, $pattern)
                 }
                 finally {
                     if ($handle.IsAllocated) { $handle.Free() }
@@ -134,7 +134,7 @@ Describe 'DryRunState singleton' {
                 )
                 try {
                     $address = $handle.AddrOfPinnedObject()
-                    $writerTask = [Kalm.Tests.DryRunStateThreadHarness]::LaunchToggleStorm(
+                    $writerTask = [Kalm.Automation.Tests.DryRunStateThreadHarness]::LaunchToggleStorm(
                         $address,
                         4,
                         2000,
