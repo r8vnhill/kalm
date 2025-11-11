@@ -1,22 +1,67 @@
 <#
 Pester tests for the ScriptLogging module (scripts/lib/ScriptLogging.psm1)
 
-This test file validates the public behavior of the `KalmScriptLogger` helper used by the
-repository's PowerShell automation helpers.
+Purpose
+-------
+These unit tests exercise the public behavior of the `KalmScriptLogger` helper used by the
+repository's PowerShell automation helpers. They are small, fast, and designed to run in CI or
+locally via the repo test helper.
 
-High-level goals tested here:
-- Initialization: logger names are sanitized and files/directories are created
-- Logging: entries include run identifier, severity and category
-- Rotation: small max-size triggers archive files (fast, deterministic)
-- Helper: `LogIfConfigured` safely no-ops when logger is absent and delegates correctly when a
-  logger is present
+What this file covers
+- Initialization: logger names are sanitized and required directories/files are created
+- Logging: log entries include run identifier, severity and optional category
+- Rotation: file rotation/archiving when the file exceeds MaxFileSizeBytes
+- Helper: `LogIfConfigured` no-ops safely when no logger is set and delegates to the active
+    logger when one is present
 
-Notes about test design:
-- Tests avoid touching user locations by using `$TestDrive` (Pester-provided temporary location)
-  and random GUID directories for isolation.
-- Rotation thresholds are intentionally tiny (e.g. 64 bytes) so we can force rotation fast without
-  writing large files; this is common in unit tests to verify behavior deterministically.
+Testing guidance & conventions
+-----------------------------
+- Tests run in an isolated temporary location provided by Pester (`$TestDrive`) and create unique
+    subdirectories using GUIDs to avoid collisions and keep the user's environment untouched.
+- Rotation thresholds are intentionally tiny (for example, 48–64 bytes) so the tests can trigger
+    rotation deterministically without writing large files.
+- Tests must not rely on or mutate global state. The suite uses `[KalmScriptLogger]::Reset()` in
+    `BeforeEach` to ensure a clean logger state between examples.
+
+API usage notes for contributors
+-------------------------------
+- Do not assign module script-scope fields directly (for example, avoid assigning
+    `$script:KalmLoggerDefaultDirectory`).
+    Instead, use the exposed Set/Get helpers provided by the module when tests or helpers need to
+    override defaults:
+
+    ```powershell
+    [KalmScriptLogger]::SetDefaultDirectory('C:\temp\kalm-logs')
+    $d = [KalmScriptLogger]::GetDefaultDirectory()
+
+    [KalmScriptLogger]::SetSyncRoot([object]::new())
+    $root = [KalmScriptLogger]::GetSyncRoot()
+
+    # Replace or read the active logger
+    [KalmScriptLogger]::SetCurrent($logger)
+    $current = [KalmScriptLogger]::GetCurrent()
+    ```
+
+    The module also exposes a small Start/Initialize convenience API for creating a logger for
+    tests:
+    ```powershell
+    $logger = [KalmScriptLogger]::Start('test-name', $directory)
+    ```
+
+How to run
+----------
+- Preferred (repo helper):
+    ```powershell
+    .\scripts\Invoke-PesterWithConfig.ps1
+    ```
+
+- Direct (Pester):
+    ```powershell
+    Invoke-Pester -Script .\scripts\tests\ScriptLogging.Tests.ps1 -OutputFormat NUnitXml -OutputFile build/test-results/pester/test-results.xml
+    ```
 #>
+
+using module '..\\..\\scripts\\lib\\ScriptLogging.psm1'
 
 Describe 'KalmScriptLogger' {
     # One-time setup for the test suite: locate and import the module under test.
@@ -28,10 +73,6 @@ Describe 'KalmScriptLogger' {
         if (-not (Test-Path -LiteralPath $modulePath)) {
             throw "Missing module: $modulePath"
         }
-
-        # Remove any previously loaded version first, then import fresh
-        Get-Module -Name 'ScriptLogging' | Remove-Module -Force -ErrorAction SilentlyContinue
-        Import-Module $modulePath -Force
     }
 
     # Reset the logger state before each example to ensure tests are independent and do not leak a
@@ -93,6 +134,48 @@ Describe 'KalmScriptLogger' {
 
             $logger.LogInfo('   ', 'SkipMe')
             (Get-Content -LiteralPath $logger.FilePath -ErrorAction SilentlyContinue | Measure-Object -Character).Characters | Should -Be 0
+        }
+    }
+
+    Context 'custom sinks' {
+        It 'invokes registered sinks with structured log entries' {
+            $logDir = Join-Path -Path $TestDrive -ChildPath ([guid]::NewGuid().ToString())
+            $logger = [KalmScriptLogger]::Start('sink-test', $logDir)
+
+            $captured = [System.Collections.Generic.List[psobject]]::new()
+            $logger.AddSink({
+                    param($record, $formatted)
+                    $captured.Add($record) | Out-Null
+                })
+
+            $logger.LogInfo('hello world', 'SinkCategory')
+
+            $captured.Count | Should -Be 1
+            $captured[0].Level | Should -Be ([KalmLogLevel]::Info)
+            $captured[0].Message | Should -Be 'hello world'
+            $captured[0].Category | Should -Be 'SinkCategory'
+            $captured[0].Logger | Should -Be 'sink-test'
+        }
+
+        It 'console sink uses the appropriate Write-* command' {
+            $logDir = Join-Path -Path $TestDrive -ChildPath ([guid]::NewGuid().ToString())
+            $logger = [KalmScriptLogger]::Start('console-test', $logDir)
+
+            $moduleName = 'ScriptLogging'
+            Mock Write-Information {} -ModuleName $moduleName
+            Mock Write-Warning {} -ModuleName $moduleName
+            Mock Write-Verbose {} -ModuleName $moduleName
+            Mock Write-Error {} -ModuleName $moduleName
+
+            $logger.AddConsoleSink()
+
+            $logger.LogInfo('info message', 'Console')
+            $logger.LogWarning('warn message', 'Console')
+
+            Assert-MockCalled Write-Information -ModuleName $moduleName -Times 1 -Exactly -ParameterFilter { $MessageData -like '*info message*' }
+            Assert-MockCalled Write-Warning -ModuleName $moduleName -Times 1 -Exactly -ParameterFilter { $Message -like '*warn message*' }
+            Assert-MockCalled Write-Verbose -ModuleName $moduleName -Times 0
+            Assert-MockCalled Write-Error -ModuleName $moduleName -Times 0
         }
     }
 
