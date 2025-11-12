@@ -1,5 +1,5 @@
 #Requires -Version 7.4
-using module ./lib/ScriptLogging.psm1
+using module ..\lib\ScriptLogging.psm1
 <#!
 .SYNOPSIS
 Synchronize main repository and all submodules (pull/commit/push) in a single workflow.
@@ -7,24 +7,6 @@ Synchronize main repository and all submodules (pull/commit/push) in a single wo
 .DESCRIPTION
 Uses shared functions from GitSync.psm1 to minimize duplication. Pulls latest changes
 for root and submodules, commits submodule changes if any, updates pointers, and pushes.
-
-.PARAMETER Remote
-Git remote name (default: origin)
-
-.PARAMETER SkipPush
-If set, performs pull & commit but skips push.
-
-.PARAMETER SkipPull
-If set, uses current working tree state without pulling.
-
-.PARAMETER SubmoduleOnly
-Operate only on submodules (skip root repo commit/push).
-
-.EXAMPLE
-./scripts/Sync-RepoAndWiki.ps1
-
-.EXAMPLE
-./scripts/Sync-RepoAndWiki.ps1 -SkipPull -SkipPush
 #>
 [CmdletBinding(SupportsShouldProcess=$true)]
 param(

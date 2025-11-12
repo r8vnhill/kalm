@@ -1,37 +1,9 @@
 #Requires -Version 7.4
-using module ./lib/ScriptLogging.psm1
+using module ..\lib\ScriptLogging.psm1
 
 <#
 .SYNOPSIS
 Runs the Gradle wrapper with an optional JAVA_HOME override.
-
-.DESCRIPTION
-Sets JAVA_HOME to the supplied JDK path (if provided), invokes the Gradle wrapper
-from the repository root, and returns a structured object describing the
-execution. JAVA_HOME is restored afterwards.
-
-.PARAMETER JdkPath
-Optional path to the JDK home directory that should be used for the invocation.
-The path must exist and point to a directory.
-
-.PARAMETER GradleArgument
-Arguments passed to the Gradle wrapper. Defaults to the "help" task when none
-are supplied.
-
-.PARAMETER WorkingDirectory
-Directory that contains the Gradle wrapper script. Defaults to the repository
-root (one level above this script).
-
-.INPUTS
-None
-
-.OUTPUTS
-System.Management.Automation.PSCustomObject
-
-.EXAMPLE
-PS> .\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'B:\scoop\apps\temurin22-jdk\current' -GradleArgument 'clean','build','--no-daemon'
-
-Runs the Gradle wrapper using the specified Temurin JDK installation.
 #>
 
 [CmdletBinding()]

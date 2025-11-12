@@ -9,7 +9,7 @@ objects that expose Output/File properties, and writes the original Pester
 log lines to the console without re-printing the metadata block.
 
 .EXAMPLE
-./scripts/Invoke-PesterWithConfig.ps1 | ./scripts/Format-PesterIsolatedResult.ps1
+./scripts/testing/Invoke-PesterWithConfig.ps1 | ./scripts/testing/helpers/Format-PesterIsolatedResult.ps1
 #>
 [CmdletBinding()]
 param(

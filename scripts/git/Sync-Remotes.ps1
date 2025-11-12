@@ -1,5 +1,5 @@
 #Requires -Version 7.4
-using module ./lib/ScriptLogging.psm1
+using module ..\lib\ScriptLogging.psm1
 
 <#
 .SYNOPSIS
@@ -26,17 +26,17 @@ Shows what would happen if the cmdlet runs. Because the script supports
 ShouldProcess, the built-in `-WhatIf` and `-Confirm` switches are available.
 
 .EXAMPLE
-PS> .\scripts\Sync-Remotes.ps1
+PS> .\scripts\git\Sync-Remotes.ps1
 
 Synchronizes the current branch with all remotes configured for 'origin'.
 
 .EXAMPLE
-PS> .\scripts\Sync-Remotes.ps1 -Branch main -WhatIf
+PS> .\scripts\git\Sync-Remotes.ps1 -Branch main -WhatIf
 
 Shows what would happen when synchronizing the 'main' branch without making changes.
 
 .EXAMPLE
-PS> .\scripts\Sync-Remotes.ps1 -Remote origin -Branch rename/kalm
+PS> .\scripts\git\Sync-Remotes.ps1 -Remote origin -Branch rename/kalm
 
 Synchronizes the 'rename/kalm' branch with the 'origin' remote.
 #>

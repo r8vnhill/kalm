@@ -32,7 +32,7 @@ The `pester:tests` job validates PowerShell automation scripts using [Pester 5.x
 
 - **Stage:** `test`
 - **Image:** `mcr.microsoft.com/powershell:7.4-alpine-3.20`
-- **Script:** `./scripts/Invoke-PesterWithConfig.ps1`
+- **Script:** `./scripts/testing/Invoke-PesterWithConfig.ps1`
 - **Artifacts:** Test results are published as JUnit XML reports under `build/test-results/pester/`
 
 **When it runs:**
@@ -43,14 +43,14 @@ The `pester:tests` job validates PowerShell automation scripts using [Pester 5.x
 **Local testing:**
 ```powershell
 # Run Pester tests locally using the same configuration as CI
-./scripts/Invoke-PesterWithConfig.ps1
+./scripts/testing/Invoke-PesterWithConfig.ps1
 ```
 
 **Configuration:**
-The Pester job loads its settings from `scripts/tests/pester.runsettings.psd1`. To add new tests, place them under `scripts/tests/` and update the runsettings file accordingly.
+The Pester job loads its settings from `scripts/testing/pester.config.psd1`. To add new tests, place them under `scripts/testing/specs/` and update the config file accordingly.
 
 > [!tip]
-> Use `-Verbose` to see detailed output during local runs: `./scripts/Invoke-PesterWithConfig.ps1 -Verbose`
+> Use `-Verbose` to see detailed output during local runs: `./scripts/testing/Invoke-PesterWithConfig.ps1 -Verbose`
 
 ## Versioning and Tagging Strategy
 

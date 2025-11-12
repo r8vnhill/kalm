@@ -45,22 +45,22 @@ Full repository sync: main repo + all submodules (pull → commit → push).
 **Usage:**
 ```powershell
 # Full sync (fetch, commit, push everything)
-.\scripts\Sync-RepoAndWiki.ps1
+.\scripts/git/Sync-RepoAndWiki.ps1
 
 # Preview without making changes
-.\scripts\Sync-RepoAndWiki.ps1 -WhatIf
+.\scripts/git/Sync-RepoAndWiki.ps1 -WhatIf
 
 # Sync only submodules (skip main repo)
-.\scripts\Sync-RepoAndWiki.ps1 -SubmoduleOnly
+.\scripts/git/Sync-RepoAndWiki.ps1 -SubmoduleOnly
 
 # Commit local changes without fetching
-.\scripts\Sync-RepoAndWiki.ps1 -SkipPull
+.\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull
 
 # Fetch and commit without pushing
-.\scripts\Sync-RepoAndWiki.ps1 -SkipPush
+.\scripts/git/Sync-RepoAndWiki.ps1 -SkipPush
 
 # Custom remote
-.\scripts\Sync-RepoAndWiki.ps1 -Remote upstream
+.\scripts/git/Sync-RepoAndWiki.ps1 -Remote upstream
 ```
 
 **Parameters:**
@@ -82,19 +82,19 @@ Wiki-focused sync: operate only on the wiki submodule.
 **Usage:**
 ```powershell
 # Sync wiki content (pull, commit, push)
-.\scripts\Sync-WikiOnly.ps1
+.\scripts/git/Sync-WikiOnly.ps1
 
 # Sync wiki AND update pointer in main repo
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer
+.\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer
 
 # Preview pointer update
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
+.\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
 
 # Custom commit messages (required when commits are needed)
 # - Wiki commit (inside wiki submodule)
-.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X"
+.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X"
 # - Pointer commit (in main repo)
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer -RootCommitMessage "📚 docs: update wiki (new benchmark)"
+.\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer -RootCommitMessage "📚 docs: update wiki (new benchmark)"
 ```
 
 **Parameters:**
@@ -117,10 +117,10 @@ If the wiki has diverged from the remote (fast-forward not possible), run with a
 
 ```powershell
 # Auto-merge remote/main into local main (no prompt, creates a merge commit if needed)
-./scripts/Sync-WikiOnly.ps1 -PullStrategy merge -SkipPush
+./scripts/git/Sync-WikiOnly.ps1 -PullStrategy merge -SkipPush
 
 # Or rebase local commits on top of remote/main
-./scripts/Sync-WikiOnly.ps1 -PullStrategy rebase -SkipPush
+./scripts/git/Sync-WikiOnly.ps1 -PullStrategy rebase -SkipPush
 ```
 
 ## Gradle with JDK
@@ -132,13 +132,13 @@ Run Gradle with a specific JDK version (bypasses JAVA_HOME).
 **Usage:**
 ```powershell
 # Windows
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build'
 
 # Pass through gradle arguments after JdkPath
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath '/usr/lib/jvm/java-22-openjdk' -GradleArgument '--no-daemon', 'verifyAll'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath '/usr/lib/jvm/java-22-openjdk' -GradleArgument '--no-daemon', 'verifyAll'
 
 # Example: run tests with JDK 21
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-21' -GradleArgument 'test', '--rerun'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-21' -GradleArgument 'test', '--rerun'
 ```
 
 **Parameters:**
@@ -152,10 +152,10 @@ Bash/Zsh equivalent of the PowerShell script.
 **Usage:**
 ```bash
 # Unix/Linux/macOS
-./scripts/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build
+./scripts/gradle/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build
 
 # Example with multiple gradle arguments
-./scripts/invoke_gradle_with_jdk.sh --jdk ~/sdkman/candidates/java/22.0.2-tem -- test --info --no-daemon
+./scripts/gradle/invoke_gradle_with_jdk.sh --jdk ~/sdkman/candidates/java/22.0.2-tem -- test --info --no-daemon
 ```
 
 **Arguments:**
@@ -170,7 +170,7 @@ Sync changes between multiple Git remotes (e.g., GitHub ↔ GitLab).
 
 **Usage:**
 ```powershell
-.\scripts\Sync-Remotes.ps1
+.\scripts/git/Sync-Remotes.ps1
 ```
 
 See script header for configuration details.
@@ -184,10 +184,10 @@ Run PSScriptAnalyzer on PowerShell scripts with project-specific rules.
 **Usage:**
 ```powershell
 # Analyze all scripts
-.\scripts\Invoke-PSSA.ps1
+.\scripts/quality/Invoke-PSSA.ps1
 
 # Analyze specific file
-.\scripts\Invoke-PSSA.ps1 -Path .\scripts\Sync-RepoAndWiki.ps1
+.\scripts/quality/Invoke-PSSA.ps1 -Path .\scripts/git/Sync-RepoAndWiki.ps1
 ```
 
 **Settings:** `scripts/PSScriptAnalyzerSettings.psd1`
@@ -195,7 +195,7 @@ Run PSScriptAnalyzer on PowerShell scripts with project-specific rules.
 ### Invoke-PesterWithConfig.ps1
 
 Run Pester using the repository's canonical configuration file. This helper loads
-`scripts/tests/pester.runsettings.psd1`, constructs a `PesterConfiguration` and
+`scripts/testing/pester.config.psd1`, constructs a `PesterConfiguration` and
 invokes `Invoke-Pester` so tests run consistently on developer machines and CI.
 
 Requirements:
@@ -205,14 +205,14 @@ Requirements:
 Usage:
 ```powershell
 # From the repository root
-.\scripts\Invoke-PesterWithConfig.ps1
+.\scripts\testing\Invoke-PesterWithConfig.ps1
 
 # Explicit pwsh invocation (useful in CI)
-# pwsh -NoProfile -Command "./scripts/Invoke-PesterWithConfig.ps1"
+pwsh -NoProfile -Command "./scripts/testing/Invoke-PesterWithConfig.ps1"
 ```
 
 Notes:
-- The script will report a clear error if `scripts/tests/pester.runsettings.psd1`
+- The script will report a clear error if `scripts/testing/pester.config.psd1`
 	is missing.
 - Use `-Verbose` when troubleshooting test runs to see the resolved settings path
 	and Pester invocation details.
@@ -244,17 +244,17 @@ All scripts follow these principles:
 ```powershell
 # Edit wiki content locally (edit files under `wiki/` using your editor)
 # Then use the script to push changes and update the pointer (dry-run first):
-.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)" -WhatIf
-.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)"
+.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)" -WhatIf
+.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)"
 ```
 
 ### Full Project Sync
 ```powershell
 # Preview all operations
-.\scripts\Sync-RepoAndWiki.ps1 -WhatIf
+.\scripts/git/Sync-RepoAndWiki.ps1 -WhatIf
 
 # Execute full sync
-.\scripts\Sync-RepoAndWiki.ps1 -Verbose
+.\scripts/git/Sync-RepoAndWiki.ps1 -Verbose
 ```
 
 ### Full add → commit → push workflows (script-first)
@@ -265,25 +265,25 @@ The repository provides script-driven workflows to safely stage, commit and push
 
 	```powershell
 	# Use the script-first approach to push wiki content and update pointer (dry-run first)
-	.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)" -WhatIf
-	.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)"
+	.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)" -WhatIf
+	.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)"
 	```
 
 - Edit only root files (docs, scripts, build files):
 
 	```powershell
 	# Preview
-	.\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts" -WhatIf
+	.\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts" -WhatIf
 
 	# Commit & push
-	.\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts"
+	.\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts"
 	```
 
 - Edit both wiki and root (single command):
 
 	```powershell
-	.\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -WhatIf
-	.\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "🚀 chore(release): publish docs and scripts"
+	.\scripts/git/Sync-RepoAndWiki.ps1 -IncludeRootChanges -WhatIf
+	.\scripts/git/Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "🚀 chore(release): publish docs and scripts"
 	```
 
 Notes:
@@ -294,10 +294,10 @@ Notes:
 ### Run Gradle with Specific JDK
 ```powershell
 # Verify build with JDK 22
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'verifyAll'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'verifyAll'
 
 # Run benchmarks with JDK 21
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-21' -GradleArgument ':benchmark:jmh'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-21' -GradleArgument ':benchmark:jmh'
 ```
 
 ## Troubleshooting
@@ -311,7 +311,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 **Module import errors:**
 ```powershell
 # Verify module loads correctly
-Import-Module .\scripts\GitSync.psm1 -Verbose
+Import-Module .\scripts/git/GitSync.psm1 -Verbose
 Get-Command -Module GitSync
 ```
 

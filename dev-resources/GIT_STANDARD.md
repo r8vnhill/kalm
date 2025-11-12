@@ -40,28 +40,28 @@ For PowerShell 7.4+ users, the `scripts/` directory includes automation tools fo
 **`Sync-RepoAndWiki.ps1`** - Full repository + submodule sync:
 ```powershell
 # Sync everything (fetch, commit, push)
-.\scripts\Sync-RepoAndWiki.ps1
+.\scripts/git/Sync-RepoAndWiki.ps1
 
 # Preview without changes
-.\scripts\Sync-RepoAndWiki.ps1 -WhatIf
+.\scripts/git/Sync-RepoAndWiki.ps1 -WhatIf
 
 # Only commit/push (skip fetch)
-.\scripts\Sync-RepoAndWiki.ps1 -SkipPull
+.\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull
 
 # Sync only submodules
-.\scripts\Sync-RepoAndWiki.ps1 -SubmoduleOnly
+.\scripts/git/Sync-RepoAndWiki.ps1 -SubmoduleOnly
 ```
 
 **`Sync-WikiOnly.ps1`** - Wiki-focused sync:
 ```powershell
 # Sync wiki content only
-.\scripts\Sync-WikiOnly.ps1
+.\scripts/git/Sync-WikiOnly.ps1
 
 # Sync wiki and update pointer in main repo
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer
+.\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer
 
 # Preview changes
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
+.\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
 ```
 
 **Common Parameters:**

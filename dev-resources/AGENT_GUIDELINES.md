@@ -9,12 +9,12 @@ This file contains small runtime reminders for automated agents and contributors
 Examples:
 - Good (when already in pwsh):
   ```powershell
-  ./scripts/Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "msg"
+  ./scripts/git/Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "msg"
   ```
 
 - Use wrapper (when uncertain):
   ```powershell
-  pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "msg"
+  pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/git/Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "msg"
   ```
 
 This document is a workspace-local reminder and may be updated with additional runtime tips. It does not replace the repository's main agent guidance at `.github/copilot-instructions.md`.
@@ -27,13 +27,13 @@ If a submodule (commonly `wiki/`) cannot be fast-forwarded, choose a strategy:
 - Merge (auto-merge remote into local; creates merge commit):
 
 ```powershell
-./scripts/Sync-WikiOnly.ps1 -PullStrategy merge -SkipPush -WikiCommitMessage "chore(wiki): merge remote"
+./scripts/git/Sync-WikiOnly.ps1 -PullStrategy merge -SkipPush -WikiCommitMessage "chore(wiki): merge remote"
 ```
 
 - Rebase (replay local commits on top of remote; keeps linear history):
 
 ```powershell
-./scripts/Sync-WikiOnly.ps1 -PullStrategy rebase -SkipPush -WikiCommitMessage "chore(wiki): rebase onto remote"
+./scripts/git/Sync-WikiOnly.ps1 -PullStrategy rebase -SkipPush -WikiCommitMessage "chore(wiki): rebase onto remote"
 ```
 
 Use `ff-only` (the default) in automation or CI to avoid unexpected history changes; opt-in to `merge`/`rebase` interactively when you understand the divergence.

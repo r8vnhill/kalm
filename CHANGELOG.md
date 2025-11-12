@@ -20,8 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitLab CI/CD pipeline with Pester test automation (9d06352):
   - `.gitlab-ci.yml` with `pester:tests` job (PowerShell 7.4 Alpine, Pester 5.7.1)
   - `Invoke-PesterWithConfig.ps1` helper for consistent test execution
-  - Pester tests for `DryRunState.ps1` (`scripts/tests/DryRunState.Tests.ps1`)
-  - Pester configuration file (`scripts/tests/pester.runsettings.psd1`)
+  - Pester tests for `DryRunState.ps1` (`scripts/testing/specs/DryRunState.Tests.ps1`)
+  - Pester configuration file (`scripts/testing/pester.config.psd1`)
 
 ### Documentation
 - Documented the new logging infrastructure and usage in `scripts/README.md`.

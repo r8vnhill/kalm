@@ -14,7 +14,7 @@ Imported symbols
 
 Notes
 - `Reset-KalmDryRun` exists as an internal test helper but is not exported by the module's public API.
-- The repository loader `scripts/GitSync.psm1` imports this module automatically when present.
+- The repository loader `scripts/git/GitSync.psm1` imports this module automatically when present.
 
 Examples
 
@@ -32,7 +32,7 @@ Set-KalmDryRun $false
 Run tests (Pester helper):
 
 ```powershell
-pwsh -NoProfile -Command "./scripts/Invoke-PesterWithConfig.ps1"
+pwsh -NoProfile -Command "./scripts/testing/Invoke-PesterWithConfig.ps1"
 ```
 
 Why use the module

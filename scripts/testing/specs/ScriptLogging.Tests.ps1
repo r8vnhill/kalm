@@ -61,14 +61,21 @@ How to run
     ```
 #>
 
-using module '..\\..\\scripts\\lib\\ScriptLogging.psm1'
+using module '..\..\..\scripts\lib\ScriptLogging.psm1'
 
 Describe 'KalmScriptLogger' {
     # One-time setup for the test suite: locate and import the module under test.
     BeforeAll {
         # Resolve the repository root relative to this test file and ensure the module exists
         # before importing; fail the suite early if it's missing.
-        $repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..' '..')
+        $repoRoot = (Get-Item -LiteralPath $PSScriptRoot).FullName
+        while (-not (Test-Path (Join-Path $repoRoot '.git'))) {
+            $parent = Split-Path -Path $repoRoot -Parent
+            if ($parent -eq $repoRoot) {
+                throw "Unable to locate the repository root relative to '$PSScriptRoot'."
+            }
+            $repoRoot = $parent
+        }
         $modulePath = Join-Path $repoRoot 'scripts' 'lib' 'ScriptLogging.psm1'
         if (-not (Test-Path -LiteralPath $modulePath)) {
             throw "Missing module: $modulePath"

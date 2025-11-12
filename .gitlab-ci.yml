@@ -26,7 +26,7 @@ pester:tests:
   before_script:
     - pwsh -NoProfile -Command "Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -Scope CurrentUser -ErrorAction Stop"
   script:
-    - pwsh -NoProfile -Command "./scripts/Invoke-PesterWithConfig.ps1"
+    - pwsh -NoProfile -Command "./scripts/testing/Invoke-PesterWithConfig.ps1"
   artifacts:
     when: always
     reports:

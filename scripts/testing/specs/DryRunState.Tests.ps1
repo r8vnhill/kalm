@@ -8,7 +8,14 @@ data-driven tests (Pester v5+).
 Describe 'DryRunState singleton' {
     BeforeAll {
         # Resolve repo root relative to this test file and dot-source the lib script.
-        $repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')
+        $repoRoot = (Get-Item -LiteralPath $PSScriptRoot).FullName
+        while (-not (Test-Path (Join-Path $repoRoot '.git'))) {
+            $parent = Split-Path -Path $repoRoot -Parent
+            if ($parent -eq $repoRoot) {
+                Throw "Unable to locate the repository root relative to '$PSScriptRoot'."
+            }
+            $repoRoot = $parent
+        }
         $libPath  = Join-Path $repoRoot 'scripts\lib'
         # Import the DryRun module (strict: fail if missing)
         $modulePath = Join-Path $libPath 'DryRunState.psm1'

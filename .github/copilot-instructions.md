@@ -37,7 +37,7 @@ Multi-module Gradle/Kotlin optimization framework with strict dependency locking
 ./gradlew detektFormat       # Auto-format
 
 # Gradle with specific JDK (script-first)
-./scripts/Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'verifyAll'
+./scripts/gradle/Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'verifyAll'
 ```
 
 ## Critical Traps & Conventions
@@ -58,7 +58,7 @@ Multi-module Gradle/Kotlin optimization framework with strict dependency locking
 - Thresholds intentionally low — justify suppressions with tests
 
 **Git & wiki automation (PowerShell 7.4+):**
-- Use `scripts/Sync-WikiOnly.ps1` for wiki changes, `scripts/Sync-RepoAndWiki.ps1` for full sync
+- Use `scripts/git/Sync-WikiOnly.ps1` for wiki changes, `scripts/git/Sync-RepoAndWiki.ps1` for full sync
 - Always preview with `-WhatIf` before executing
 - Handle divergence with `-PullStrategy merge|rebase` (default: `ff-only` fails fast)
 - Avoid redundant pwsh wrappers when already in pwsh (see `dev-resources/AGENT_GUIDELINES.md`)
@@ -104,6 +104,6 @@ Plugins in `build-logic/src/main/kotlin/`:
 - Missing lock state? → `./gradlew <task> --write-locks`
 - API dump mismatch? → Regenerate with `./gradlew apiDump` (only if intentional API change)
 - Detekt fails on new config? → `./gradlew :core:detekt --write-locks`
-- Wiki diverged? → `./scripts/Sync-WikiOnly.ps1 -PullStrategy merge -WhatIf` (preview first)
+- Wiki diverged? → `./scripts/git/Sync-WikiOnly.ps1 -PullStrategy merge -WhatIf` (preview first)
 
 Last updated: 2025-11-11

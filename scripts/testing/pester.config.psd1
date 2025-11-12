@@ -1,8 +1,8 @@
 @{
     Run = @{
-        # Execute every test file living under scripts/tests to keep coverage in sync.
+        # Execute every test file living under scripts/testing/specs to keep coverage in sync.
         # Path is relative to where Invoke-PesterWithConfig.ps1 is invoked (repo root).
-        Path     = @('scripts/tests/*.Tests.ps1')
+        Path     = @('scripts/testing/specs/*.Tests.ps1')
         PassThru = $true
     }
     TestResult = @{

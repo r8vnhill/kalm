@@ -1,4 +1,4 @@
-using module ./lib/ScriptLogging.psm1
+using module ..\lib\ScriptLogging.psm1
 #Requires -Version 7.4
 <#!
 .SYNOPSIS
@@ -30,10 +30,10 @@ Repository path (default: parent of scripts directory).
 If set, assumes files are already staged and only performs commit.
 
 .EXAMPLE
-.\scripts\Invoke-Commit.ps1 -Emoji '🔧' -Scope 'scripts' -Message 'add git staging preview' -DetailedDescription "- Add Show-GitChangesToStage helper`n- Integrate preview into sync scripts"
+.\scripts\git\Invoke-Commit.ps1 -Emoji '🔧' -Scope 'scripts' -Message 'add git staging preview' -DetailedDescription "- Add Show-GitChangesToStage helper`n- Integrate preview into sync scripts"
 
 .EXAMPLE
-.\scripts\Invoke-Commit.ps1 -Emoji '📝','📚' -Scope 'docs' -Message 'update wiki submodule' -WhatIf
+.\scripts\git\Invoke-Commit.ps1 -Emoji '📝','📚' -Scope 'docs' -Message 'update wiki submodule' -WhatIf
 #>
 [CmdletBinding(SupportsShouldProcess=$true)]
 param(

@@ -1,10 +1,10 @@
 #Requires -Version 7.5
-using module ./lib/ScriptLogging.psm1
+using module ..\lib\ScriptLogging.psm1
 [CmdletBinding()]
 param(
-    [string] $Settings = "$PSScriptRoot/PSScriptAnalyzerSettings.psd1",
+    [string] $Settings = "$PSScriptRoot/../PSScriptAnalyzerSettings.psd1",
     [string[]] $Paths = @(
-        "$PSScriptRoot"
+        "$PSScriptRoot/.."
     )
 )
 
@@ -20,7 +20,7 @@ function Install-PSScriptAnalyzerIfMissing {
         return
     }
 
-    Write-Output 'PSScriptAnalyzer not found. Installing...' 
+    Write-Output 'PSScriptAnalyzer not found. Installing...'
     [KalmScriptLogger]::LogIfConfigured([KalmLogLevel]::Warning, 'PSScriptAnalyzer missing; attempting installation.','Setup')
 
     # Make sure TLS 1.2 is used for PSGallery over HTTPS
@@ -34,7 +34,7 @@ function Install-PSScriptAnalyzerIfMissing {
     # Prefer PSResourceGet if available (PowerShellGet v3)
     if (Get-Command Install-PSResource -ErrorAction SilentlyContinue) {
         # Ensure PSGallery is registered
-        if (-not (Get-PSResourceRepository -ErrorAction SilentlyContinue | 
+        if (-not (Get-PSResourceRepository -ErrorAction SilentlyContinue |
                     Where-Object Name -EQ 'PSGallery')) {
             Register-PSResourceRepository -Name PSGallery `
                 -Uri 'https://www.powershellgallery.com/api/v2' -Trusted
@@ -44,7 +44,7 @@ function Install-PSScriptAnalyzerIfMissing {
     else {
         # Fallback to PowerShellGet v2
         if (-not (Get-Module -ListAvailable PowerShellGet)) {
-            Write-Output 'PowerShellGet not found; attempting to install/update...' 
+            Write-Output 'PowerShellGet not found; attempting to install/update...'
             # Try to get PowerShellGet using the in-box bootstrap
             Install-Module PowerShellGet -Scope CurrentUser -Force -AllowClobber `
                 -ErrorAction SilentlyContinue
@@ -95,8 +95,8 @@ if ($allResults) {
         $logger.LogWarning('PSScriptAnalyzer reported errors.','Summary')
         exit 1
     }
-    else { 
-        Write-Warning 'PSScriptAnalyzer found warnings/information.' 
+    else {
+        Write-Warning 'PSScriptAnalyzer found warnings/information.'
         $logger.LogWarning('PSScriptAnalyzer completed with warnings/information.','Summary')
     }
 }
@@ -109,4 +109,3 @@ catch {
     $logger.LogError(("Invoke-PSSA failed: {0}" -f $_.Exception.Message),'Failure')
     throw
 }
-

@@ -1,7 +1,7 @@
 Describe 'Invoke-GradleWithJdk helper' {
     BeforeAll {
         $script:RepoRoot = (Resolve-Path -Path (Join-Path $PSScriptRoot '..' '..')).Path
-        $script:HelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\scripts\Invoke-GradleWithJdk.ps1'
+    $script:HelperPath = Join-Path -Path $PSScriptRoot -ChildPath '..\..\gradle\Invoke-GradleWithJdk.ps1'
         $script:GradleJdkPath = $env:JAVA_HOME
 
         if (-not $script:GradleJdkPath -or -not (Test-Path -LiteralPath $script:GradleJdkPath -PathType Container)) {
