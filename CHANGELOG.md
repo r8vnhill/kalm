@@ -42,14 +42,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved PowerShell sync scripts: guarded git wrapper (`Invoke-Git`), output capture & clean status handling (9832ac5c49d2, e71c1b07a28d).
 - Added `-PullStrategy` to sync scripts (`Sync-GitSubmodule`, `Sync-WikiOnly.ps1`, `Sync-RepoAndWiki.ps1`) to support `ff-only|merge|rebase`. Documented usage in `scripts/README.md` and agent docs (commit c67072ecfed56d0998a0c427c6c8561e5fdfe3ff).
 - Integrated staging preview into sync scripts before git add operations (85484ac0b210).
+- Consolidated Pester runner under `scripts/testing`; introduced `helpers/PesterHelpers.psm1` and updated `Invoke-PesterWithConfig.ps1` to import it.
+- Pester runner now sinks to console via `AddConsoleSink()` for better local visibility during runs.
+- CI updated to call `./scripts/testing/Invoke-PesterWithConfig.ps1`.
 
 ### Fixed
 - Clean working tree detection logic for empty `git status` output (9832ac5c49d2).
 - Detekt configuration correctness & JVM target derivation (925efefea358).
 
 ### Removed
+- Root-level PowerShell wrappers in `scripts/` (moved into `scripts/git`, `scripts/quality`, and `scripts/testing`) were removed.
+- Legacy `scripts/tests/` directory removed; specs live under `scripts/testing/specs`.
 - Obsolete commented changelog links and redundant pre-`0.1.0` script placeholders (6afde41b10e7).
-
 ### Notes
 - Future release will bundle these changes; consider tagging once wiki & CLI test harness land.
 
