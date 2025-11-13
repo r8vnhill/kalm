@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Invoke-PesterWithConfig.ps1` helper for consistent test execution
   - Pester tests for `DryRunState.ps1` (`scripts/testing/specs/DryRunState.Tests.ps1`)
   - Pester configuration file (`scripts/testing/pester.config.psd1`)
+- Added specs for `Get-KalmRepoRoot` (`scripts/testing/specs/PesterHelpers.Tests.ps1`)
+- Split `scripts/testing/helpers/PesterHelpers.psm1` into focused helper scripts and keep the module as a simple aggregator for exports.
 
 ### Documentation
 - Documented the new logging infrastructure and usage in `scripts/README.md`.

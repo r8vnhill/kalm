@@ -38,9 +38,11 @@ function Get-KalmDryRun {
 
 # Internal test helper (not exported by default)
 function Reset-KalmDryRun {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$true)]
     param()
-    [void][System.Threading.Interlocked]::Exchange([ref]$script:_KalmDryRun, 0)
+    if ($PSCmdlet.ShouldProcess('Kalm dry-run flag', 'Reset to false')) {
+        [void][System.Threading.Interlocked]::Exchange([ref]$script:_KalmDryRun, 0)
+    }
 }
 
 # Export the public helpers when module is imported

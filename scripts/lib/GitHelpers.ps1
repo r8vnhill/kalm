@@ -75,7 +75,7 @@ function Show-GitChangesToStage {
     $outArray | ForEach-Object { Write-Information "  $_" }
 }
 
-function Ensure-GitSubmodulesInitialized {
+function Initialize-GitSubmodules {
     <#
     .SYNOPSIS
     Initialize git submodules if a `.gitmodules` file exists in the repository root.

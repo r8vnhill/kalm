@@ -61,6 +61,7 @@ How to run
     ```
 #>
 
+using module '..\helpers\PesterHelpers.psm1'
 using module '..\..\..\scripts\lib\ScriptLogging.psm1'
 
 Describe 'KalmScriptLogger' {
@@ -68,14 +69,7 @@ Describe 'KalmScriptLogger' {
     BeforeAll {
         # Resolve the repository root relative to this test file and ensure the module exists
         # before importing; fail the suite early if it's missing.
-        $repoRoot = (Get-Item -LiteralPath $PSScriptRoot).FullName
-        while (-not (Test-Path (Join-Path $repoRoot '.git'))) {
-            $parent = Split-Path -Path $repoRoot -Parent
-            if ($parent -eq $repoRoot) {
-                throw "Unable to locate the repository root relative to '$PSScriptRoot'."
-            }
-            $repoRoot = $parent
-        }
+        $repoRoot = Get-KalmRepoRoot -StartPath $PSScriptRoot
         $modulePath = Join-Path $repoRoot 'scripts' 'lib' 'ScriptLogging.psm1'
         if (-not (Test-Path -LiteralPath $modulePath)) {
             throw "Missing module: $modulePath"
@@ -151,7 +145,7 @@ Describe 'KalmScriptLogger' {
 
             $captured = [System.Collections.Generic.List[psobject]]::new()
             $logger.AddSink({
-                    param($record, $formatted)
+                    param($record)
                     $captured.Add($record) | Out-Null
                 })
 

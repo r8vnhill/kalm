@@ -47,13 +47,12 @@ process {
     }
 
     if ($label) {
-        Write-Host ""
-        Write-Host ("==> {0}" -f $label) -ForegroundColor Cyan
+        Write-Information ("==> {0}" -f $label) -InformationAction Continue
     }
 
     foreach ($line in $lines) {
         $plain = $line -replace '\x1B\[[0-9;]*m',''
         if ($plain -match '^\s*Containers\s*:') { break }
-        Write-Host $line
+        Write-Information $line -InformationAction Continue
     }
 }

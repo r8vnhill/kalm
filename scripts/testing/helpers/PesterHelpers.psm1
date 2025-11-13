@@ -1,30 +1,17 @@
-using module ..\..\..\lib\ScriptLogging.psm1
+#Requires -Version 7.4
 
-function Ensure-PesterModule {
-    [CmdletBinding()]
-    param(
-        [string] $ModuleName = 'Pester',
-        [KalmScriptLogger] $Logger = $null
-    )
+using module ..\..\lib\ScriptLogging.psm1
 
-    try {
-        Import-Module $ModuleName -ErrorAction Stop
-        if ($Logger -ne $null) {
-            $Logger.LogInfo(('Imported module: {0}' -f $ModuleName), 'Startup')
-        }
-        else {
-            Write-Verbose ("Imported module: $ModuleName")
-        }
-    }
-    catch {
-        if ($Logger -ne $null) {
-            $Logger.LogError(('Failed to import {0} module: {1}' -f $ModuleName, $_.Exception.Message), 'Failure')
-        }
-        else {
-            Write-Error ("Failed to import ${ModuleName}: $($_.Exception.Message)")
-        }
-        throw
-    }
-}
+<#
+.SYNOPSIS
+    Aggregates the individual helper scripts used by the Pester harness.
 
-Export-ModuleMember -Function Ensure-PesterModule
+.DESCRIPTION
+    Dot-sources the specific helper scripts so callers can simply `using module`
+    `PesterHelpers.psm1` and get `Import-PesterModule` / `Get-KalmRepoRoot`.
+#>
+
+. (Join-Path $PSScriptRoot 'Import-PesterModule.ps1')
+. (Join-Path $PSScriptRoot 'Get-KalmRepoRoot.ps1')
+
+Export-ModuleMember -Function Import-PesterModule, Get-KalmRepoRoot

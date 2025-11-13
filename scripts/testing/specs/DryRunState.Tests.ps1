@@ -5,17 +5,12 @@ Validates the Set-KalmDryRun / Get-KalmDryRun singleton behavior using
 data-driven tests (Pester v5+).
 #>
 
+using module '..\helpers\PesterHelpers.psm1'
+
 Describe 'DryRunState singleton' {
     BeforeAll {
-        # Resolve repo root relative to this test file and dot-source the lib script.
-        $repoRoot = (Get-Item -LiteralPath $PSScriptRoot).FullName
-        while (-not (Test-Path (Join-Path $repoRoot '.git'))) {
-            $parent = Split-Path -Path $repoRoot -Parent
-            if ($parent -eq $repoRoot) {
-                Throw "Unable to locate the repository root relative to '$PSScriptRoot'."
-            }
-            $repoRoot = $parent
-        }
+        # Resolve repo root relative to this test file and import the DryRun module.
+        $repoRoot = Get-KalmRepoRoot -StartPath $PSScriptRoot
         $libPath  = Join-Path $repoRoot 'scripts\lib'
         # Import the DryRun module (strict: fail if missing)
         $modulePath = Join-Path $libPath 'DryRunState.psm1'

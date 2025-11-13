@@ -30,7 +30,7 @@
 #Requires -Version 7.4
 
 using module ..\lib\ScriptLogging.psm1
-using module .\helpers\PesterHelpers.psm1
+
 param()
 
 Set-StrictMode -Version 3.0
@@ -39,7 +39,11 @@ $logger = [KalmScriptLogger]::Start('Invoke-PesterWithConfig', $null)
 $logger.AddConsoleSink()
 $logger.LogInfo('Starting Pester execution with repo configuration.','Startup')
 
-Ensure-PesterModule -ModuleName 'Pester' -Logger $logger
+# Import the PesterHelpers module to get Import-PesterModule function
+$helperModulePath = Join-Path $PSScriptRoot 'helpers\PesterHelpers.psm1'
+Import-Module $helperModulePath -Force -ErrorAction Stop
+
+Import-PesterModule -ModuleName 'Pester' -Logger $logger
 
 # Resolve expected configuration file path
 $settingsPath = Join-Path $PSScriptRoot 'pester.config.psd1'
