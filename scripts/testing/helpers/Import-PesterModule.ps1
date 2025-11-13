@@ -69,7 +69,27 @@ function Import-PesterModule {
 }
 
 
+<#
+.SYNOPSIS
+    Import a module from a literal file path with validation and structured logging.
+
+.DESCRIPTION
+    Validates that the provided module file exists, logs the import attempt, and imports the
+    module using -LiteralPath when available (falling back to the positional Import-Module call
+    otherwise). On missing paths a FileNotFoundException is thrown after logging.
+
+.PARAMETER ModulePath
+    Literal path to the module file to import.
+
+.PARAMETER Logger
+    A [KalmScriptLogger] instance used for structured log events.
+
+.OUTPUTS
+    [System.Management.Automation.PSModuleInfo]
+#>
 function Import-PesterModuleByPath {
+    [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSModuleInfo])]
     param(
         [ValidateNotNullOrWhiteSpace()]
         [string] $ModulePath,
@@ -85,14 +105,35 @@ function Import-PesterModuleByPath {
     }
 
     if ((Get-Command Import-Module).Parameters.Keys -contains 'LiteralPath') {
-        return Import-Module -LiteralPath $ModulePath -PassThru -ErrorAction Stop
+        Import-Module -LiteralPath $ModulePath -PassThru -ErrorAction Stop
     }
     else {
-        return Import-Module $ModulePath -PassThru -ErrorAction Stop
+        Import-Module $ModulePath -PassThru -ErrorAction Stop
     }
 }
 
 
+<#
+.SYNOPSIS
+    Import a module by name with an optional minimum version and helpful error messages.
+
+.DESCRIPTION
+    Attempts to import a named module using `Import-Module -Name` with the provided
+    `-MinimumVersion`. If the import fails, this helper collects available versions on the
+    system and raises a descriptive InvalidOperationException to make failure diagnosis easier.
+
+.PARAMETER ModuleName
+    Name of the module to import (for example, 'Pester').
+
+.PARAMETER MinimumVersion
+    A [System.Version] instance representing the minimum acceptable module version.
+
+.PARAMETER Logger
+    A [KalmScriptLogger] instance used for structured log events.
+
+.OUTPUTS
+    [System.Management.Automation.PSModuleInfo]
+#>
 function Import-PesterModuleByName {
     param(
         [ValidateNotNullOrWhiteSpace()]
