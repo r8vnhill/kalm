@@ -28,7 +28,7 @@ Describe 'Import-PesterModule' {
         # Import the helper module so Get-KalmRepoRoot / Import-PesterModule are available in tests
         Import-Module $helperPath -Force -ErrorAction Stop
 
-    # helper funcs are available now
+        # helper funcs are available now
     }
 
     BeforeEach {
@@ -62,9 +62,9 @@ Export-ModuleMember -Function Test-Export
         It 'throws when ModulePath does not exist and logs failure' {
             $missing = Join-Path $TestDrive 'no-such-module.psm1'
             $logDir = Join-Path $TestDrive ([guid]::NewGuid().ToString())
-            $logger = [KalmScriptLogger]::Start('pesterhelper-fail', $logDir)
-
-            { Import-PesterModule -ModulePath $missing -Logger $logger } | Should -Throw
+            { [PSCustomObject]@{
+                    Logger = [KalmScriptLogger]::Start('pesterhelper-fail', $logDir)
+                } | Import-PesterModule -ModulePath $missing } | Should -Throw
 
             $content = Get-Content -LiteralPath $logger.FilePath -Raw
             # Accept either older 'Failed to import' phrasing or the new 'Module import failed' / 'ModulePath not found'

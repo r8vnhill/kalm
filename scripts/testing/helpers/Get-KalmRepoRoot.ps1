@@ -22,7 +22,6 @@
 #>
 function Get-KalmRepoRoot {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
-    # Indicate the returned type depending on the selected parameter set.
     [OutputType([string], ParameterSetName = 'Default')]
     [OutputType([System.IO.DirectoryInfo], ParameterSetName = 'AsObject')]
     param(
