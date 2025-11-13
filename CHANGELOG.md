@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pester configuration file (`scripts/testing/pester.config.psd1`)
 - Added specs for `Get-KalmRepoRoot` (`scripts/testing/specs/PesterHelpers.Tests.ps1`)
 - Split `scripts/testing/helpers/PesterHelpers.psm1` into focused helper scripts and keep the module as a simple aggregator for exports.
+- `Get-KalmRepoRoot` helper with parameter-set-aware `OutputType` annotations (faef3e6):
+  - Returns `[string]` by default, `[System.IO.DirectoryInfo]` with `-AsObject` switch
+  - Locates repository root by walking ancestor directories until marker (`.git`) is found
+  - Supports custom markers via `-Marker` parameter
 
 ### Documentation
 - Documented the new logging infrastructure and usage in `scripts/README.md`.
@@ -47,10 +51,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consolidated Pester runner under `scripts/testing`; introduced `helpers/PesterHelpers.psm1` and updated `Invoke-PesterWithConfig.ps1` to import it.
 - Pester runner now sinks to console via `AddConsoleSink()` for better local visibility during runs.
 - CI updated to call `./scripts/testing/Invoke-PesterWithConfig.ps1`.
+- Typed `Ensure-PesterModule` parameter (now `[KalmScriptLogger]`) and integrated `ScriptLogging.psm1` for stronger type safety (bed14b5).
+- Split `Import-PesterModule` into focused helpers (bab15b7):
+  - `Import-PesterModuleByPath` handles literal-path imports with validation
+  - `Import-PesterModuleByName` handles named imports with MinimumVersion and improved error messages
+  - Main function delegates to helpers while preserving behavior and logging
 
 ### Fixed
 - Clean working tree detection logic for empty `git status` output (9832ac5c49d2).
 - Detekt configuration correctness & JVM target derivation (925efefea358).
+- Removed unsupported PSScriptAnalyzer `MaximumLineLength` key; added editor and VSCode rules for 100-char enforcement (d2ad440).
+- Refactored `scripts/lib/ScriptLogging.psm1` with Set/Get API, fixed parsing, ensured file creation, and added sinks (d2ad440).
+- Hardened Pester tests requiring external tools and updated run settings (d2ad440).
 
 ### Removed
 - Root-level PowerShell wrappers in `scripts/` (moved into `scripts/git`, `scripts/quality`, and `scripts/testing`) were removed.
