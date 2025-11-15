@@ -30,6 +30,7 @@
 #Requires -Version 7.4
 
 using module ..\lib\ScriptLogging.psm1
+using module ..\helpers\PesterHelpers.psm1
 
 param()
 
@@ -37,23 +38,11 @@ Set-StrictMode -Version 3.0
 
 $logger = [KalmScriptLogger]::Start('Invoke-PesterWithConfig', $null)
 $logger.AddConsoleSink()
-$logger.LogInfo('Starting Pester execution with repo configuration.','Startup')
-
-# Import the PesterHelpers module to get Import-PesterModule function
-$helperModulePath = Join-Path $PSScriptRoot 'helpers\PesterHelpers.psm1'
-Import-Module $helperModulePath -Force -ErrorAction Stop
+$logger.LogInfo('Starting Pester execution with repo configuration.', 'Startup')
 
 Import-PesterModule -ModuleName 'Pester' -Logger $logger
 
-# Resolve expected configuration file path
-$settingsPath = Join-Path $PSScriptRoot 'pester.config.psd1'
-if (-not (Test-Path -LiteralPath $settingsPath)) {
-    Write-Error @(
-        "Pester settings file not found: $settingsPath",
-        "Create a 'pester.config.psd1' under 'scripts/testing' or run Invoke-Pester manually."
-    ) -join [Environment]::NewLine
-    throw 'Missing Pester runsettings file'
-}
+$settingsPath = Resolve-PesterSettingsPath -ScriptRoot $PSScriptRoot
 
 # Load configuration and execute tests. To avoid PowerShell class/type redefinition
 # issues across test files (PowerShell classes are defined at parse-time per
@@ -62,91 +51,133 @@ if (-not (Test-Path -LiteralPath $settingsPath)) {
 # each test file.
 $settings = Import-PowerShellDataFile -Path $settingsPath
 
-# Resolve test file patterns (allow multiple patterns) into concrete file list
-$patterns = @()
-if ($settings.Run -and $settings.Run.Path) {
-    $patterns = @($settings.Run.Path) | ForEach-Object { $_ }
+function Get-PesterPatterns {
+    param([pscustomobject] $Settings)
+    if ($Settings.Run -and $Settings.Run.Path) {
+        return @($Settings.Run.Path) | ForEach-Object { $_ }
+    }
+    return @()
 }
 
-$testFiles = @()
-foreach ($pat in $patterns) {
-    try {
-        $matches = Resolve-Path -Path $pat -ErrorAction SilentlyContinue | ForEach-Object { $_.Path }
-        if ($matches) { $testFiles += $matches }
-    }
-    catch {
-        # ignore patterns that don't match
+function Resolve-TestFiles {
+    param([string[]] $Patterns)
+    return $Patterns | ForEach-Object {
+        try {
+            Resolve-Path -Path $_ -ErrorAction Stop | ForEach-Object { $_.Path }
+        }
+        catch {
+            # ignore missing patterns
+        }
+    } | Where-Object { $_ } | Sort-Object -Unique
+}
+
+function Select-PesterTestFiles {
+    param(
+        [string[]] $Files,
+        [string[]] $ExcludePatterns = @('Invoke-GradleWithJdk')
+    )
+
+    return $Files | Where-Object {
+        $excluded = $false
+        foreach ($pattern in $ExcludePatterns) {
+            if ($_ -match $pattern) {
+                $excluded = $true
+                break
+            }
+        }
+        -not $excluded
     }
 }
+
+function Convert-PesterOutputToResult {
+    param(
+        [string[]] $Raw,
+        [string] $File,
+        [string] $OutputDir,
+        [System.TimeSpan] $Duration,
+        [datetime] $StartedAt,
+        [datetime] $FinishedAt
+    )
+
+    $logLines = @()
+    if ($Raw.Count -gt 1) {
+        $logLines = $Raw[0..($Raw.Count - 2)] | ForEach-Object { $_.ToString() }
+    }
+
+    $jsonLine = $Raw[-1]
+    if ($jsonLine -match '^__PesterResult__::(?<payload>\{.+\})$') {
+        $result = ($matches['payload'] | ConvertFrom-Json -Depth 8)
+    }
+    else {
+        $logLines = $Raw | ForEach-Object { $_.ToString() }
+        $result = [pscustomobject]@{
+            File       = $File
+            OutputPath = Join-Path -Path $OutputDir -ChildPath (([System.IO.Path]::GetFileNameWithoutExtension($File)) + '.test-results.xml')
+        }
+    }
+
+    $failedCount = 0
+    foreach ($line in $logLines) {
+        if ($line -match 'Failed:\s*(\d+)') {
+            $failedCount = [int]$matches[1]
+            break
+        }
+    }
+
+    return [pscustomobject]@{
+        File       = $result.File
+        OutputPath = $result.OutputPath
+        Output     = $logLines
+        ExitCode   = if ($failedCount -gt 0) { 1 } else { 0 }
+        Duration   = $Duration
+        Success    = ($failedCount -eq 0)
+        StartedAt  = $StartedAt
+        FinishedAt = $FinishedAt
+    }
+}
+
+function Invoke-IsolatedTest {
+    param(
+        [string] $File,
+        [string] $SettingsPath,
+        [string] $OutputDir,
+        [KalmScriptLogger] $Logger
+    )
+
+    $Logger.LogDebug(('Invoking pwsh for {0}' -f $File), 'Execution')
+    $scriptFile = Join-Path -Path $PSScriptRoot -ChildPath 'helpers\Invoke-PesterIsolated.ps1'
+    $startTime = Get-Date
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    $rawOutput = & pwsh -NoLogo -NoProfile -File $scriptFile -FilePath $File -SettingsPath $SettingsPath -OutputDir $OutputDir 2>&1
+    $stopwatch.Stop()
+    $finishTime = Get-Date
+
+    if (-not $rawOutput) { return }
+    return Convert-PesterOutputToResult -Raw $rawOutput -File $File -OutputDir $OutputDir `
+        -Duration $stopwatch.Elapsed -StartedAt $startTime -FinishedAt $finishTime
+}
+
+$patterns = Get-PesterPatterns -Settings $settings
+if (-not $patterns -or $patterns.Count -eq 0) {
+    Write-Error 'No test file patterns defined in Pester settings.'
+    throw 'No patterns configured.'
+}
+
+$testFiles = Resolve-TestFiles -Patterns $patterns
+$testFiles = Select-PesterTestFiles -Files $testFiles
 
 if (-not $testFiles -or $testFiles.Count -eq 0) {
     Write-Error "No test files found for patterns: $($patterns -join ', ')"
     throw 'No tests to run.'
 }
 
-# Temporarily skip gradle helper tests to avoid long-running external calls.
-$excluded = @($testFiles | Where-Object { $_ -match 'Invoke-GradleWithJdk' })
-if ($excluded.Count -gt 0) {
-    $logger.LogInfo(("Skipping {0} test file(s) matching Invoke-GradleWithJdk.*" -f $excluded.Count),'Execution')
-}
-$testFiles = @($testFiles | Where-Object { $_ -notmatch 'Invoke-GradleWithJdk' })
+$logger.LogInfo(('Running {0} test file(s) in isolated runspaces.' -f $testFiles.Count), 'Execution')
 
-if ($testFiles.Count -eq 0) {
-    Write-Warning 'All discovered files were excluded.'
-    return
-}
-
-$logger.LogInfo(("Running {0} test file(s) in isolated runspaces." -f $testFiles.Count),'Execution')
-
-# Ensure output directory exists
 $outDir = Join-Path -Path (Split-Path -Parent $settingsPath) -ChildPath '../../build/test-results/pester'
 $outDir = [System.IO.Path]::GetFullPath($outDir)
 if (-not (Test-Path -LiteralPath $outDir)) { New-Item -ItemType Directory -Path $outDir -Force | Out-Null }
 
-foreach ($file in $testFiles) {
-    Write-Verbose "Running tests in isolated process for: $file"
-    $logger.LogDebug(("Invoking pwsh for {0}" -f $file),'Execution')
-    $startedAt = Get-Date
-    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    $scriptFile = Join-Path -Path $PSScriptRoot -ChildPath 'helpers\Invoke-PesterIsolated.ps1'
-    $raw = & pwsh -NoLogo -NoProfile -File $scriptFile -FilePath $file -SettingsPath $settingsPath -OutputDir $outDir 2>&1
-    $stopwatch.Stop()
-    $finishedAt = Get-Date
-    if (-not $raw) { continue }
-    $jsonLine = $raw[-1]
-    $logLines = @()
-    if ($raw.Count -gt 1) {
-        $logLines = $raw[0..($raw.Count - 2)] | ForEach-Object { $_.ToString() }
-    }
-    if ($jsonLine -notmatch '^__PesterResult__::(?<payload>\{.+\})$') {
-        # Fallback: treat all lines as log output if sentinel missing
-        $logLines = $raw | ForEach-Object { $_.ToString() }
-        $result = [pscustomobject]@{
-            File       = $file
-            OutputPath = Join-Path -Path $outDir -ChildPath (([System.IO.Path]::GetFileNameWithoutExtension($file)) + '.test-results.xml')
-        }
-    }
-    else {
-        $json = $matches['payload']
-        $result = $json | ConvertFrom-Json -Depth 8
-    }
-    $failedCount = 0
-    foreach ($line in $logLines) {
-        if ($line -match 'Failed:\s*(\d+)') {
-            $failedCount = [int]$matches[1]
-        }
-    }
-    $result = [pscustomobject]@{
-        File        = $result.File
-        OutputPath  = $result.OutputPath
-        Output      = $logLines
-        ExitCode    = if ($failedCount -gt 0) { 1 } else { 0 }
-        Duration    = $stopwatch.Elapsed
-        Success     = ($failedCount -eq 0)
-        StartedAt   = $startedAt
-        FinishedAt  = $finishedAt
-    }
-    $result | Write-Output
-}
+$testFiles | ForEach-Object { Invoke-IsolatedTest -File $_ -SettingsPath $settingsPath -OutputDir $outDir -Logger $logger } |
+    Write-Output
 
-$logger.LogInfo('Pester isolated-run execution complete.','Summary')
+$logger.LogInfo('Pester isolated-run execution complete.', 'Summary')

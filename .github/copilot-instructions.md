@@ -1,109 +1,34 @@
 # AI Assistant Instructions for KALM
+Multi-module Kotlin/Gradle optimization sandbox with strict reproducibility and PowerShell-first automation.
 
-Multi-module Gradle/Kotlin optimization framework with strict dependency locking, convention plugins, and automated Git/wiki workflows.
+## Hard rules
+1. Never stage/commit/push or touch wiki remotes unless the user explicitly requests it.
+2. Announce planned multi-file edits before touching them; keep diffs laser-focused.
+3. Preserve published APIs (`core/api/core.api`) and Kotlin style unless breaking changes are requested + justified.
+4. Read `dev-resources/AGENT_GUIDELINES.md` once per session and respect its shell guidance (already in pwsh).
 
-## Hard Rules
-1. Never stage, commit, push, or open PRs unless explicitly requested
-2. Explain multi-file changes before applying; keep diffs minimal
-3. Preserve public APIs and coding style unless tests/user require changes
-4. Read `dev-resources/AGENT_GUIDELINES.md` at session start for shell behavior tips
+## Architecture snapshot
+- `core/` hosts algorithm contracts such as `OptimizationEngine` and the self-referential `Feature<T, F>` hierarchy; treat generics carefully to keep type safety.
+- `platform/` exposes the BOM (`kalm-platform`) so consumers import aligned versions — don’t add dependencies directly to downstream modules.
+- `build-logic/` defines convention plugins (`kalm.jvm`, `.library`, `.dependency-locking`, `.detekt-redmadrobot`, `.reproducible`) that modules opt into via `plugins {}`; never re-introduce `allprojects {}` blocks.
+- `scripts/` PowerShell modules (see `scripts/README.md`) wrap Git, wiki, Gradle, Pester, and logging behaviors; reuse them instead of crafting ad-hoc automation.
+- `wiki/` is a git submodule that stores design docs; update it only through the provided sync scripts.
 
-## Architecture Overview
-**Multi-module structure:**
-- `core/` — domain model, algorithms (`OptimizationEngine`, `Feature` with self-referential types)
-- `platform/` — BOM for version alignment
-- `build-logic/` — convention plugins (`kalm.jvm`, `kalm.library`, `kalm.detekt-redmadrobot`, `kalm.dependency-locking`)
+## Day-to-day workflows
+- Full guardrail: `./gradlew verifyAll` (tests + Detekt + API checks). `preflight` adds dependency reports.
+- Module focus: `./gradlew :core:test`, `:core:detekt`, `:core:apiCheck`; regenerate dumps with `:core:apiDump` only when the user approves API changes.
+- Static analysis: `detektAll` for everything, `detektDiff` for branch deltas, `detektFormat` to auto-fix. Config lives in `config/detekt/detekt.yml`.
+- Dependency locking is strict (`gradle.lockfile`, `<module>/gradle.lockfile`, `settings-gradle.lockfile`); only rerun tasks with `--write-locks` when explicitly asked and commit every touched lockfile.
+- Need a specific JDK? Run `./scripts/gradle/Invoke-GradleWithJdk.ps1 -JdkPath <path> -GradleArgument 'verifyAll'`.
+- PowerShell quality gates: `./scripts/quality/Invoke-PSSA.ps1` for linting and `./scripts/testing/Invoke-PesterWithConfig.ps1` for tests (reads `scripts/testing/pester.config.psd1`).
 
-**Key patterns:**
-- Self-referential types in `Feature<T, F> where F : Feature<T, F>` for type-safe transformations
-- Convention plugins apply toolchain, dependency locking, and Detekt — not via `allprojects {}`
-- Version catalog at `gradle/libs.versions.toml` with provider-safe accessors
+## Git + wiki expectations
+- Prefer script-first syncs: `./scripts/git/Sync-RepoAndWiki.ps1` for the whole repo, `Sync-WikiOnly.ps1 -UpdatePointer` for docs. Always dry-run with `-WhatIf` when touching remotes or submodules.
+- Avoid redundant `pwsh -NoProfile` wrappers when already inside pwsh; consult `dev-resources/AGENT_GUIDELINES.md`.
+- When wiki diverges, use the script’s `-PullStrategy merge|rebase` switches instead of manual git commands.
 
-## Essential Commands
-```powershell
-# Full verification (tests + Detekt + API checks)
-./gradlew verifyAll
-
-# Preflight (verifyAll + dependency reports)
-./gradlew preflight
-
-# Module-specific
-./gradlew :core:test
-./gradlew :core:detekt
-
-# Multi-module Detekt tasks (via RedMadRobot plugin)
-./gradlew detektAll          # All modules
-./gradlew detektDiff         # Only changes vs main
-./gradlew detektFormat       # Auto-format
-
-# Gradle with specific JDK (script-first)
-./scripts/gradle/Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'verifyAll'
-```
-
-## Critical Traps & Conventions
-**Dependency locking (strict mode):**
-- Lock files: `gradle.lockfile`, `core/gradle.lockfile`, etc.
-- **Never** regenerate without `--write-locks` explicitly requested by user
-- Missing lock state? Run task with `--write-locks`: `./gradlew :core:test --write-locks`
-- Detekt lock issues: `./gradlew :core:detekt --write-locks`
-- See `dev-resources/DEPENDENCY_LOCKING.md` for troubleshooting
-
-**Binary compatibility:**
-- API dumps at `core/api/core.api` are source-of-truth
-- Changes trigger `apiCheck` failures — regenerate with `apiDump` only when APIs intentionally change
-
-**Detekt:**
-- Config: `config/detekt/detekt.yml`
-- Auto-format with `detektFormat`, incremental checks with `detektDiff`
-- Thresholds intentionally low — justify suppressions with tests
-
-**Git & wiki automation (PowerShell 7.4+):**
-- Use `scripts/git/Sync-WikiOnly.ps1` for wiki changes, `scripts/git/Sync-RepoAndWiki.ps1` for full sync
-- Always preview with `-WhatIf` before executing
-- Handle divergence with `-PullStrategy merge|rebase` (default: `ff-only` fails fast)
-- Avoid redundant pwsh wrappers when already in pwsh (see `dev-resources/AGENT_GUIDELINES.md`)
-
-## Convention Plugin Architecture
-Plugins in `build-logic/src/main/kotlin/`:
-- `kalm.jvm` — Java 22 toolchain, Kotlin compiler options, `-Xjsr305=strict`
-- `kalm.library` — Maven publishing, explicit API mode, test configuration (JUnit Platform)
-- `kalm.dependency-locking` — applies `LockMode.STRICT` per module (not via `allprojects`)
-- `kalm.detekt-redmadrobot` — wraps RedMadRobot plugin for multi-module Detekt tasks
-- `kalm.reproducible` — byte-for-byte reproducible builds (archive metadata)
-
-**Why convention plugins?**
-- Avoids `allprojects {}` pitfalls (breaks configuration cache, implicit dependencies)
-- Each module opts in explicitly via `plugins { id("kalm.jvm") }`
-
-## Workflow Contracts
-**Before edits:**
-- Gather context (read files, check tests/API dumps)
-- Verify lockfiles exist for affected modules
-
-**After edits:**
-- Run affected module's tests: `./gradlew :core:test`
-- Check Detekt: `./gradlew :core:detekt`
-- Verify API compatibility: `./gradlew :core:apiCheck`
-- Report failures (build errors, lint violations, API mismatches)
-
-## Key File References
-- `core/src/main/kotlin/cl/ravenhill/kalm/engine/OptimizationEngine.kt` — engine contract
-- `core/src/main/kotlin/cl/ravenhill/kalm/repr/Feature.kt` — self-referential type example
-- `build-logic/src/main/kotlin/kalm.*.gradle.kts` — convention plugin implementations
-- `gradle/libs.versions.toml` — version catalog
-- `dev-resources/DEPENDENCY_LOCKING.md` — lockfile troubleshooting
-- `dev-resources/AGENT_GUIDELINES.md` — shell/runtime tips
-- `scripts/README.md` — Git/wiki automation documentation
-
-## Integration Points
-- **Wiki submodule:** `wiki/` tracks research docs (synced via `syncWiki` task or scripts)
-- **PowerShell scripts:** `scripts/` for Git operations, Gradle JDK selection, PSScriptAnalyzer checks
-- **CI verification:** `verifyAll` aggregates tests, Detekt, and API checks across all modules
-
-## Quick Troubleshooting
-- Missing lock state? → `./gradlew <task> --write-locks`
-- API dump mismatch? → Regenerate with `./gradlew apiDump` (only if intentional API change)
-- Detekt fails on new config? → `./gradlew :core:detekt --write-locks`
-- Wiki diverged? → `./scripts/git/Sync-WikiOnly.ps1 -PullStrategy merge -WhatIf` (preview first)
-
-Last updated: 2025-11-11
+## Key references
+- Version catalog: `gradle/libs.versions.toml`.
+- Detekt + RedMadRobot tuning: `config/detekt/detekt.yml`, convention plugin sources in `build-logic/src/main/kotlin/`.
+- Dependency-locking how-to: `dev-resources/DEPENDENCY_LOCKING.md`.
+- Git standards & CI/CD expectations: `dev-resources/GIT_STANDARD.md`, `dev-resources/CI_CD.md`.

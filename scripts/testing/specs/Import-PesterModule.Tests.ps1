@@ -13,31 +13,31 @@ Conventions:
 using module '..\..\..\scripts\lib\ScriptLogging.psm1'
 
 Describe 'Import-PesterModule' {
-        <#
-        Notes on test structure and patterns used in this file:
+    <#
+    Notes on test structure and patterns used in this file:
 
-        - Module vs implementation helpers:
-            The project exposes the public helper API via `PesterHelpers.psm1`. That module
-            intentionally exports only the public surface (e.g. `Import-PesterModule`,
-            `Get-KalmRepoRoot`). For finer-grained, unit-like tests we dot-source the
-            implementation script (`Import-PesterModule.ps1`) in `BeforeAll` below. This
-            keeps the public module API unchanged while allowing tests to call internal
-            helpers directly.
+    - Module vs implementation helpers:
+        The project exposes the public helper API via `PesterHelpers.psm1`. That module
+        intentionally exports only the public surface (e.g. `Import-PesterModule`,
+        `Get-KalmRepoRoot`). For finer-grained, unit-like tests we dot-source the
+        implementation script (`Import-PesterModule.ps1`) in `BeforeAll` below. This
+        keeps the public module API unchanged while allowing tests to call internal
+        helpers directly.
 
-        - Discovery vs execution time in Pester:
-            Top-level code in the spec runs during test *discovery*; code inside `BeforeAll`,
-            `It`, `BeforeEach`, etc. runs at *execution* time. When generating per-case tests
-            in a loop, be careful: capturing loop variables (closures) can cause tests to use
-            the final loop value at execution time. To avoid that, we generate literal `It`
-            blocks at discovery time using `[ScriptBlock]::Create()` so each test contains
-            its own embedded, immutable values.
+    - Discovery vs execution time in Pester:
+        Top-level code in the spec runs during test *discovery*; code inside `BeforeAll`,
+        `It`, `BeforeEach`, etc. runs at *execution* time. When generating per-case tests
+        in a loop, be careful: capturing loop variables (closures) can cause tests to use
+        the final loop value at execution time. To avoid that, we generate literal `It`
+        blocks at discovery time using `[ScriptBlock]::Create()` so each test contains
+        its own embedded, immutable values.
 
-        - Escaping variables in generated literal blocks:
-            Inside the literal string we escape `$` with a backtick so the created scriptblock
-            evaluates the variables at execution time rather than during the string interpolation
-            at discovery time. At the same time, we interpolate loop-specific values (like
-            the case name) into the literal at discovery time so they're baked into the test.
-        #>
+    - Escaping variables in generated literal blocks:
+        Inside the literal string we escape `$` with a backtick so the created scriptblock
+        evaluates the variables at execution time rather than during the string interpolation
+        at discovery time. At the same time, we interpolate loop-specific values (like
+        the case name) into the literal at discovery time so they're baked into the test.
+    #>
     BeforeAll {
         # Determine helper module path relative to this spec and import it first
         $helperPath = Join-Path $PSScriptRoot '..' 'helpers' 'PesterHelpers.psm1'

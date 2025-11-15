@@ -135,6 +135,8 @@ function Import-PesterModuleByPath {
     [System.Management.Automation.PSModuleInfo]
 #>
 function Import-PesterModuleByName {
+    [CmdletBinding()]
+    [OutputType([System.Management.Automation.PSModuleInfo])]
     param(
         [ValidateNotNullOrWhiteSpace()]
         [string] $ModuleName,
@@ -144,20 +146,22 @@ function Import-PesterModuleByName {
         [KalmScriptLogger] $Logger
     )
 
-    $Logger.LogInfo(('Importing module by name: {0} (>= {1})' -f $ModuleName, $MinimumVersion), 'Startup')
+    $Logger.LogInfo("Importing module by name: $ModuleName (>= $MinimumVersion)", 'Startup')
 
     try {
-        return Import-Module -Name $ModuleName -MinimumVersion $MinimumVersion -PassThru -ErrorAction Stop
+        Import-Module -Name $ModuleName -MinimumVersion $MinimumVersion -PassThru -ErrorAction Stop
     }
     catch {
         $available = (Get-Module -ListAvailable -Name $ModuleName |
                 Sort-Object Version -Descending |
                 Select-Object -ExpandProperty Version -Unique) -join ', '
         if ($available) {
-            $msg = "Failed to import module '{0}' with MinimumVersion {1}. Available versions: {2}" -f $ModuleName, $MinimumVersion, $available
+            $msg = (
+                "Failed to import module '{0}' with MinimumVersion {1}. Available versions: {2}" -f
+                $ModuleName, $MinimumVersion, $available)
         }
         else {
-            $msg = "Failed to import module '{0}': no versions found on this system." -f $ModuleName
+            $msg = "Failed to import module '$ModuleName': no versions found on this system."
         }
         throw [System.InvalidOperationException]::new($msg, $_.Exception)
     }

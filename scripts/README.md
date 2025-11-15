@@ -8,6 +8,16 @@ PowerShell automation tools for Git, Gradle, and project maintenance workflows.
 - **Git 2.20+**
 - **JDK** (for Gradle scripts)
 
+For a deeper, maintainer-focused overview of how repository scripts are structured (logging, strict mode, dry-run behavior, testing, and static analysis), see the wiki page **“PowerShell Scripting Practices (KALM)”** under the `wiki/` submodule.
+
+## Module Loading Guidelines
+
+For scripts in this folder, prefer the following patterns:
+
+- Use `using module` when you need types at parse time (for example, classes or enums defined in a `.psm1`, such as `KalmScriptLogger` in `./lib/ScriptLogging.psm1`). It must appear at the very top of the file and cannot be conditional.
+- Use `Import-Module` when you want runtime and/or conditional loading (for example, inside functions, with `try/catch`, or when you need `-Scope`, `-Prefix`, or selective import). This loads functions and cmdlets but does not make PowerShell classes available at parse time.
+- Use `#Requires -Modules` when a script cannot run without a module and you want PowerShell to fail early with a clear error. If you also need classes from that module, combine `#Requires -Modules` with `using module` at the top.
+
 ## Logging
 
 All entry-point scripts initialize the `KalmScriptLogger` class from `scripts/lib/ScriptLogging.psm1`. Logs are written under `logs/<script>.log`, rotated at ~5 MB (five archives kept). Include the module via `using module` at the top of any new script and emit log lines as needed:
