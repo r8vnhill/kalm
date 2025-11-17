@@ -7,7 +7,7 @@
 	```powershell
 	.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build', '--no-daemon'
 	```
-> [!warning] Project status: Early-stage / pre-alpha  
+> [!warning] Project status: Early-stage / pre-alpha
 	```bash
 	./scripts/gradle/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build --no-daemon
 	```

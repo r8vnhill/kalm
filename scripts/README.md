@@ -338,3 +338,21 @@ Get-Command -Module GitSync
 - **Contribution guide:** [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 - **Git workflows:** [`dev-resources/GIT_STANDARD.md`](../dev-resources/GIT_STANDARD.md)
 - **Dependency locking:** [`dev-resources/DEPENDENCY_LOCKING.md`](../dev-resources/DEPENDENCY_LOCKING.md)
+
+## Testing (Pester)
+
+- Run all tests from Windows PowerShell (pwsh):
+
+```powershell
+./scripts/testing/Invoke-PesterWithConfig.ps1
+```
+
+- Run tests inside WSL using pwsh (useful for cross-platform verification):
+
+```powershell
+wsl.exe -e bash -lc 'cd "$(wslpath -a .)" && pwsh -NoLogo -NoProfile -File ./scripts/testing/Invoke-PesterWithConfig.ps1'
+```
+
+Notes:
+- The harness isolates each test file in its own pwsh process to avoid class redefinition issues and writes results to `build/test-results/pester`.
+- If `wsl.exe -e pwsh` fails due to PATH, invoking via `bash -lc` ensures the shell environment is initialized so `pwsh` is resolvable.

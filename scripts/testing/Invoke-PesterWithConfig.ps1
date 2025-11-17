@@ -30,7 +30,7 @@
 #Requires -Version 7.4
 
 using module ..\lib\ScriptLogging.psm1
-using module ..\helpers\PesterHelpers.psm1
+using module .\helpers\PesterHelpers.psm1
 
 param()
 
@@ -44,20 +44,11 @@ Import-PesterModule -ModuleName 'Pester' -Logger $logger
 
 $settingsPath = Resolve-PesterSettingsPath -ScriptRoot $PSScriptRoot
 
-# Load configuration and execute tests. To avoid PowerShell class/type redefinition
-# issues across test files (PowerShell classes are defined at parse-time per
-# runspace), execute each discovered test file in a fresh pwsh process. This
-# ensures modules that define classes (like ScriptLogging) load cleanly for
-# each test file.
+# Load configuration and execute tests. To avoid PowerShell class/type redefinition issues across
+# test files (PowerShell classes are defined at parse-time per runspace), execute each discovered
+# test file in a fresh pwsh process. This ensures modules that define classes (like ScriptLogging)
+# load cleanly for each test file.
 $settings = Import-PowerShellDataFile -Path $settingsPath
-
-function Get-PesterPatterns {
-    param([pscustomobject] $Settings)
-    if ($Settings.Run -and $Settings.Run.Path) {
-        return @($Settings.Run.Path) | ForEach-Object { $_ }
-    }
-    return @()
-}
 
 function Resolve-TestFiles {
     param([string[]] $Patterns)
@@ -158,7 +149,7 @@ function Invoke-IsolatedTest {
 }
 
 $patterns = Get-PesterPatterns -Settings $settings
-if (-not $patterns -or $patterns.Count -eq 0) {
+if (@($patterns).Count -eq 0) {
     Write-Error 'No test file patterns defined in Pester settings.'
     throw 'No patterns configured.'
 }
@@ -166,7 +157,7 @@ if (-not $patterns -or $patterns.Count -eq 0) {
 $testFiles = Resolve-TestFiles -Patterns $patterns
 $testFiles = Select-PesterTestFiles -Files $testFiles
 
-if (-not $testFiles -or $testFiles.Count -eq 0) {
+if (@($testFiles).Count -eq 0) {
     Write-Error "No test files found for patterns: $($patterns -join ', ')"
     throw 'No tests to run.'
 }
