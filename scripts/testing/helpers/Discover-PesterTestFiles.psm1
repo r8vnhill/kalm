@@ -13,23 +13,77 @@ using module ..\..\lib\ScriptLogging.psm1
 
     Notes:
     - Resolve-Path does not understand '**'; when '**' is present, this module enumerates from
-      the longest literal prefix directory and matches using -like against the full absolute path.
+      the longest literal prefix directory and matches using custom glob semantics against the
+      full absolute path.
     - Deterministic ordering is enforced via Sort-Object -Unique.
 
 .OUTPUTS
     [string[]]
 #>
 
+function Convert-PesterGlobToRegex {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Pattern
+    )
+
+    $normalized = ($Pattern -replace '\\', '/')
+    $builder = [System.Text.StringBuilder]::new()
+    $builder.Append('^') | Out-Null
+
+    for ($i = 0; $i -lt $normalized.Length;) {
+        $char = $normalized[$i]
+
+        if ($char -eq '*') {
+            if (($i + 1) -lt $normalized.Length -and $normalized[$i + 1] -eq '*') {
+                # Treat '**' as "zero or more directories". When followed by '/' allow the slash to be optional
+                # so '**/Foo.ps1' still matches 'Foo.ps1' at the root.
+                $i += 2
+                if ($i -lt $normalized.Length -and $normalized[$i] -eq '/') {
+                    $builder.Append('(?:.*/)?') | Out-Null
+                    $i++
+                }
+                else {
+                    $builder.Append('.*') | Out-Null
+                }
+                continue
+            }
+
+            $builder.Append('[^/]*') | Out-Null
+            $i++
+            continue
+        }
+        elseif ($char -eq '?') {
+            $builder.Append('[^/]') | Out-Null
+            $i++
+            continue
+        }
+
+        $builder.Append([System.Text.RegularExpressions.Regex]::Escape($char)) | Out-Null
+        $i++
+    }
+
+    $builder.Append('$') | Out-Null
+    return $builder.ToString()
+}
+
 function Get-PesterTestFiles {
     [CmdletBinding()]
     [OutputType([string[]])]
     param(
-        # TODO: Parameter validation
+        [ValidateNotNullOrEmpty()]
         [Parameter(Mandatory, Position = 0)]
         [string[]] $IncludePatterns,
 
+        [ValidateScript({
+                if (-not $_) { return $true }
+                if (Test-Path -LiteralPath $_ -PathType Container) { return $true }
+                throw "BaseDirectory '$_' does not exist or is not a directory."
+            })]
         [string] $BaseDirectory,
 
+        [ValidateNotNull()]
         [Parameter(Mandatory)]
         [KalmScriptLogger] $Logger
     )
@@ -53,41 +107,51 @@ function Get-PesterTestFiles {
         $absPatternNorm = $absPattern -replace '/', '\\'
 
         $patternMatches = @()
-        if ($absPatternNorm -like '*`**`*') {
-            # TODO: Extract this to a function
+        if ($absPattern -like '*`**`*') {
             # Fallback discovery for patterns with '**'
-            # Find first wildcard index to compute an enumeration root
-            $wildIdx = $absPatternNorm.IndexOf('*')
-            if ($wildIdx -lt 0) { $wildIdx = $absPatternNorm.Length }
-            $rootCandidate = $absPatternNorm.Substring(0, $wildIdx)
-            $rootDir = if ([System.IO.Directory]::Exists($rootCandidate)) {
-                $rootCandidate
+            $wildIdx = $absPattern.IndexOf('*')
+            if ($wildIdx -lt 0) { $wildIdx = $absPattern.Length }
+            $literalPrefix = $absPattern.Substring(0, $wildIdx)
+            $separatorIndex = [Math]::Max($literalPrefix.LastIndexOf('/'), $literalPrefix.LastIndexOf('\'))
+
+            # TODO: Confirm BaseDirectory fallback behavior for rooted absolute patterns; currently we
+            #       prefer the caller-supplied base even when the pattern is already absolute.
+            $rootDir = $BaseDirectory
+            if ($separatorIndex -gt 0) {
+                $candidate = $literalPrefix.Substring(0, $separatorIndex)
+                if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+                    $rootDir = $candidate
+                }
             }
-            else {
-                [System.IO.Path]::GetDirectoryName($rootCandidate)
+
+            try {
+                $rootDir = (Resolve-Path -Path $rootDir -ErrorAction Stop).ProviderPath
             }
-            if (
-                -not [string]::IsNullOrWhiteSpace($rootDir) -and (Test-Path -LiteralPath $rootDir)
-            ) {
+            catch {
+                $rootDir = $null
+            }
+
+            if ($rootDir) {
+                # TODO: Convert-PesterGlobToRegex currently treats '**' by expanding enumeration roots.
+                #       Revisit once we have a clearer set of expected Pester glob behaviors.
+                $regexPattern = Convert-PesterGlobToRegex -Pattern $absPattern
                 $gciSplat = @{
                     LiteralPath = $rootDir
                     Recurse     = $true
                     File        = $true
                     ErrorAction = 'SilentlyContinue'
                 }
-                # Convert pattern: treat '**' as wildcard crossing directories.
-                # -like handles '\' in the candidate.
-                # '**' -> '*'
-                $likePattern = $absPatternNorm -replace '\\\\', '\\' -replace '\*\*', '*'
-                # TODO: Maybe this could be improved? Is ForEach-Object the best option here?
+
                 $patternMatches = Get-ChildItem @gciSplat |
                     ForEach-Object { $_.FullName } |
                     Where-Object {
-                        ($_ -replace '/', '\\') -like $likePattern
+                        ($_ -replace '\\', '/') -match $regexPattern
                     }
             }
         }
         else {
+            # TODO: Extraction: the literal Resolve-Path branch could reuse a helper shared with the
+            #       '**' path to centralize normalization.
             $patternMatches = try {
                 Resolve-Path -Path $absPatternNorm -ErrorAction Stop |
                     ForEach-Object { $_.ProviderPath }
@@ -97,6 +161,9 @@ function Get-PesterTestFiles {
             }
         }
 
+        if (-not $patternMatches) {
+            $patternMatches = @()
+        }
         $Logger.LogDebug("Pattern '$pattern' → ${@($patternMatches).Count} file(s)", 'Discovery')
         $all.AddRange([string[]]$patternMatches)
     }
