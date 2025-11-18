@@ -122,4 +122,56 @@ Describe 'Get-PesterPatterns' {
     It 'produces an empty array when no settings object is supplied' {
         Get-PesterPatterns -Settings $null | Should -BeNullOrEmpty
     }
+
+    It 'accepts hashtable settings from Import-PowerShellDataFile with a scalar path' {
+        # Import-PowerShellDataFile produces hashtables, not PSCustomObject.
+        # Verify the helper handles hashtable access correctly.
+        $settings = @{
+            Run = @{
+                Path = 'scripts/testing/specs/*.Tests.ps1'
+            }
+        }
+
+        $patterns = Get-PesterPatterns -Settings $settings
+        $patterns | Should -Be @('scripts/testing/specs/*.Tests.ps1')
+    }
+
+    It 'accepts hashtable settings with an array path' {
+        # Verify the helper handles array values in hashtables.
+        $expectedPatterns = @('scripts/**/*.Tests.ps1', 'core/**/*.Tests.ps1')
+        $settings = @{
+            Run = @{
+                Path = $expectedPatterns
+            }
+        }
+
+        $patterns = Get-PesterPatterns -Settings $settings
+        $patterns | Should -Be $expectedPatterns
+    }
+
+    It 'accepts the settings object via pipeline input by value' {
+        $expectedPatterns = @('scripts/testing/specs/*.Tests.ps1')
+        $settings = [PSCustomObject]@{
+            Run = @{ Path = $expectedPatterns }
+        }
+
+        $settings | Get-PesterPatterns | Should -Be $expectedPatterns
+    }
+
+    It 'accepts hashtable settings via pipeline' {
+        # Verify pipeline input works with hashtables (from Import-PowerShellDataFile).
+        $expectedPatterns = @('scripts/testing/specs/*.Tests.ps1')
+        $settings = @{
+            Run = @{ Path = $expectedPatterns }
+        }
+
+        $settings | Get-PesterPatterns | Should -Be $expectedPatterns
+    }
+
+    It 'accepts pipeline input that exposes a Run dictionary' {
+        $expectedPatterns = @('scripts/testing/specs/*.Tests.ps1')
+        $runDefinition = [ordered]@{ Path = $expectedPatterns }
+
+        [PSCustomObject]@{ Run = $runDefinition } | Get-PesterPatterns | Should -Be $expectedPatterns
+    }
 }

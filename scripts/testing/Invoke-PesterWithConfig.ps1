@@ -31,10 +31,15 @@
 
 using module ..\lib\ScriptLogging.psm1
 using module .\helpers\PesterHelpers.psm1
+using module .\helpers\Discover-PesterTestFiles.psm1
 
 param()
 
 Set-StrictMode -Version 3.0
+
+# Ensure latest helper modules are loaded even if this session previously imported them
+Import-Module -Name (Join-Path $PSScriptRoot 'helpers\Discover-PesterTestFiles.psm1') -Force
+Import-Module -Name (Join-Path $PSScriptRoot 'helpers\Resolve-PesterSettings.psm1') -Force
 
 $logger = [KalmScriptLogger]::Start('Invoke-PesterWithConfig', $null)
 $logger.AddConsoleSink()
@@ -49,36 +54,6 @@ $settingsPath = Resolve-PesterSettingsPath -ScriptRoot $PSScriptRoot
 # test file in a fresh pwsh process. This ensures modules that define classes (like ScriptLogging)
 # load cleanly for each test file.
 $settings = Import-PowerShellDataFile -Path $settingsPath
-
-function Resolve-TestFiles {
-    param([string[]] $Patterns)
-    return $Patterns | ForEach-Object {
-        try {
-            Resolve-Path -Path $_ -ErrorAction Stop | ForEach-Object { $_.Path }
-        }
-        catch {
-            # ignore missing patterns
-        }
-    } | Where-Object { $_ } | Sort-Object -Unique
-}
-
-function Select-PesterTestFiles {
-    param(
-        [string[]] $Files,
-        [string[]] $ExcludePatterns = @('Invoke-GradleWithJdk')
-    )
-
-    return $Files | Where-Object {
-        $excluded = $false
-        foreach ($pattern in $ExcludePatterns) {
-            if ($_ -match $pattern) {
-                $excluded = $true
-                break
-            }
-        }
-        -not $excluded
-    }
-}
 
 function Convert-PesterOutputToResult {
     param(
@@ -154,8 +129,8 @@ if (@($patterns).Count -eq 0) {
     throw 'No patterns configured.'
 }
 
-$testFiles = Resolve-TestFiles -Patterns $patterns
-$testFiles = Select-PesterTestFiles -Files $testFiles
+$testFiles = Get-PesterTestFiles -IncludePatterns $patterns -BaseDirectory (Get-Location).ProviderPath -Logger $logger
+$testFiles = Select-PesterTestFiles -Files $testFiles -ExcludePatterns @('Invoke-GradleWithJdk') -Logger $logger
 
 if (@($testFiles).Count -eq 0) {
     Write-Error "No test files found for patterns: $($patterns -join ', ')"

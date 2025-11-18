@@ -1,3 +1,6 @@
+#Requires -Version 7.4
+Set-StrictMode -Version 3.0
+
 <#
 .SYNOPSIS
     Resolve the repository Pester configuration file path and validate it exists.
@@ -40,29 +43,67 @@ function Resolve-PesterSettingsPath {
     Extract test file patterns from a Pester settings object.
 
 .DESCRIPTION
-    Normalizes the `Run.Path` value from the provided settings into an array of
-    patterns. Accepts both scalar strings and arrays. Returns an empty array
-    when `Run.Path` is missing.
+    Normalizes the `Run.Path` value from the provided settings into an array of patterns. Accepts
+    both scalar strings and arrays. Returns an empty array when `Run.Path` is missing.
+
+    This function handles both hashtables (as returned by Import-PowerShellDataFile) and
+    PSCustomObjects. It safely navigates nested properties/keys to extract Run.Path values.
 
 .PARAMETER Settings
-    A settings object (typically from Import-PowerShellDataFile) that may
-    contain `Run.Path`.
+    A settings object (hashtable from Import-PowerShellDataFile or PSCustomObject) that may
+    contain `Run.Path`. Accepts pipeline input by value or by property name.
 
 .OUTPUTS
     [string[]] Array of patterns (possibly empty).
+
+.EXAMPLE
+    # Load settings from file and extract patterns
+    $settings = Import-PowerShellDataFile -Path 'pester.config.psd1'
+    $patterns = Get-PesterPatterns -Settings $settings
+
+.EXAMPLE
+    # Pipeline usage with hashtable
+    @{ Run = @{ Path = '**/*.Tests.ps1' } } | Get-PesterPatterns
 #>
 function Get-PesterPatterns {
     [CmdletBinding()]
+    [OutputType([string[]])]
     param(
-        [PSCustomObject] $Settings
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+        $Settings
     )
 
-    if ($Settings -and $Settings.Run) {
-        @($Settings.Run.Path)
+    # Handle both hashtable (from Import-PowerShellDataFile) and PSCustomObject inputs.
+    # Safely navigate to Run.Path without tripping StrictMode on missing members.
+    $paths = $null
+    if ($Settings) {
+        $runConfig = $null
+        if ($Settings -is [System.Collections.IDictionary]) {
+            $runConfig = $Settings['Run']
+        }
+        elseif ($Settings.PSObject -and $Settings.PSObject.Properties.Match('Run').Count -gt 0) {
+            $runConfig = $Settings.Run
+        }
+
+        if ($runConfig) {
+            if ($runConfig -is [System.Collections.IDictionary]) {
+                $paths = $runConfig['Path']
+            }
+            elseif (
+                $runConfig.PSObject -and $runConfig.PSObject.Properties.Match('Path').Count -gt 0
+            ) {
+                $paths = $runConfig.Path
+            }
+        }
     }
-    else {
-        @()
+
+    if (-not $paths) {
+        return @()
     }
+
+    # Normalize to [string[]] so callers always get an array, even for a single path
+    [string[]]$normalized = $paths
+    return $normalized
 }
 
 Export-ModuleMember -Function Resolve-PesterSettingsPath, Get-PesterPatterns
