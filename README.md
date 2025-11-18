@@ -4,13 +4,11 @@
 [![Gradle](https://img.shields.io/badge/Gradle-8.14-blue?logo=gradle)](https://gradle.org/)
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD--2--Clause-blue.svg)](LICENSE)
 [![Pre-Alpha](https://img.shields.io/badge/status-pre--alpha-orange)](#)
-	```powershell
-	.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build', '--no-daemon'
-	```
-> [!warning] Project status: Early-stage / pre-alpha
-	```bash
-	./scripts/gradle/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build --no-daemon
-	```
+
+> [!warning] Project status: Early-stage / pre-alpha  
+> This project is in active development. APIs and features are subject to change.
+
+**Planned features:**
 - Support for modular optimization algorithms (e.g., genetic algorithms, differential evolution)
 - Extensible components for selection, mutation, and evaluation
 - Integration with analysis and visualization tools
@@ -58,10 +56,10 @@ The project includes PowerShell scripts for Git and wiki submodule workflows:
 
 ```powershell
 # Sync entire repo + all submodules
-.\scripts/git/Sync-RepoAndWiki.ps1
+./scripts/git/Sync-RepoAndWiki.ps1
 
 # Sync only wiki submodule (and optionally update pointer)
-.\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer
+./scripts/git/Sync-WikiOnly.ps1 -UpdatePointer
 ```
 
 See **[`scripts/README.md`](scripts/README.md)** for comprehensive documentation on all automation scripts.
@@ -92,7 +90,10 @@ $env:JAVA_HOME = '/path/to/jdk-22'
 ./gradlew --write-locks preflight --no-daemon
 ```
 
-For detailed guidance and troubleshooting on dependency locking (strict mode, writing locks, and common errors), see
+For detailed guidance and troubleshooting on dependency locking (strict mode, writing locks, and common errors), see [`dev-resources/DEPENDENCY_LOCKING.md`](dev-resources/DEPENDENCY_LOCKING.md).
+
+## 🧪 Quality & Verification
+
 Run all verification in one go:
 
 ```powershell
