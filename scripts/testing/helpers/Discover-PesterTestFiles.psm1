@@ -37,11 +37,13 @@ function Convert-PesterGlobToRegex {
 
         if ($char -eq '*') {
             if (($i + 1) -lt $normalized.Length -and $normalized[$i + 1] -eq '*') {
-                # Treat '**' as "zero or more directories". When followed by '/' allow the slash to be optional
-                # so '**/Foo.ps1' still matches 'Foo.ps1' at the root.
+                # Treat '**' as "zero or more path segments".
+                # When followed by '/', emit a pattern that matches zero or more directories
+                # so '**/Foo.ps1' matches both 'Foo.ps1' at root and 'sub/Foo.ps1' in subdirs
                 $i += 2
                 if ($i -lt $normalized.Length -and $normalized[$i] -eq '/') {
-                    $builder.Append('(?:.*/)?') | Out-Null
+                    # Match zero or more complete path segments: (dir/, dir/sub/, or nothing)
+                    $builder.Append('(?:(?:[^/]+/)*)') | Out-Null
                     $i++
                 }
                 else {
@@ -66,6 +68,73 @@ function Convert-PesterGlobToRegex {
 
     $builder.Append('$') | Out-Null
     return $builder.ToString()
+}
+
+function Get-PesterGlobEnumerationRoot {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string] $Pattern,
+
+        [Parameter(Mandatory)]
+        [string] $AbsolutePattern,
+
+        [Parameter(Mandatory)]
+        [string] $BaseDirectory,
+
+        [Parameter(Mandatory)]
+        [bool] $IsRooted
+    )
+
+    $normalizedAbsolute = $AbsolutePattern -replace '\\', '/'
+    $normalizedBase = $BaseDirectory -replace '\\', '/'
+    $rootDir = if ($IsRooted) {
+        [System.IO.Path]::GetPathRoot($AbsolutePattern)
+    }
+    else {
+        $BaseDirectory
+    }
+
+    if (-not $rootDir) {
+        $rootDir = $BaseDirectory
+    }
+
+    $relativePortion = if ($IsRooted) {
+        $rootPrefix = ([System.IO.Path]::GetPathRoot($AbsolutePattern) -replace '\\', '/')
+        if ($rootPrefix) {
+            $normalizedAbsolute.Substring([Math]::Min($normalizedAbsolute.Length, $rootPrefix.Length))
+        }
+        else {
+            $normalizedAbsolute
+        }
+    }
+    else {
+        if ($normalizedAbsolute.StartsWith($normalizedBase, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $normalizedAbsolute.Substring($normalizedBase.Length)
+        }
+        else {
+            $Pattern -replace '\\', '/'
+        }
+    }
+
+    if ($relativePortion) {
+        $relativePortion = $relativePortion.TrimStart('/')
+    }
+
+    if (-not $relativePortion) {
+        return $rootDir
+    }
+
+    $segments = $relativePortion -split '/'
+    foreach ($segment in $segments) {
+        if (-not $segment) { continue }
+        if ([System.Management.Automation.WildcardPattern]::ContainsWildcardCharacters($segment)) {
+            break
+        }
+        $rootDir = Join-Path -Path $rootDir -ChildPath $segment
+    }
+
+    return $rootDir
 }
 
 function Get-PesterTestFiles {
@@ -104,25 +173,17 @@ function Get-PesterTestFiles {
         }
 
         # Normalize separators to platform style for matching
-        $absPatternNorm = $absPattern -replace '/', '\\'
+        $absPatternNorm = if ([System.IO.Path]::DirectorySeparatorChar -eq '\') {
+            $absPattern -replace '/', '\'
+        }
+        else {
+            $absPattern -replace '\', '/'
+        }
 
         $patternMatches = @()
         if ($absPattern -like '*`**`*') {
             # Fallback discovery for patterns with '**'
-            $wildIdx = $absPattern.IndexOf('*')
-            if ($wildIdx -lt 0) { $wildIdx = $absPattern.Length }
-            $literalPrefix = $absPattern.Substring(0, $wildIdx)
-            $separatorIndex = [Math]::Max($literalPrefix.LastIndexOf('/'), $literalPrefix.LastIndexOf('\'))
-
-            # TODO: Confirm BaseDirectory fallback behavior for rooted absolute patterns; currently we
-            #       prefer the caller-supplied base even when the pattern is already absolute.
-            $rootDir = $BaseDirectory
-            if ($separatorIndex -gt 0) {
-                $candidate = $literalPrefix.Substring(0, $separatorIndex)
-                if (-not [string]::IsNullOrWhiteSpace($candidate)) {
-                    $rootDir = $candidate
-                }
-            }
+            $rootDir = Get-PesterGlobEnumerationRoot -Pattern $pattern -AbsolutePattern $absPatternNorm -BaseDirectory $BaseDirectory -IsRooted:$isRooted
 
             try {
                 $rootDir = (Resolve-Path -Path $rootDir -ErrorAction Stop).ProviderPath
@@ -176,17 +237,17 @@ function Select-PesterTestFiles {
     [CmdletBinding()]
     [OutputType([string[]])]
     param(
-        # TODO: Parameter validation
+        [ValidateNotNullOrEmpty()]
         [Parameter(Mandatory, Position = 0)]
         [string[]] $Files,
 
         [string[]] $ExcludePatterns = @(),
 
+        [ValidateNotNull()]
         [Parameter(Mandatory)]
         [KalmScriptLogger] $Logger
     )
 
-    # TODO: This function could be easily broken into smaller pieces for modularity/testing.
     if (-not $ExcludePatterns -or @($ExcludePatterns).Count -eq 0) {
         return , ($Files | Sort-Object -Unique)
     }
@@ -212,4 +273,4 @@ function Select-PesterTestFiles {
     return , ($kept | Sort-Object -Unique)
 }
 
-Export-ModuleMember -Function Get-PesterTestFiles, Select-PesterTestFiles
+Export-ModuleMember -Function Get-PesterTestFiles, Select-PesterTestFiles, Convert-PesterGlobToRegex, Get-PesterGlobEnumerationRoot
