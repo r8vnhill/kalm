@@ -1,6 +1,6 @@
 #Requires -Version 7.4
 
-using module ..\..\lib\ScriptLogging.psm1
+using module ..\..\..\lib\ScriptLogging.psm1
 
 <#
 .SYNOPSIS
@@ -181,7 +181,8 @@ function Get-PesterTestFiles {
         }
 
         $patternMatches = @()
-        if ($absPattern -like '*`**`*') {
+        $containsRecursiveWildcard = $pattern -match '\*\*'
+        if ($containsRecursiveWildcard) {
             # Fallback discovery for patterns with '**'
             $rootDir = Get-PesterGlobEnumerationRoot -Pattern $pattern -AbsolutePattern $absPatternNorm -BaseDirectory $BaseDirectory -IsRooted:$isRooted
 
@@ -193,8 +194,6 @@ function Get-PesterTestFiles {
             }
 
             if ($rootDir) {
-                # TODO: Convert-PesterGlobToRegex currently treats '**' by expanding enumeration roots.
-                #       Revisit once we have a clearer set of expected Pester glob behaviors.
                 $regexPattern = Convert-PesterGlobToRegex -Pattern $absPattern
                 $gciSplat = @{
                     LiteralPath = $rootDir

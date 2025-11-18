@@ -28,7 +28,7 @@ and then create a literal scriptblock for each case embedding the StartPath and 
     access the expected root value at runtime.
 #>
 
-using module '..\helpers\PesterHelpers.psm1'
+using module '..\helpers\aggregate\PesterHelpers.psm1'
 
 # Compute RepoRoot and per-case table at discovery time. Because we use `using module` above the
 # helper is available at parse/discovery time and calling `Get-KalmRepoRoot` here is safe; this

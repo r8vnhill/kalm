@@ -5,7 +5,7 @@ Validates the Set-KalmDryRun / Get-KalmDryRun singleton behavior using
 data-driven tests (Pester v5+).
 #>
 
-using module '..\helpers\PesterHelpers.psm1'
+using module '..\helpers\aggregate\PesterHelpers.psm1'
 
 Describe 'DryRunState singleton' {
     BeforeAll {

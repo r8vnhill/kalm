@@ -1,7 +1,5 @@
 #Requires -Version 7.4
 
-using module ..\..\lib\ScriptLogging.psm1
-
 <#
 .SYNOPSIS
     Aggregates individual helper scripts used by the Pester harness.
@@ -12,10 +10,10 @@ using module ..\..\lib\ScriptLogging.psm1
     `Resolve-PesterSettingsPath`.
 #>
 
-. (Join-Path $PSScriptRoot 'Import-PesterModule.ps1')
-. (Join-Path $PSScriptRoot 'Get-KalmRepoRoot.ps1')
-Import-Module -Name (Join-Path $PSScriptRoot 'Resolve-PesterSettings.psm1') -Force
-Import-Module -Name (Join-Path $PSScriptRoot 'Discover-PesterTestFiles.psm1') -Force
+. (Join-Path $PSScriptRoot '..' 'module' 'Import-PesterModule.ps1')
+. (Join-Path $PSScriptRoot '..' 'repo' 'Get-KalmRepoRoot.ps1')
+Import-Module -Name (Join-Path $PSScriptRoot '..' 'settings' 'Resolve-PesterSettings.psm1') -Force
+Import-Module -Name (Join-Path $PSScriptRoot '..' 'discovery' 'Discover-PesterTestFiles.psm1') -Force
 
 $pesterHelperFunctions = @(
     'Import-PesterModule'

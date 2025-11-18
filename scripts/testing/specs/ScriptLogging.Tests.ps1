@@ -61,7 +61,7 @@ How to run
     ```
 #>
 
-using module '..\helpers\PesterHelpers.psm1'
+using module '..\helpers\aggregate\PesterHelpers.psm1'
 using module '..\..\..\scripts\lib\ScriptLogging.psm1'
 
 Describe 'KalmScriptLogger' {

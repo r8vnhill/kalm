@@ -30,13 +30,15 @@ if (-not (Test-Path -LiteralPath $OutputDir)) {
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
 
-$fileName = [System.IO.Path]::GetFileNameWithoutExtension($FilePath)
+$resolvedFilePath = (Resolve-Path -LiteralPath $FilePath).ProviderPath
+$fileDirectory = Split-Path -Parent $resolvedFilePath
+$fileName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedFilePath)
 $perFileOutput = Join-Path -Path $OutputDir -ChildPath ($fileName + '.test-results.xml')
 
 $settings = Import-PowerShellDataFile -Path $SettingsPath
 if (-not ($settings -is [System.Collections.IDictionary])) { throw 'Pester settings file must define a hashtable.' }
 if (-not $settings.ContainsKey('Run')) { $settings['Run'] = @{} }
-$settings.Run['Path'] = @($FilePath)
+$settings.Run['Path'] = @($resolvedFilePath)
 if (-not $settings.ContainsKey('Output')) { $settings['Output'] = @{} }
 $settings.Output['Verbosity'] = 'Detailed'
 if (-not $settings.ContainsKey('TestResult')) { $settings['TestResult'] = @{} }
@@ -44,10 +46,16 @@ $settings.TestResult['OutputPath'] = $perFileOutput
 
 $configuration = New-PesterConfiguration -Hashtable $settings
 
-Invoke-Pester -Configuration $configuration
+Push-Location -Path $fileDirectory
+try {
+    Invoke-Pester -Configuration $configuration
+}
+finally {
+    Pop-Location
+}
 
 $metadata = [pscustomobject]@{
-    File = $FilePath
+    File = $resolvedFilePath
     OutputPath = $perFileOutput
 }
 

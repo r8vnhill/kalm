@@ -8,7 +8,7 @@ Scenarios exercised:
     null, or empty inputs.
 #>
 
-using module '..\helpers\PesterHelpers.psm1'
+using module '..\helpers\aggregate\PesterHelpers.psm1'
 
 Describe 'Resolve-PesterSettingsPath' {
     BeforeAll { # Establish a few useful paths for the specs.

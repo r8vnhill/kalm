@@ -40,7 +40,7 @@ Describe 'Import-PesterModule' {
     #>
     BeforeAll {
         # Determine helper module path relative to this spec and import it first
-        $helperPath = Join-Path $PSScriptRoot '..' 'helpers' 'PesterHelpers.psm1'
+        $helperPath = Join-Path $PSScriptRoot '..' 'helpers' 'aggregate' 'PesterHelpers.psm1'
         try {
             $helperPath = Resolve-Path -Path $helperPath -ErrorAction Stop |
                 Select-Object -ExpandProperty Path
@@ -59,7 +59,7 @@ Describe 'Import-PesterModule' {
         # (Import-PesterModuleByPath, Import-PesterModuleByName) are available to tests for direct
         # unit-like testing. The module intentionally exports only the public surface; dot-sourcing
         # here gives us access to the implementation helpers for finer-grained tests.
-        $helperScript = Join-Path $PSScriptRoot '..' 'helpers' 'Import-PesterModule.ps1'
+        $helperScript = Join-Path $PSScriptRoot '..' 'helpers' 'module' 'Import-PesterModule.ps1'
         $helperScript = Resolve-Path -Path $helperScript -ErrorAction Stop |
             Select-Object -ExpandProperty Path
         . $helperScript

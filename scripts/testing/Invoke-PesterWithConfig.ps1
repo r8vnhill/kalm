@@ -30,16 +30,15 @@
 #Requires -Version 7.4
 
 using module ..\lib\ScriptLogging.psm1
-using module .\helpers\PesterHelpers.psm1
-using module .\helpers\Discover-PesterTestFiles.psm1
+using module .\helpers\aggregate\PesterHelpers.psm1
 
 param()
 
 Set-StrictMode -Version 3.0
 
 # Ensure latest helper modules are loaded even if this session previously imported them
-Import-Module -Name (Join-Path $PSScriptRoot 'helpers\Discover-PesterTestFiles.psm1') -Force
-Import-Module -Name (Join-Path $PSScriptRoot 'helpers\Resolve-PesterSettings.psm1') -Force
+Import-Module -Name (Join-Path $PSScriptRoot 'helpers\discovery\Discover-PesterTestFiles.psm1') -Force
+Import-Module -Name (Join-Path $PSScriptRoot 'helpers\settings\Resolve-PesterSettings.psm1') -Force
 
 $logger = [KalmScriptLogger]::Start('Invoke-PesterWithConfig', $null)
 $logger.AddConsoleSink()
@@ -111,7 +110,7 @@ function Invoke-IsolatedTest {
     )
 
     $Logger.LogDebug(('Invoking pwsh for {0}' -f $File), 'Execution')
-    $scriptFile = Join-Path -Path $PSScriptRoot -ChildPath 'helpers\Invoke-PesterIsolated.ps1'
+    $scriptFile = Join-Path -Path $PSScriptRoot -ChildPath 'helpers\isolation\Invoke-PesterIsolated.ps1'
     $startTime = Get-Date
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $rawOutput = & pwsh -NoLogo -NoProfile -File $scriptFile -FilePath $File -SettingsPath $SettingsPath -OutputDir $OutputDir 2>&1
