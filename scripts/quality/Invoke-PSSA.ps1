@@ -76,12 +76,29 @@ try {
 
     Install-PSScriptAnalyzerIfMissing
 
+$settingsFile = (Resolve-Path -LiteralPath $Settings).Path
+$settingsData = Import-PowerShellDataFile -LiteralPath $settingsFile
+# Resolve any relative custom rule paths relative to the settings file location so PSSA can load
+if (-not $settingsData.CustomRulePath) {
+    $settingsData.CustomRulePath = @()
+}
+$settingsData.CustomRulePath = [string[]]@(
+    foreach ($rulePath in $settingsData.CustomRulePath) {
+        if ([System.IO.Path]::IsPathRooted($rulePath)) {
+            $rulePath
+        }
+        else {
+            Join-Path -Path (Split-Path -Parent $settingsFile) -ChildPath $rulePath
+        }
+    }
+)
+
 $allResults = @()
 foreach ($p in $Paths) {
     if (-not (Test-Path -LiteralPath $p)) { continue }
     $rp = (Resolve-Path -LiteralPath $p).Path  # normalize to a single [string]
     Write-Output "Analyzing: $rp"
-    $res = Invoke-ScriptAnalyzer -Path $rp -Settings $Settings -Recurse -ErrorAction Stop
+    $res = Invoke-ScriptAnalyzer -Path $rp -Settings $settingsData -Recurse -ErrorAction Stop
     if ($res) { $allResults += $res }
 }
 

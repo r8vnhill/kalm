@@ -1,11 +1,77 @@
-<#
-Pester coverage for Get-PesterTestFiles helper.
-#>
-
+# Pester coverage for Get-PesterTestFiles helper.
+# New-PesterTestFile is kept script-scoped for test setup only.
+#Requires -Version 7.4
 using module '..\..\..\lib\ScriptLogging.psm1'
 using module '..\..\helpers\discovery\Discover-PesterTestFiles.psm1'
 
+Set-StrictMode -Version 3.0
+
+<#
+.SYNOPSIS
+    Creates one or more test files under a base directory and returns absolute paths.
+
+.DESCRIPTION
+    Script-scoped helper for these specs; accepts relative paths from the pipeline, ensures parent
+    directories exist, and emits normalized absolute file paths.
+
+.PARAMETER BaseDirectory
+    Directory where the files are created.
+
+.PARAMETER RelativePath
+    Relative file path(s) to create; accepts pipeline input.
+
+.OUTPUTS
+    System.String
+#>
+function Script:New-PesterTestFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrWhiteSpace()]
+        [string] $BaseDirectory,
+
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrWhiteSpace()]
+        [string[]] $RelativePath
+    )
+
+    process {
+        foreach ($path in $RelativePath) {
+            $fullPath = Join-Path -Path $BaseDirectory -ChildPath $path -ErrorAction Stop
+            $dir = Split-Path -Path $fullPath -Parent
+            if (-not (Test-Path -LiteralPath $dir -PathType Container)) {
+                # Ensure parent exists
+                New-Item -ItemType Directory -Path $dir -Force -ErrorAction Stop | Out-Null
+            }
+            # Idempotent create/overwrite
+            New-Item -ItemType File -Path $fullPath -Force -ErrorAction Stop | Out-Null
+            Write-Output ([System.IO.Path]::GetFullPath($fullPath))
+        }
+    }
+}
+
+function Script:Invoke-InLocation {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrWhiteSpace()]
+        [string] $Path,
+
+        [Parameter(Mandatory)]
+        [scriptblock] $ScriptBlock
+    )
+
+    Push-Location -LiteralPath $Path
+    try {
+        & $ScriptBlock
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 Describe 'Get-PesterTestFiles' {
+
     $sortAndDedupCases = @(
         @{
             Name            = 'dedup duplicates and sort relative patterns'
@@ -20,29 +86,18 @@ Describe 'Get-PesterTestFiles' {
     )
 
     BeforeAll {
-        $pathNormalizationScript = Join-Path -Path $PSScriptRoot -ChildPath '..'
-        $pathNormalizationScript = Join-Path -Path $pathNormalizationScript -ChildPath 'support/PathNormalization.ps1'
+        $pathNormalizationScript = Join-Path $PSScriptRoot '..'
+        $pathNormalizationScript = (
+            Join-Path $pathNormalizationScript 'support' 'PathNormalization.ps1')
         . $pathNormalizationScript
 
-        $script:TempRoot = Join-Path -Path $TestDrive -ChildPath ([guid]::NewGuid().ToString())
+        $script:TempRoot = Join-Path $TestDrive ([guid]::NewGuid().ToString())
         New-Item -ItemType Directory -Path $script:TempRoot -Force | Out-Null
+        $script:FooPath, $script:BarPath, $script:DeepPath =
+        @('Foo.Tests.ps1', 'sub/Bar.Tests.ps1', 'sub/deep/Deep.Tests.ps1') |
+            New-PesterTestFile -BaseDirectory $script:TempRoot
 
-        $createTestFile = {
-            param($relativePath)
-            $fullPath = Join-Path -Path $script:TempRoot -ChildPath $relativePath
-            $dir = Split-Path -Path $fullPath -Parent
-            if (-not (Test-Path -LiteralPath $dir)) {
-                New-Item -ItemType Directory -Path $dir -Force | Out-Null
-            }
-            New-Item -ItemType File -Path $fullPath -Force | Out-Null
-            return $fullPath
-        }
-
-        $script:FooPath = & $createTestFile 'Foo.Tests.ps1'
-        $script:BarPath = & $createTestFile 'sub/Bar.Tests.ps1'
-        $script:DeepPath = & $createTestFile 'sub/deep/Deep.Tests.ps1'
-
-        $logDir = Join-Path -Path $script:TempRoot -ChildPath 'logs'
+        $logDir = Join-Path $script:TempRoot 'logs'
         $script:Logger = [KalmScriptLogger]::Start('discover-pester-testfiles', $logDir)
     }
 
@@ -54,23 +109,20 @@ Describe 'Get-PesterTestFiles' {
     }
 
     It 'resolves literal patterns relative to the provided base directory' {
-        $files = Get-PesterTestFiles -IncludePatterns 'Foo.Tests.ps1' -BaseDirectory $script:TempRoot -Logger $script:Logger
-        $normalizedResult = ConvertTo-NormalizedPaths $files
-        $normalizedExpected = ConvertTo-NormalizedPaths @($script:FooPath)
-        $normalizedResult | Should -Be $normalizedExpected
+        $params = @{
+            IncludePatterns = 'Foo.Tests.ps1'
+            BaseDirectory   = $script:TempRoot
+            Logger          = $script:Logger
+        }
+        $files = Get-PesterTestFiles @params
+        ConvertTo-NormalizedPath $files | Should -Be (ConvertTo-NormalizedPath @($script:FooPath))
     }
 
     It 'falls back to the current location when BaseDirectory is omitted' {
-        Push-Location $script:TempRoot
-        try {
-            $files = Get-PesterTestFiles -IncludePatterns 'Foo.Tests.ps1' -Logger $script:Logger
-            $normalizedResult = ConvertTo-NormalizedPaths $files
-            $normalizedExpected = ConvertTo-NormalizedPaths @($script:FooPath)
-            $normalizedResult | Should -Be $normalizedExpected
+        $files = Invoke-InLocation -Path $script:TempRoot -ScriptBlock {
+            Get-PesterTestFiles -IncludePatterns 'Foo.Tests.ps1' -Logger $script:Logger
         }
-        finally {
-            Pop-Location
-        }
+        ConvertTo-NormalizedPath $files | Should -Be (ConvertTo-NormalizedPath @($script:FooPath))
     }
 
     # Data-driven coverage ensures duplicates are removed and ordering stays deterministic.
@@ -80,8 +132,8 @@ Describe 'Get-PesterTestFiles' {
         $expected = $ExpectedNames |
             ForEach-Object { Join-Path -Path $script:TempRoot -ChildPath $_ } |
             Sort-Object -Unique
-        $normalizedResult = ConvertTo-NormalizedPaths $result
-        $normalizedExpected = ConvertTo-NormalizedPaths $expected
+        $normalizedResult = ConvertTo-NormalizedPath $result
+        $normalizedExpected = ConvertTo-NormalizedPath $expected
         $normalizedResult | Should -Be $normalizedExpected
     }
 
@@ -97,8 +149,8 @@ Describe 'Get-PesterTestFiles' {
 
     It 'ignores include patterns with no matches' {
         $files = Get-PesterTestFiles -IncludePatterns @('Foo.Tests.ps1', 'Missing.Tests.ps1') -BaseDirectory $script:TempRoot -Logger $script:Logger
-        $normalizedResult = ConvertTo-NormalizedPaths $files
-        $normalizedExpected = ConvertTo-NormalizedPaths @($script:FooPath)
+        $normalizedResult = ConvertTo-NormalizedPath $files
+        $normalizedExpected = ConvertTo-NormalizedPath @($script:FooPath)
         $normalizedResult | Should -Be $normalizedExpected
     }
 
@@ -115,8 +167,8 @@ Describe 'Get-PesterTestFiles' {
 
     It 'handles rooted absolute paths' {
         $files = Get-PesterTestFiles -IncludePatterns @($script:FooPath) -BaseDirectory $script:TempRoot -Logger $script:Logger
-        $normalizedResult = ConvertTo-NormalizedPaths $files
-        $normalizedExpected = ConvertTo-NormalizedPaths @($script:FooPath)
+        $normalizedResult = ConvertTo-NormalizedPath $files
+        $normalizedExpected = ConvertTo-NormalizedPath @($script:FooPath)
         $normalizedResult | Should -Be $normalizedExpected
     }
 }

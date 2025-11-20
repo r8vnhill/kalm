@@ -43,8 +43,8 @@ Describe 'Select-PesterTestFiles' {
             -ExcludePatterns @('*integration*') `
             -Logger $script:Logger
 
-        $normalizedResult = ConvertTo-NormalizedPaths $result
-        $normalizedExcluded = ConvertTo-NormalizedPaths @($script:SampleFiles[1])
+        $normalizedResult = ConvertTo-NormalizedPath $result
+        $normalizedExcluded = ConvertTo-NormalizedPath @($script:SampleFiles[1])
         $normalizedResult | Should -Not -Contain $normalizedExcluded[0]
         @($result).Count | Should -Be 3
     }
@@ -55,8 +55,8 @@ Describe 'Select-PesterTestFiles' {
             -ExcludePatterns @('integration') `
             -Logger $script:Logger
 
-        $normalizedResult = ConvertTo-NormalizedPaths $result
-        $normalizedExcluded = ConvertTo-NormalizedPaths @($script:SampleFiles[1])
+        $normalizedResult = ConvertTo-NormalizedPath $result
+        $normalizedExcluded = ConvertTo-NormalizedPath @($script:SampleFiles[1])
         $normalizedResult | Should -Not -Contain $normalizedExcluded[0]
         @($result).Count | Should -Be 3
     }
@@ -67,8 +67,8 @@ Describe 'Select-PesterTestFiles' {
             -ExcludePatterns @('*specs*') `
             -Logger $script:Logger
 
-        $normalizedResult = ConvertTo-NormalizedPaths $result
-        $normalizedExcluded = ConvertTo-NormalizedPaths @($script:SampleFiles[2])
+        $normalizedResult = ConvertTo-NormalizedPath $result
+        $normalizedExcluded = ConvertTo-NormalizedPath @($script:SampleFiles[2])
         $normalizedResult | Should -Not -Contain $normalizedExcluded[0]
         @($result).Count | Should -Be 3
     }
@@ -98,8 +98,8 @@ Describe 'Select-PesterTestFiles' {
             -ExcludePatterns @('', $null, '*integration*') `
             -Logger $script:Logger
 
-        $normalizedResult = ConvertTo-NormalizedPaths $result
-        $normalizedExcluded = ConvertTo-NormalizedPaths @($script:SampleFiles[1])
+        $normalizedResult = ConvertTo-NormalizedPath $result
+        $normalizedExcluded = ConvertTo-NormalizedPath @($script:SampleFiles[1])
         $normalizedResult | Should -Not -Contain $normalizedExcluded[0]
         @($result).Count | Should -Be 3
     }

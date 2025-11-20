@@ -5,6 +5,7 @@ This file contains small runtime reminders for automated agents and contributors
 - When the active terminal/session is already PowerShell (pwsh), do NOT prefix commands with `pwsh -NoProfile -ExecutionPolicy Bypass`.
   - Use the wrapper only when you are not sure the target shell is pwsh (for example, when launching a new shell on a remote system or invoking from another shell type).
   - Rationale: avoid redundant wrappers, reduce quoting/escaping issues, and respect the interactive session environment.
+- Default to TDD: write/adjust a failing test that expresses the expected behavior first, then implement or modify code to make it pass. Only skip this when the user explicitly opts out.
 
 Examples:
 - Good (when already in pwsh):

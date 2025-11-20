@@ -17,8 +17,11 @@
         'PSAlignAssignmentStatement',
         'PSAvoidDefaultValueSwitchParameter',
         'PSAvoidUsingCmdletAliases',
-        'PSUseShouldProcessForStateChangingFunctions'
+        'PSUseShouldProcessForStateChangingFunctions',
+        'PSUsePSCustomObjectCasing'
     )
+
+    CustomRulePath     = @('quality/PSSARules/PSCustomObjectCasingRule.psm1')
 
     # Per-rule tuning lives here
     Rules               = @{
@@ -26,6 +29,7 @@
         PSUseApprovedVerbs                          = @{ Severity = 'Warning' }
         PSUseDeclaredVarsMoreThanAssignments        = @{ Severity = 'Error' }
         PSPossibleIncorrectComparisonWithNull       = @{ Severity = 'Error' }
+        PSUsePSCustomObjectCasing                   = @{ Severity = 'Warning' }
 
         PSUseConsistentWhitespace                   = @{
             CheckInnerBrace = $true

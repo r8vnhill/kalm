@@ -6,6 +6,7 @@ Multi-module Kotlin/Gradle optimization sandbox with strict reproducibility and 
 2. Announce planned multi-file edits before touching them; keep diffs laser-focused.
 3. Preserve published APIs (`core/api/core.api`) and Kotlin style unless breaking changes are requested + justified.
 4. Read `dev-resources/AGENT_GUIDELINES.md` once per session and respect its shell guidance (already in pwsh).
+5. Default to a TDD flow: add or adjust tests first to capture expected behavior, then implement/minimally change code until tests pass (unless the user explicitly opts out).
 
 ## Architecture snapshot
 - `core/` hosts algorithm contracts such as `OptimizationEngine` and the self-referential `Feature<T, F>` hierarchy; treat generics carefully to keep type safety.
