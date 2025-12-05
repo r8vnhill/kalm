@@ -159,6 +159,36 @@ Run Gradle with a specific JDK version (bypasses JAVA_HOME).
 
 Bash/Zsh equivalent of the PowerShell script.
 
+---
+
+## Container Usage
+
+All scripts in this repository (Gradle invocations, Pester test runners, Git sync scripts, etc.) work inside the KALM Docker/OCI image. For container-based local development or CI:
+
+### Running Scripts Inside a Container
+
+```bash
+# Mount the repo and run scripts interactively
+docker run --rm -it -v /path/to/kalm:/workspace kalm-env:latest
+
+# Inside the container, use scripts as normal:
+$ ./gradlew verifyAll
+$ .\scripts\testing\Invoke-PesterWithConfig.ps1
+```
+
+### Container Compatibility
+
+Scripts are **container-agnostic** by default:
+- All paths use PowerShell's cross-platform operators (`Join-Path`, relative paths).
+- No hard-coded Windows drive letters or assumptions.
+- Git and PowerShell behaviors are consistent inside and outside the container.
+
+If a script assumes a specific platform or tool version, it will clearly document that in its `#Requires` or error messages.
+
+### Further Reading
+
+See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for detailed container setup, usage, and troubleshooting.
+
 **Usage:**
 ```bash
 # Unix/Linux/macOS

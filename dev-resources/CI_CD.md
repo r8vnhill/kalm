@@ -49,6 +49,27 @@ The `pester:tests` job validates PowerShell automation scripts using [Pester 5.x
 **Configuration:**
 The Pester job loads its settings from `scripts/testing/pester.config.psd1`. To add new tests, place them under `scripts/testing/specs/` and update the config file accordingly.
 
+---
+
+## Container-Based CI and Local Development (Phase 2+)
+
+As KALM transitions to container-based reproducibility (tracked in `dev-resources/PLAN-dockerization.md`), the following features are planned:
+
+### Current Status (Phase 1)
+
+- **Local-only:** A Dockerfile and supporting documentation exist for developers and researchers to use locally.
+- **Opt-in:** No CI jobs yet use the container image; this is a maintainer preview.
+- **Documentation:** See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for building and running the image locally.
+
+### Future Phases (2–5)
+
+- **Phase 2:** Validate that containerized builds match native builds locally.
+- **Phase 3:** Add partial CI integration (dedicated container jobs alongside existing jobs).
+- **Phase 4:** Full CI migration to container-based environment.
+- **Phase 5:** Research reproducibility workflows and documentation.
+
+For more details on the roadmap, see `dev-resources/PLAN-dockerization.md`.
+
 > [!tip]
 > Use `-Verbose` to see detailed output during local runs: `./scripts/testing/Invoke-PesterWithConfig.ps1 -Verbose`
 
