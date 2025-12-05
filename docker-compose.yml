@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  kalm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kalm-env:local
+    container_name: kalm-dev
+    volumes:
+      # Mount repo at /workspace with cached mode for performance
+      - .:/workspace:cached
+    working_dir: /workspace
+    environment:
+      # Ensure consistent locale inside container
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+    # Interactive terminal for pwsh
+    tty: true
+    stdin_open: true
+    # Optional: Override entrypoint to keep container running
+    # (useful if you want to attach multiple shells)
+    # entrypoint: sleep infinity
+
+  # Convenience service for running gradle tasks
+  gradle:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kalm-env:local
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    environment:
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+    # Override entrypoint to run gradle directly
+    entrypoint: ./gradlew
+    # Users pass gradle arguments like: docker-compose run --rm gradle verifyAll
+
+  # Convenience service for running Pester tests
+  pester:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kalm-env:local
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    environment:
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+    # Override entrypoint to run Pester
+    entrypoint: ./scripts/testing/Invoke-PesterWithConfig.ps1

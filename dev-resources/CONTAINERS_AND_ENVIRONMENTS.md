@@ -19,15 +19,15 @@ This is a **maintainer-facing feature**. The main README remains consumer-focuse
 
 The `kalm-env` image includes:
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| OS Base | Ubuntu 22.04 LTS | Stable, well-supported Linux distribution |
-| OpenJDK | 21 LTS | Modern, long-term-support JDK for Kotlin/Gradle |
-| PowerShell | 7.4+ | Cross-platform automation scripting |
-| Gradle | (wrapper only) | Always uses `./gradlew` from the repo; no standalone install |
-| Git | 2.20+ | Version control, submodule management |
-| Build tools | `build-essential` | C/C++ compiler, `make`, etc., for any native dependencies |
-| Locale | en_US.UTF-8 | UTF-8 encoding for reproducible text processing |
+| Component   | Version           | Purpose                                                      |
+| ----------- | ----------------- | ------------------------------------------------------------ |
+| OS Base     | Ubuntu 22.04 LTS  | Stable, well-supported Linux distribution                    |
+| OpenJDK     | 22 LTS            | Matches build-logic DEFAULT_JAVA_VERSION; modern Kotlin/Gradle |
+| PowerShell  | 7.4+              | Cross-platform automation scripting                          |
+| Gradle      | (wrapper only)    | Always uses `./gradlew` from the repo; no standalone install |
+| Git         | 2.20+             | Version control, submodule management                        |
+| Build tools | `build-essential` | C/C++ compiler, `make`, etc., for any native dependencies    |
+| Locale      | en_US.UTF-8       | UTF-8 encoding for reproducible text processing              |
 
 **Important:** The image does **not** contain the KALM source code. You mount or copy the repo at runtime.
 
@@ -43,11 +43,11 @@ The `kalm-env` image includes:
 ### Build Command
 
 ```bash
-# From the repo root, build with a tag
-docker build -t kalm-env:0.1.0 -f Dockerfile .
-
-# Or use the simpler 'latest' tag for local work
+# /path/to/kalm
+# Use the simpler 'latest' tag for local work
 docker build -t kalm-env:latest -f Dockerfile .
+# Or build with a tag for a specific version
+docker build -t kalm-env:0.1.0 -f Dockerfile .
 ```
 
 **Build time:** ~5–10 minutes on first build (downloads base OS, PowerShell, JDK). Subsequent builds are faster due to layer caching.
@@ -56,44 +56,96 @@ docker build -t kalm-env:latest -f Dockerfile .
 
 ## Running the Image Locally
 
+### Basic Checks
+
+**Note:** The image's default entrypoint is PowerShell. To run shell commands like `java`, use `--entrypoint /bin/bash`:
+
+```bash
+# Check Java installation
+docker run --rm --entrypoint /bin/bash kalm-env:latest -c "java -version"
+
+# Check PowerShell version (no --entrypoint needed; it's the default)
+docker run --rm kalm-env:latest -Command '$PSVersionTable'
+```
+
 ### Basic Usage: Interactive PowerShell
 
 ```bash
+# /path/to/kalm
 # Start a container with the repo mounted, run pwsh interactively
-docker run --rm -it -v /path/to/kalm:/workspace kalm-env:latest
+docker run --rm -it -v .:/workspace kalm-env:latest
 
 # Now inside the container, you can use all repo scripts:
-$ ./gradlew tasks
-$ .\scripts\testing\Invoke-PesterWithConfig.ps1
+PS> ./gradlew tasks
+PS> .\scripts\testing\Invoke-PesterWithConfig.ps1
 ```
 
 **Explanation:**
 - `--rm`: Remove the container after exit (keeps your system clean).
 - `-it`: Interactive terminal (required for `pwsh` prompt).
-- `-v /path/to/kalm:/workspace`: Bind-mount the repo from your host to `/workspace` inside the container.
+- `-v .:/workspace`: Bind-mount the repo from your host to `/workspace` inside the container.
+- The default entrypoint is `pwsh`, so you get a PowerShell prompt automatically.
 
 ### Run a Single Command Inside the Container
 
 ```bash
 # Run a Gradle task without an interactive session
+# Using PowerShell (default entrypoint)
 docker run --rm -v /path/to/kalm:/workspace kalm-env:latest \
-  ./gradlew verifyAll
+  -Command "cd /workspace; ./gradlew verifyAll"
 
-# Run Pester tests
+# Run Pester tests (PowerShell)
 docker run --rm -v /path/to/kalm:/workspace kalm-env:latest \
-  .\scripts\testing\Invoke-PesterWithConfig.ps1
+  -Command ". /workspace/scripts/testing/Invoke-PesterWithConfig.ps1"
+
+# Alternative: Use bash with -w flag to set working directory
+docker run --rm -v /path/to/kalm:/workspace -w /workspace kalm-env:latest \
+  --entrypoint /bin/bash -c "./gradlew verifyAll"
+```
+
+**Note:** When using `--entrypoint /bin/bash`, you must either:
+- Use `-w /workspace` to set the working directory, OR
+- Include `cd /workspace &&` in the command string.
+
+### Using Docker Compose (Recommended for Development)
+
+A `docker-compose.yml` file is provided at the repo root for convenience. It eliminates the need for long `docker run` commands:
+
+```bash
+# Interactive PowerShell session (recommended)
+docker-compose run --rm kalm
+
+# Inside the container:
+$ ./gradlew verifyAll
+$ .\scripts\testing\Invoke-PesterWithConfig.ps1
+```
+
+**Convenience services:**
+
+```bash
+# Run Gradle tasks via docker-compose (shorter syntax)
+docker-compose run --rm gradle verifyAll
+docker-compose run --rm gradle :core:test
+
+# Run Pester tests via docker-compose
+docker-compose run --rm pester
+```
+
+**First time setup:**
+```bash
+# Build the image (automatic on first run, but you can build explicitly)
+docker-compose build
 ```
 
 ### Preserve File Permissions (for Git Operations)
 
-If you commit or modify files from inside the container and want the host to own them correctly:
+If you commit or modify files from inside the container and want the host to own them correctly on Linux:
 
 ```bash
 # Run as the current host user (on Linux; macOS similar)
-docker run --rm -it \
+docker-compose run --rm \
   --user $(id -u):$(id -g) \
-  -v /path/to/kalm:/workspace \
-  kalm-env:latest
+  kalm
 ```
 
 ---
