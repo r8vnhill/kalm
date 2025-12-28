@@ -21,14 +21,15 @@ FROM ubuntu:22.04
 
 # Set metadata using OCI Image Spec standard keys (org.opencontainers.image.*)
 # This enables standardized tooling, CI/CD integration, and image management
-LABEL maintainer="Ignacio Slater-Muñoz <https://ravenhill.cl>" \
+LABEL org.opencontainers.image.authors="Ignacio Slater-Muñoz <https://ravenhill.cl>" \
     org.opencontainers.image.title="KALM Base Build & Experiments Environment" \
     org.opencontainers.image.description="Reproducible Linux environment for KALM builds, tests, and scientific experiments" \
     org.opencontainers.image.version="0.1.0" \
     org.opencontainers.image.source="https://gitlab.com/r8vnhill/kalm" \
     org.opencontainers.image.documentation="https://gitlab.com/r8vnhill/kalm" \
     org.opencontainers.image.base.name="ubuntu:22.04" \
-    org.opencontainers.image.vendor="KALM Contributors"
+    org.opencontainers.image.vendor="KALM Contributors" \
+    org.opencontainers.image.licenses="BSD-2-Clause"
 
 # Install system dependencies and configure locale
 # Use a single RUN command to reduce layer count.
