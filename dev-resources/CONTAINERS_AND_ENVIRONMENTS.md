@@ -19,15 +19,15 @@ This is a **maintainer-facing feature**. The main README remains consumer-focuse
 
 The `kalm-env` image includes:
 
-| Component   | Version           | Purpose                                                      |
-| ----------- | ----------------- | ------------------------------------------------------------ |
-| OS Base     | Ubuntu 22.04 LTS  | Stable, well-supported Linux distribution                    |
+| Component   | Version           | Purpose                                                        |
+| ----------- | ----------------- | -------------------------------------------------------------- |
+| OS Base     | Ubuntu 22.04 LTS  | Stable, well-supported Linux distribution                      |
 | OpenJDK     | 22 LTS            | Matches build-logic DEFAULT_JAVA_VERSION; modern Kotlin/Gradle |
-| PowerShell  | 7.4+              | Cross-platform automation scripting                          |
-| Gradle      | (wrapper only)    | Always uses `./gradlew` from the repo; no standalone install |
-| Git         | 2.20+             | Version control, submodule management                        |
-| Build tools | `build-essential` | C/C++ compiler, `make`, etc., for any native dependencies    |
-| Locale      | en_US.UTF-8       | UTF-8 encoding for reproducible text processing              |
+| PowerShell  | 7.4+              | Cross-platform automation scripting                            |
+| Gradle      | (wrapper only)    | Always uses `./gradlew` from the repo; no standalone install   |
+| Git         | 2.20+             | Version control, submodule management                          |
+| Build tools | `build-essential` | C/C++ compiler, `make`, etc., for any native dependencies      |
+| Locale      | en_US.UTF-8       | UTF-8 encoding for reproducible text processing                |
 
 **Important:** The image does **not** contain the KALM source code. You mount or copy the repo at runtime.
 
@@ -37,7 +37,7 @@ The `kalm-env` image includes:
 
 ### Prerequisites
 
-- Docker or Podman installed and running
+- Docker installed and running
 - Clone of the KALM repository (to access the Dockerfile)
 
 ### Build Command
@@ -50,7 +50,29 @@ docker build -t kalm-env:latest -f Dockerfile .
 docker build -t kalm-env:0.1.0 -f Dockerfile .
 ```
 
-**Build time:** ~5–10 minutes on first build (downloads base OS, PowerShell, JDK). Subsequent builds are faster due to layer caching.
+**Build time:** ~5-10 minutes on first build (downloads base OS, PowerShell, JDK). Subsequent builds are faster due to layer caching.
+
+---
+
+## Dockerfile Linting (Hadolint)
+
+Use Hadolint to catch Dockerfile best-practice issues before commits or merge requests.
+
+```bash
+# Run via Docker (no local install required)
+docker run --rm -i hadolint/hadolint < Dockerfile
+```
+
+```powershell
+# PowerShell variant
+Get-Content -Raw Dockerfile | docker run --rm -i hadolint/hadolint
+```
+
+If Hadolint is installed locally, you can run:
+
+```bash
+hadolint Dockerfile
+```
 
 ---
 
