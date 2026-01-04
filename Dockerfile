@@ -31,43 +31,11 @@ LABEL org.opencontainers.image.authors="Ignacio Slater-Muñoz <https://ravenhill
     org.opencontainers.image.vendor="KALM Contributors" \
     org.opencontainers.image.licenses="BSD-2-Clause"
 
-# Install system dependencies and configure locale
-# Use a single RUN command to reduce layer count.
-RUN set -eux; \
-    apt-get update; \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates \
-        curl \
-        wget \
-        git \
-        locales \
-        tzdata \
-        build-essential \
-        software-properties-common \
-        gnupg2; \
-    \
-    # Add Microsoft's PowerShell repository (modern method)
-    mkdir -p /usr/share/keyrings; \
-    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-archive-keyring.gpg; \
-    echo "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main" > /etc/apt/sources.list.d/microsoft.list; \
-    \
-    # Add PPA for newer OpenJDK versions (Java 22+)
-    add-apt-repository -y ppa:openjdk-r/ppa; \
-    \
-    # Install PowerShell 7.4+
-    apt-get update; \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends powershell; \
-    \
-    # Install OpenJDK 22 (matches build-logic DEFAULT_JAVA_VERSION)
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openjdk-22-jdk-headless; \
-    \
-    # Configure locale to UTF-8 (important for reproducibility)
-    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
-    locale-gen en_US.UTF-8; \
-    \
-    # Clean up to reduce image size
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/*
+# Copy and execute the build environment setup script
+COPY scripts/docker/setup-build-environment.sh /tmp/setup-build-environment.sh
+RUN chmod +x /tmp/setup-build-environment.sh && \
+    /tmp/setup-build-environment.sh && \
+    rm /tmp/setup-build-environment.sh
 
 # Set environment variables for Java and locale
 ENV LANG=en_US.UTF-8 \
@@ -92,14 +60,13 @@ WORKDIR /workspace
 # Switch to non-root user (optional; comment out if you prefer root)
 # USER builder
 
-# Set bash as the default shell/entrypoint for the container
+# Set bash as the default shell for the container
 # This allows ./gradlew and shell scripts to work by default.
-# Users can still invoke pwsh explicitly: docker run ... pwsh -Command "..."
 SHELL ["/bin/bash", "-c"]
-ENTRYPOINT ["/bin/bash"]
-CMD ["-i"]
 
 # Health check: verify Java and PowerShell are available
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD java -version && pwsh -Version
+
+# PowerShell as the primary entrypoint for automation-first workflows
 ENTRYPOINT ["/usr/bin/pwsh", "-NoProfile"]
