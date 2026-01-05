@@ -12,16 +12,17 @@
 #
 # Exit on error, undefined variables, and pipe failures
 set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
 
-echo "Setting up KALM build environment..."
+printf "Setting up KALM build environment...\n"
 
 # Update package index
-echo "Updating package index..."
+printf "Updating package index...\n"
 apt-get update
 
 # Install base dependencies
-echo "Installing base dependencies..."
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+printf "Installing base dependencies...\n"
+apt-get install -y --no-install-recommends \
 	ca-certificates \
 	curl \
 	wget \
@@ -30,18 +31,23 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	tzdata \
 	build-essential \
 	software-properties-common \
-	gnupg2
+	gnupg
 
 # Configure Microsoft PowerShell repository
-echo "Configuring Microsoft PowerShell repository..."
+printf "Configuring Microsoft PowerShell repository...\n"
 mkdir -p /usr/share/keyrings
 
 # Download Microsoft's GPG key in ASCII-armored format and convert it to binary GPG keyring format.
 # The curl flags: --fail (error on HTTP errors), --silent (no progress), --show-error (show errors anyway),
 # --location (follow redirects). The gpg --dearmor converts ASCII armor to binary keyring format.
 # This key is used to verify the authenticity of packages from Microsoft's Ubuntu repository.
-curl --fail --silent --show-error --location https://packages.microsoft.com/keys/microsoft.asc |
-	gpg --dearmor -o /usr/share/keyrings/microsoft-archive-keyring.gpg
+curl --fail --silent --show-error --location --retry 3 --retry-connrefused --retry-delay 2 \
+	https://packages.microsoft.com/keys/microsoft.asc |
+	gpg --dearmor --batch --yes -o /usr/share/keyrings/microsoft-archive-keyring.gpg
+
+# Set permissions to be readable by all users
+# user: read, write; group: read; others: read
+chmod u=rw,g=r,o=r /usr/share/keyrings/microsoft-archive-keyring.gpg
 
 # Write the Microsoft repository source list entry using printf
 printf '%s%s\n' \
@@ -51,29 +57,32 @@ printf '%s%s\n' \
 
 # Add OpenJDK PPA for newer Java versions (Java 22+).
 # add-apt-repository is provided by software-properties-common.
-printf "Adding OpenJDK PPA..."
+printf "Adding OpenJDK PPA...\n"
 add-apt-repository -y ppa:openjdk-r/ppa
 
 # Update package index after adding repositories
-printf "Updating package index after adding repositories..."
+printf "Updating package index after adding repositories...\n"
 apt-get update
 
-# Install PowerShell 7.4+
-printf "Installing PowerShell 7.4+..."
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends powershell
-
-# Install OpenJDK 22 (matches build-logic DEFAULT_JAVA_VERSION)
-printf "Installing OpenJDK 22..."
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openjdk-22-jdk-headless
+# Install PowerShell 7.4+ and OpenJDK 22 (matches build-logic DEFAULT_JAVA_VERSION)
+printf "Installing PowerShell 7.4+ and OpenJDK 22...\n"
+apt-get install -y --no-install-recommends \
+	powershell \
+	openjdk-22-jdk-headless
 
 # Configure UTF-8 locale (important for reproducibility)
-printf "Configuring UTF-8 locale..."
-echo "en_US.UTF-8 UTF-8" >>/etc/locale.gen
+printf "Configuring UTF-8 locale...\n"
+# -q - **quiet mode**: no output; exit status indicates match presence
+# -x - require a line to **match the entire pattern**, rather than a substring
+# -F - treat patterns as **fixed strings** (no regular expression interpretation)
+if ! grep -qxF "en_US.UTF-8 UTF-8" /etc/locale.gen; then
+	printf "en_US.UTF-8 UTF-8\n" >>/etc/locale.gen
+fi
 locale-gen en_US.UTF-8
 
 # Clean up to reduce image size
-printf "Cleaning up..."
+printf "Cleaning up...\n"
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
-echo "KALM build environment setup completed successfully."
+printf "KALM build environment setup completed successfully.\n"
