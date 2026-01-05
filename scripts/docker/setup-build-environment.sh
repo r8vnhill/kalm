@@ -44,32 +44,35 @@ curl --fail --silent --show-error --location https://packages.microsoft.com/keys
 	gpg --dearmor -o /usr/share/keyrings/microsoft-archive-keyring.gpg
 
 # Write the Microsoft repository source list entry using printf
-printf '%s\n' 'deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main' >/etc/apt/sources.list.d/microsoft.list
+printf '%s%s\n' \
+	'deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] ' \
+	'https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main' \
+	>/etc/apt/sources.list.d/microsoft.list
 
 # Add OpenJDK PPA for newer Java versions (Java 22+).
 # add-apt-repository is provided by software-properties-common.
-echo "Adding OpenJDK PPA..."
+printf "Adding OpenJDK PPA..."
 add-apt-repository -y ppa:openjdk-r/ppa
 
 # Update package index after adding repositories
-echo "Updating package index after adding repositories..."
+printf "Updating package index after adding repositories..."
 apt-get update
 
 # Install PowerShell 7.4+
-echo "Installing PowerShell 7.4+..."
+printf "Installing PowerShell 7.4+..."
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends powershell
 
 # Install OpenJDK 22 (matches build-logic DEFAULT_JAVA_VERSION)
-echo "Installing OpenJDK 22..."
+printf "Installing OpenJDK 22..."
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openjdk-22-jdk-headless
 
 # Configure UTF-8 locale (important for reproducibility)
-echo "Configuring UTF-8 locale..."
+printf "Configuring UTF-8 locale..."
 echo "en_US.UTF-8 UTF-8" >>/etc/locale.gen
 locale-gen en_US.UTF-8
 
 # Clean up to reduce image size
-echo "Cleaning up..."
+printf "Cleaning up..."
 apt-get clean
 rm -rf /var/lib/apt/lists/*
 
