@@ -22,15 +22,15 @@ apt-get update
 # Install base dependencies
 echo "Installing base dependencies..."
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    wget \
-    git \
-    locales \
-    tzdata \
-    build-essential \
-    software-properties-common \
-    gnupg2
+	ca-certificates \
+	curl \
+	wget \
+	git \
+	locales \
+	tzdata \
+	build-essential \
+	software-properties-common \
+	gnupg2
 
 # Configure Microsoft PowerShell repository
 echo "Configuring Microsoft PowerShell repository..."
@@ -40,14 +40,14 @@ mkdir -p /usr/share/keyrings
 # The curl flags: --fail (error on HTTP errors), --silent (no progress), --show-error (show errors anyway),
 # --location (follow redirects). The gpg --dearmor converts ASCII armor to binary keyring format.
 # This key is used to verify the authenticity of packages from Microsoft's Ubuntu repository.
-curl --fail --silent --show-error --location https://packages.microsoft.com/keys/microsoft.asc | \
-    gpg --dearmor -o /usr/share/keyrings/microsoft-archive-keyring.gpg
+curl --fail --silent --show-error --location https://packages.microsoft.com/keys/microsoft.asc |
+	gpg --dearmor -o /usr/share/keyrings/microsoft-archive-keyring.gpg
 
-cat > /etc/apt/sources.list.d/microsoft.list << EOF
-deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main
-EOF
+# Write the Microsoft repository source list entry using printf
+printf '%s\n' 'deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main' >/etc/apt/sources.list.d/microsoft.list
 
-# Add OpenJDK PPA for newer Java versions (Java 22+)
+# Add OpenJDK PPA for newer Java versions (Java 22+).
+# add-apt-repository is provided by software-properties-common.
 echo "Adding OpenJDK PPA..."
 add-apt-repository -y ppa:openjdk-r/ppa
 
@@ -65,7 +65,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openjd
 
 # Configure UTF-8 locale (important for reproducibility)
 echo "Configuring UTF-8 locale..."
-echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+echo "en_US.UTF-8 UTF-8" >>/etc/locale.gen
 locale-gen en_US.UTF-8
 
 # Clean up to reduce image size
