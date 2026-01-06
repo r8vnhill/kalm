@@ -1,6 +1,44 @@
 # KALM Containers and Environments
 
-**Audience:** KALM maintainers and contributors. This is NOT for library consumers; use the main README for consumer guidance.
+> [!IMPORTANT] Audience
+> KALM maintainers and contributors.
+> This is NOT for library consumers; use the main README for consumer guidance.
+
+> [!NOTE] See also
+> - [Container: Build and Run (wiki)](https://gitlab.com/r8vnhill/kalm/-/wikis/Container-Build-and-Run) - Instructions for building and running the KALM container image locally.
+
+----
+
+## Table of Contents
+
+- [KALM Containers and Environments](#kalm-containers-and-environments)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Base Image Contents](#base-image-contents)
+  - [Building the Image Locally](#building-the-image-locally)
+    - [Prerequisites](#prerequisites)
+    - [Build Commands (Docker Buildx)](#build-commands-docker-buildx)
+      - [One-time setup (if you have no builder)](#one-time-setup-if-you-have-no-builder)
+      - [Single-arch build for local use (loads into the local daemon)](#single-arch-build-for-local-use-loads-into-the-local-daemon)
+  - [Dockerfile Linting (Hadolint)](#dockerfile-linting-hadolint)
+  - [Running the Image Locally](#running-the-image-locally)
+    - [Basic Checks](#basic-checks)
+    - [Basic Usage: Interactive PowerShell](#basic-usage-interactive-powershell)
+    - [Run a Single Command Inside the Container](#run-a-single-command-inside-the-container)
+    - [Using Docker Compose (Recommended for Development)](#using-docker-compose-recommended-for-development)
+    - [Preserve File Permissions (for Git Operations)](#preserve-file-permissions-for-git-operations)
+  - [Running with Podman](#running-with-podman)
+  - [CI Integration (Phase 2+)](#ci-integration-phase-2)
+  - [Troubleshooting](#troubleshooting)
+    - ["Docker daemon is not running"](#docker-daemon-is-not-running)
+    - ["Cannot mount /path/to/kalm: No such file or directory"](#cannot-mount-pathtokalm-no-such-file-or-directory)
+    - ["java: command not found" inside container](#java-command-not-found-inside-container)
+    - ["Permission denied" when writing files from container](#permission-denied-when-writing-files-from-container)
+  - [For Researchers: Reproducibility Bundles](#for-researchers-reproducibility-bundles)
+  - [Design Rationale](#design-rationale)
+  - [Next Steps](#next-steps)
+
+----
 
 ## Overview
 
@@ -13,7 +51,7 @@ KALM provides an OCI/Docker-based environment image (`kalm-env`) to improve **re
 
 This is a **maintainer-facing feature**. The main README remains consumer-focused.
 
----
+----
 
 ## Base Image Contents
 
@@ -31,7 +69,7 @@ The `kalm-env` image includes:
 
 **Important:** The image does **not** contain the KALM source code. You mount or copy the repo at runtime.
 
----
+----
 
 ## Building the Image Locally
 
@@ -40,19 +78,29 @@ The `kalm-env` image includes:
 - Docker installed and running
 - Clone of the KALM repository (to access the Dockerfile)
 
-### Build Command
+### Build Commands (Docker Buildx)
+
+> [!NOTE] Buildx
+> [Buildx](https://docs.docker.com/reference/cli/docker/buildx/) is the modern Docker builder and works for both single-arch (local testing) and multi-arch (publishing) scenarios.
+
+#### One-time setup (if you have no builder)
+
+```bash
+docker buildx create --use --name kalm-builder
+```
+
+#### Single-arch build for local use (loads into the local daemon)
 
 ```bash
 # /path/to/kalm
-# Use the simpler 'latest' tag for local work
-docker build -t kalm-env:latest -f Dockerfile .
-# Or build with a tag for a specific version
-docker build -t kalm-env:0.1.0 -f Dockerfile .
+docker buildx build -t kalm-env:latest -f Dockerfile . --load
 ```
 
-**Build time:** ~5-10 minutes on first build (downloads base OS, PowerShell, JDK). Subsequent builds are faster due to layer caching.
+> [!NOTE] Build notes:
+> - `--load` is only for single-arch; multi-arch requires `--push`.
+> - Build time: ~5-10 minutes on first build (downloads base OS, PowerShell, JDK); faster with cache.
 
----
+----
 
 ## Dockerfile Linting (Hadolint)
 
@@ -74,7 +122,7 @@ If Hadolint is installed locally, you can run:
 hadolint Dockerfile
 ```
 
----
+----
 
 ## Running the Image Locally
 
@@ -170,7 +218,7 @@ docker-compose run --rm \
   kalm
 ```
 
----
+----
 
 ## Running with Podman
 
@@ -184,7 +232,7 @@ podman run --rm -it -v /path/to/kalm:/workspace localhost/kalm-env:latest
 
 All commands are identical except `docker` → `podman`.
 
----
+----
 
 ## CI Integration (Phase 2+)
 
@@ -201,7 +249,7 @@ build:
 
 Documentation for CI usage will live in `dev-resources/CI_CD.md` once Phase 3 is underway.
 
----
+----
 
 ## Troubleshooting
 
@@ -244,7 +292,7 @@ docker build -t kalm-env:latest -f Dockerfile .
 
 On Linux, container processes run as the `builder` user (non-root). Use the `--user` flag to run as your host user (see "Preserve File Permissions" above).
 
----
+----
 
 ## For Researchers: Reproducibility Bundles
 
@@ -269,13 +317,13 @@ When publishing a KALM-based experiment, include:
 
 This ensures others can reproduce your exact computational environment.
 
----
+----
 
 ## Design Rationale
 
 See the wiki page **"Design-Reproducibility-CI-CD.md"** for the full rationale behind containerization in KALM and how it aligns with reproducibility goals for scientific investigations.
 
----
+----
 
 ## Next Steps
 

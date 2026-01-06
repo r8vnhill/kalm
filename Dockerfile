@@ -48,7 +48,8 @@ ENV LANG=en_US.UTF-8 \
 ENV PATH=$JAVA_HOME/bin:$PATH
 
 # Create a non-root user for builds (optional but recommended for security)
-RUN useradd -m -s /usr/bin/pwsh builder
+# -s SHELL: user’s login shell
+RUN useradd --create-home -s /usr/bin/pwsh builder
 
 # Create directories for workspace and gradle cache
 RUN mkdir -p /workspace /gradle-cache && \
@@ -57,11 +58,10 @@ RUN mkdir -p /workspace /gradle-cache && \
 # Set working directory
 WORKDIR /workspace
 
-# Switch to non-root user (optional; comment out if you prefer root)
-# USER builder
-
 # Set bash as the default shell for the container
 # This allows ./gradlew and shell scripts to work by default.
+# If SHELL were set to PowerShell, any RUN lines (and shell scripts invoked during build) would
+# execute under PowerShell, which can break bash scripts like `setup-build-environment.sh`.
 SHELL ["/bin/bash", "-c"]
 
 # Health check: verify Java and PowerShell are available
