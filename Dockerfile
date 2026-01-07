@@ -24,7 +24,7 @@ FROM ubuntu:22.04
 LABEL org.opencontainers.image.authors="Ignacio Slater-Muñoz <https://ravenhill.cl>" \
     org.opencontainers.image.title="KALM Base Build & Experiments Environment" \
     org.opencontainers.image.description="Reproducible Linux environment for KALM builds, tests, and scientific experiments" \
-    org.opencontainers.image.version="0.1.0" \
+    org.opencontainers.image.version="0.2.0" \
     org.opencontainers.image.source="https://gitlab.com/r8vnhill/kalm" \
     org.opencontainers.image.documentation="https://gitlab.com/r8vnhill/kalm" \
     org.opencontainers.image.base.name="ubuntu:22.04" \

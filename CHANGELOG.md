@@ -5,72 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - TBD
-
-> This section summarizes the net state of the project since `0.1.0`. Entries reflect current functionality only (removed or superseded items are omitted). Commit hashes are included for traceability.
+## [0.2.0] - 2026-01-07
 
 ### Added
-- Class-based `KalmScriptLogger` (rotating file logger + enum-based levels) with instrumentation across repository PowerShell scripts (`Invoke-Commit`, `Sync-*`, `Invoke-GradleWithJdk`, `Invoke-PesterWithConfig`, `Invoke-PSSA`, and git helpers).
-- Singleton dry-run state for PowerShell automation (`DryRunState.ps1`) — prevents any git invocation during `-WhatIf` (9832ac5c49d2).
-- Explicit commit message parameters (`-WikiCommitMessage`, `-RootCommitMessage`) required for sync scripts (e71c1b07a28d).
-- Type-aware Detekt configuration and improved plugin usage (925efefea358, ef1c5df8a116).
-- Dynamic wiring of subproject `apiCheck` and `detekt` tasks in `verifyAll` (1ef72a767c39, 9ef0de174e81).
-- Agent runtime & interaction guidelines (`.github/copilot-instructions.md` and workspace reminders) (ef1c5df8a116, 59301a98cad3, c242c2bc5f3a).
-- Git staging preview helper (`Show-GitChangesToStage`) and standardized commit script (`Invoke-Commit.ps1`) for automated workflow (85484ac0b210).
-- GitLab CI/CD pipeline with Pester test automation (9d06352):
-  - `.gitlab-ci.yml` with `pester:tests` job (PowerShell 7.4 Alpine, Pester 5.7.1)
-  - `Invoke-PesterWithConfig.ps1` helper for consistent test execution
-  - Pester tests for `DryRunState.ps1` (`scripts/testing/specs/DryRunState.Tests.ps1`)
-  - Pester configuration file (`scripts/testing/pester.config.psd1`)
-- Added specs for `Get-KalmRepoRoot` (`scripts/testing/specs/PesterHelpers.Tests.ps1`)
-- Split `scripts/testing/helpers/PesterHelpers.psm1` into focused helper scripts and keep the module as a simple aggregator for exports.
-- `Get-KalmRepoRoot` helper with parameter-set-aware `OutputType` annotations (faef3e6):
-  - Returns `[string]` by default, `[System.IO.DirectoryInfo]` with `-AsObject` switch
-  - Locates repository root by walking ancestor directories until marker (`.git`) is found
-  - Supports custom markers via `-Marker` parameter
-
-### Documentation
-- Documented the new logging infrastructure and usage in `scripts/README.md`.
-- Formatted markdown files under `wiki/` with `dprint` and updated `wiki/.dprint.json` to a working plugin version (commit 240e6755a709e06e63eb543c59590b53af0e7f96).
-- Updated contribution & automation guidelines to prefer script-first workflows (cf04aa30a16f, 338070690435, c242c2bc5f3a).
-- Added / refined dependency locking, agent guidance, and runtime reminders (c504f84fe656, 6324b4b25cd1, 59301a98cad3).
-- Clarified and expanded RedMadRobot Detekt documentation and guidance; added README "Static Analysis" quick-start, updated `CONTRIBUTING.md`, `dev-resources/DOCUMENTATION_RULES.md`, and `dev-resources/CI_CD.md`; adjusted `kalm.detekt-redmadrobot` header and un-ignored functionalTest build outputs for fixture tracking (commit 82052ad).
-- Adjusted wiki line wrapping and commit examples for consistency (d6108e1, f17c92b).
-- Synced wiki submodule to d1b4831 (parent d063502) — adds new docs and PDFs; updates wiki `.gitignore`.
-- Added CI/CD pipeline documentation in `dev-resources/CI_CD.md` with Pester test job details and local testing instructions (9d06352).
-- Updated `scripts/README.md` with Pester helper usage, CI integration notes, and test execution examples (9d06352).
+- Docker container image (`kalm-env`) for reproducible builds, tests, and scientific experiments (Dockerfile, docker-compose.yml)
+- GitLab CI/CD pipeline with container smoke test to verify Java, PowerShell, and Pester availability
+- Pester PowerShell testing framework installed in container image
+- Comprehensive PowerShell automation scripts:
+  - Git and wiki submodule synchronization with pull strategy options (ff-only, merge, rebase)
+  - Git staging preview and commit automation
+  - Pester test harness with module discovery and validation
+  - ScriptLogging module for standardized error/warning/info output
+- Documentation for container usage, Dockerfile linting (Hadolint), and PowerShell scripting practices
+- Custom PSScriptAnalyzer rule for PsCustomObject casing validation
 
 ### Changed
-- Centralized repository declarations in `settings.gradle.kts` for plugins & dependencies (59301a98cad3).
-- Enforced strict dependency locking & regenerated lock states (0725233d875b, c504f84fe656, 6324b4b25cd1).
-- Adopted canonical plugin alias form and provider-safe catalog lookups (7940104d8480, bf97e26e76b3).
-- Enhanced build reproducibility and documentation of locking & automation (c504f84fe656, 6324b4b25cd1, c242c2bc5f3a).
-- Improved PowerShell sync scripts: guarded git wrapper (`Invoke-Git`), output capture & clean status handling (9832ac5c49d2, e71c1b07a28d).
-- Added `-PullStrategy` to sync scripts (`Sync-GitSubmodule`, `Sync-WikiOnly.ps1`, `Sync-RepoAndWiki.ps1`) to support `ff-only|merge|rebase`. Documented usage in `scripts/README.md` and agent docs (commit c67072ecfed56d0998a0c427c6c8561e5fdfe3ff).
-- Integrated staging preview into sync scripts before git add operations (85484ac0b210).
-- Consolidated Pester runner under `scripts/testing`; introduced `helpers/PesterHelpers.psm1` and updated `Invoke-PesterWithConfig.ps1` to import it.
-- Pester runner now sinks to console via `AddConsoleSink()` for better local visibility during runs.
-- CI updated to call `./scripts/testing/Invoke-PesterWithConfig.ps1`.
-- Typed `Ensure-PesterModule` parameter (now `[KalmScriptLogger]`) and integrated `ScriptLogging.psm1` for stronger type safety (bed14b5).
-- Split `Import-PesterModule` into focused helpers (bab15b7):
-  - `Import-PesterModuleByPath` handles literal-path imports with validation
-  - `Import-PesterModuleByName` handles named imports with MinimumVersion and improved error messages
-  - Main function delegates to helpers while preserving behavior and logging
+- Centralized repository declarations and agent runtime guidelines
+- Improved Detekt convention: enabled type-aware analysis with dynamic jvmTarget
+- Enhanced Pester test discovery with better glob enumeration handling
+- Refactored DryRunState from script to module implementation
+- Stabilized Pester test harness with extracted C# test generation component
+- Updated wiki submodule pointers to reflect latest documentation
 
 ### Fixed
-- Clean working tree detection logic for empty `git status` output (9832ac5c49d2).
-- Detekt configuration correctness & JVM target derivation (925efefea358).
-- Removed unsupported PSScriptAnalyzer `MaximumLineLength` key; added editor and VSCode rules for 100-char enforcement (d2ad440).
-- Refactored `scripts/lib/ScriptLogging.psm1` with Set/Get API, fixed parsing, ensured file creation, and added sinks (d2ad440).
-- Hardened Pester tests requiring external tools and updated run settings (d2ad440).
+- Container smoke test quoting issues in GitLab CI
+- Resolve-PesterSettings helper coverage improvements
+- Detekt plugin usage and verification tasks now resilient when not applied to root
+- PSScriptAnalyzer rule violations in sync scripts
+
+### Deprecated
+- None
 
 ### Removed
-- Root-level PowerShell wrappers in `scripts/` (moved into `scripts/git`, `scripts/quality`, and `scripts/testing`) were removed.
-- Legacy `scripts/tests/` directory removed; specs live under `scripts/testing/specs`.
-- Obsolete commented changelog links and redundant pre-`0.1.0` script placeholders (6afde41b10e7).
-### Notes
-- Future release will bundle these changes; consider tagging once wiki & CLI test harness land.
+- None
 
+### Security
+- Enforced strict dependency locking across all modules (gradle.lockfile, settings-gradle.lockfile, module-level lockfiles)
+- Added non-root `builder` user in Docker image for improved security
 
 ## [0.1.0] - 2025-10-27
 
@@ -87,5 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Dropped legacy PowerShell Git helper scripts in favor of the consolidated `Sync-Remotes` workflow.
 
-[unreleased]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.1.0...HEAD
+[unreleased]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.2.0...HEAD
+[0.2.0]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.1.0...v0.2.0
 [0.1.0]: https://gitlab.com/r8vnhill/kalm/-/releases/v0.1.0

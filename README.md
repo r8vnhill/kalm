@@ -15,6 +15,8 @@
 
 ## 🚧 Current State
 - ✅ Kotlin + Gradle project setup
+- ✅ Docker-based reproducible build environment (fully functional)
+- ⚠️ Project is not yet executable — Docker container and CI/CD infrastructure were prioritized to ensure reproducible development and testing before implementing core features
 - ❌ No functional optimization features implemented yet
 
 ## 🛠️ Getting Started
@@ -74,8 +76,8 @@ Once artefacts are published (local or remote Maven repository), import the BOM 
 
 ```kotlin
 dependencies {
-	implementation(platform("cl.ravenhill.kalm:kalm-platform:0.1.0-SNAPSHOT"))
-	implementation("cl.ravenhill.kalm:kalm-core:0.1.0-SNAPSHOT")
+	implementation(platform("cl.ravenhill.kalm:kalm-platform:0.2.0-SNAPSHOT"))
+	implementation("cl.ravenhill.kalm:kalm-core:0.2.0-SNAPSHOT")
 }
 ```
 
