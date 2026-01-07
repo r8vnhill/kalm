@@ -1,65 +1,38 @@
-# GitLab CI/CD Pipeline Configuration for KALM
-#
-# This pipeline validates PowerShell scripts, runs Gradle builds, and executes tests.
-# For project details, see: https://gitlab.com/r8vnhill/kalm
+# Minimal GitLab CI to build and smoke-test the KALM container
 
 stages:
   - test
-  - build
-  - verify
 
-# Default settings applied to all jobs unless overridden
-default:
-  retry:
-    max: 2
-    when:
-      - runner_system_failure
-      - stuck_or_timeout_failure
+variables:
+  # Use Docker-in-Docker
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
 
-# ============================================================================
-# PowerShell Script Tests (Pester)
-# ============================================================================
-
-pester:tests:
+container:smoke:
   stage: test
-  image: mcr.microsoft.com/powershell:7.4-alpine-3.20
+  image: docker:24.0
+  services:
+    - name: docker:24.0-dind
+      command: ["--mtu=1460"]
   before_script:
-    - pwsh -NoProfile -Command "Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -Scope CurrentUser -ErrorAction Stop"
+    - docker version
+    - docker info
   script:
-    - pwsh -NoProfile -Command "./scripts/testing/Invoke-PesterWithConfig.ps1"
-  artifacts:
-    when: always
-    reports:
-      junit: build/test-results/pester/*.xml
-    paths:
-      - build/test-results/pester/*.xml
-    expire_in: 7 days
+    # Build the image from the repo Dockerfile
+    - docker build --pull -t kalm-env:${CI_COMMIT_SHORT_SHA} -f Dockerfile .
+
+    # Run a simple smoke test inside the container using its pwsh entrypoint.
+    # Verifies Java, PowerShell, and that Pester is available.
+    - >-
+      docker run --rm kalm-env:${CI_COMMIT_SHORT_SHA}
+      -c "$ErrorActionPreference='Stop';
+      & java -version; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE };
+      Write-Host \"PowerShell $($PSVersionTable.PSVersion.ToString())\";
+      Import-Module Pester -ErrorAction Stop;
+      Write-Host \"Pester $((Get-Module Pester -ListAvailable | Select-Object -First 1).Version.ToString())\";
+      Write-Host 'Container smoke test OK.'"
+
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_COMMIT_TAG
-
-# ============================================================================
-# Gradle Build and Verification
-# ============================================================================
-# 
-# Placeholder jobs for Gradle-based build and verification tasks.
-# Uncomment and configure these when integrating Gradle CI steps.
-#
-# gradle:build:
-#   stage: build
-#   image: eclipse-temurin:22-jdk-alpine
-#   script:
-#     - ./gradlew build --no-daemon --stacktrace
-#   artifacts:
-#     paths:
-#       - build/libs/
-#     expire_in: 1 week
-#
-# gradle:verify:
-#   stage: verify
-#   image: eclipse-temurin:22-jdk-alpine
-#   script:
-#     - ./gradlew verifyAll --no-daemon --stacktrace
-#   dependencies:
-#     - gradle:build
+    - if: $CI_COMMIT_BRANCH
