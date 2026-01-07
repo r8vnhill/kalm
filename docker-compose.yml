@@ -1,0 +1,46 @@
+services:
+  kalm:
+    <<: &kalm-base
+      build:
+        # Build context: the directory sent to the Docker daemon for the build.
+        # Files under this path are available to the Dockerfile (e.g. via COPY/ADD).
+        # Using `.` sends the repository root so the Dockerfile can access repo files.
+        context: .
+        dockerfile: Dockerfile
+      image: kalm-env:local
+      volumes:
+        # Mount repo at /workspace with cached mode for performance
+        - .:/workspace:cached
+      working_dir: /workspace
+      environment:
+        # Ensure consistent locale inside container
+        LANG: en_US.UTF-8
+        LC_ALL: en_US.UTF-8
+      init: true
+    # Interactive terminal for pwsh
+    tty: true
+    stdin_open: true
+
+  # Convenience service for running gradle tasks
+  gradle:
+    <<: *kalm-base
+    profiles:
+      - gradle
+    volumes:
+      - .:/workspace:cached
+      - gradle-cache:/gradle-cache
+    working_dir: /workspace
+    # Override entrypoint to run gradle directly
+    entrypoint: ./gradlew
+    # Users pass gradle arguments like: docker compose --profile gradle run --rm gradle verifyAll
+
+  # Convenience service for running Pester tests
+  pester:
+    <<: *kalm-base
+    profiles:
+      - pester
+    # Keep pwsh entrypoint; pass the script as a command argument
+    command: ["-File", "./scripts/testing/Invoke-PesterWithConfig.ps1"]
+
+volumes:
+  gradle-cache: {}

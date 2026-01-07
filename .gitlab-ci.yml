@@ -1,0 +1,40 @@
+# Minimal GitLab CI to build and smoke-test the KALM container
+
+stages:
+  - test
+
+variables:
+  # Use Docker-in-Docker
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
+
+container:smoke:
+  stage: test
+  image: docker:24.0
+  services:
+    - name: docker:24.0-dind
+      command: ["--mtu=1460"]
+  before_script:
+    - docker version
+    - docker info
+  script:
+    # Build the image from the repo Dockerfile
+    - docker build --pull -t kalm-env:${CI_COMMIT_SHORT_SHA} -f Dockerfile .
+
+    # Run a simple smoke test inside the container using its pwsh entrypoint.
+    # Verifies Java, PowerShell, and that Pester is available.
+    - >-
+      docker run --rm kalm-env:${CI_COMMIT_SHORT_SHA}
+      -c '$ErrorActionPreference="Stop";
+      java -version; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE };
+      $psVersion = $PSVersionTable.PSVersion.ToString();
+      Write-Host ("PowerShell " + $psVersion);
+      Import-Module Pester -ErrorAction Stop;
+      $pesterVersion = (Get-Module Pester -ListAvailable | Select-Object -First 1).Version.ToString();
+      Write-Host ("Pester " + $pesterVersion);
+      Write-Host "Container smoke test OK."'
+
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH

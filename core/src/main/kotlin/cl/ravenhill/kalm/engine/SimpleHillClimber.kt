@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Ignacio Slater M.
+ * Copyright (c) 2026, Ignacio Slater-Muñoz.
  * 2-Clause BSD License.
  */
 
@@ -18,7 +18,7 @@ class SimpleHillClimber(
         var bestScore = objectiveFunction(current)
 
         repeat(maxIterations) {
-            val candidate = current.map { it + stepSize }
+            val candidate = current.map { featureValue -> featureValue + stepSize }
             val candidateScore = objectiveFunction(candidate)
             if (candidateScore > bestScore) {
                 current = candidate

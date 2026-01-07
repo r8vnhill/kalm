@@ -1,15 +1,18 @@
 [versions]
 ben-manes-versions = "0.53.0"
 detekt = "1.23.8"
+detekt-redmadrobot = "0.19.1"
+junit = "5.11.3"
 kotest = "6.0.4"
 kotest-framework-datatest = "5.9.1"
-kotlin = "2.3.0-Beta1"
+kotlin = "2.3.0-Beta2"
 kotlin-bin-compatibility-validator = "0.18.1"
 version-catalog-update = "1.0.1"
 
 [libraries]
 # Optional formatting plugin for Detekt (requires detekt CLI/tooling)
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest-framework-datatest" }
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
@@ -18,12 +21,15 @@ kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref 
 # Core Kotlin Gradle plugin (required for all Kotlin projects)
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 
 [plugins]
 ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
 dependency-updates = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
 # Static analysis plugin for Kotlin codebases
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+detekt-redmadrobot = { id = "com.redmadrobot.detekt", version.ref = "detekt-redmadrobot" }
 # Plugin to check binary compatibility of public APIs
 kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-bin-compatibility-validator" }
 version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "version-catalog-update" }

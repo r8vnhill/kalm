@@ -4,6 +4,11 @@
 
 - [CI/CD and Release Guide](#cicd-and-release-guide)
   - [Table of Contents](#table-of-contents)
+  - [CI/CD Pipeline Overview](#cicd-pipeline-overview)
+    - [🧪 Pester Tests (PowerShell Scripts)](#-pester-tests-powershell-scripts)
+  - [Container-Based CI and Local Development (Phase 2+)](#container-based-ci-and-local-development-phase-2)
+    - [Current Status (Phase 1)](#current-status-phase-1)
+    - [Future Phases (2–5)](#future-phases-25)
   - [Versioning and Tagging Strategy](#versioning-and-tagging-strategy)
     - [🔖 Centralized Version Management](#-centralized-version-management)
     - [🧭 Semantic Versioning and Git Tagging](#-semantic-versioning-and-git-tagging)
@@ -15,6 +20,61 @@
       - [In GitHub (🌐 Public Mirror at `r8vnhill/kalm`)](#in-github--public-mirror-at-r8vnhillkalm)
     - [🧾 Changelog Guidelines](#-changelog-guidelines)
     - [🏷️ Tagging the Release](#️-tagging-the-release)
+
+## CI/CD Pipeline Overview
+
+The project uses GitLab CI/CD (`.gitlab-ci.yml`) to automate testing and verification. The pipeline consists of multiple stages:
+
+1. **test** — Runs unit and integration tests for scripts and code modules
+2. **build** — Compiles and packages project artifacts (Gradle builds)
+3. **verify** — Executes static analysis, API compatibility checks, and comprehensive verification tasks
+
+### 🧪 Pester Tests (PowerShell Scripts)
+
+The `pester:tests` job validates PowerShell automation scripts using [Pester 5.x](https://pester.dev):
+
+- **Stage:** `test`
+- **Image:** `mcr.microsoft.com/powershell:7.4-alpine-3.20`
+- **Script:** `./scripts/testing/Invoke-PesterWithConfig.ps1`
+- **Artifacts:** Test results are published as JUnit XML reports under `build/test-results/pester/`
+
+**When it runs:**
+- On merge request events
+- On commits to the default branch (`main`)
+- When a Git tag is pushed
+
+**Local testing:**
+```powershell
+# Run Pester tests locally using the same configuration as CI
+./scripts/testing/Invoke-PesterWithConfig.ps1
+```
+
+**Configuration:**
+The Pester job loads its settings from `scripts/testing/pester.config.psd1`. To add new tests, place them under `scripts/testing/specs/` and update the config file accordingly.
+
+---
+
+## Container-Based CI and Local Development (Phase 2+)
+
+As KALM transitions to container-based reproducibility (tracked in `dev-resources/PLAN-dockerization.md`), the following features are planned:
+
+### Current Status (Phase 1)
+
+- **Local-only:** A Dockerfile and supporting documentation exist for developers and researchers to use locally.
+- **Opt-in:** No CI jobs yet use the container image; this is a maintainer preview.
+- **Documentation:** See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for the recommended `docker compose` quickstart; the wiki page `Container-Build-and-Run` covers Buildx/docker run variants.
+
+### Future Phases (2–5)
+
+- **Phase 2:** Validate that containerized builds match native builds locally.
+- **Phase 3:** Add partial CI integration (dedicated container jobs alongside existing jobs).
+- **Phase 4:** Full CI migration to container-based environment.
+- **Phase 5:** Research reproducibility workflows and documentation.
+
+For more details on the roadmap, see `dev-resources/PLAN-dockerization.md`.
+
+> [!tip]
+> Use `-Verbose` to see detailed output during local runs: `./scripts/testing/Invoke-PesterWithConfig.ps1 -Verbose`
 
 ## Versioning and Tagging Strategy
 
@@ -86,6 +146,7 @@ To ensure traceability and consistency across GitLab and GitHub, releases are dr
 1. Ensure that all pull/merge requests for the milestone have been merged.
 2. Confirm that `Versions.kt` has been updated to the intended version (e.g., `1.2.3`).
 3. Validate that CI pipelines pass on the **default branch** (`main` unless otherwise configured).
+4. Ensure multi-module static analysis passes (`./gradlew detektAll`) or a full `./gradlew verifyAll` run is clean (tests + Detekt + API checks). Incremental checks (`detektDiff`) are acceptable for PR validation, but a release requires a full pass.
 
 ### ✍️ How to Create a Release Draft
 

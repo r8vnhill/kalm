@@ -1,8 +1,37 @@
 public abstract interface class cl/ravenhill/kalm/engine/OptimizationEngine {
-	public abstract fun optimize (Lcl/ravenhill/kalm/state/State;)Lcl/ravenhill/kalm/state/State;
+	public abstract fun getObjectiveFunction ()Lkotlin/jvm/functions/Function1;
+	public abstract fun optimize (Lcl/ravenhill/kalm/repr/Feature;)Lcl/ravenhill/kalm/repr/Feature;
 }
 
-public abstract interface class cl/ravenhill/kalm/state/State {
-	public abstract fun getSolution ()Ljava/lang/Object;
+public final class cl/ravenhill/kalm/engine/SimpleHillClimber : cl/ravenhill/kalm/engine/OptimizationEngine {
+	public fun <init> (Lkotlin/jvm/functions/Function1;DI)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;DIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getObjectiveFunction ()Lkotlin/jvm/functions/Function1;
+	public synthetic fun optimize (Lcl/ravenhill/kalm/repr/Feature;)Lcl/ravenhill/kalm/repr/Feature;
+	public fun optimize (Lcl/ravenhill/kalm/repr/ScalarFeature;)Lcl/ravenhill/kalm/repr/ScalarFeature;
+}
+
+public final class cl/ravenhill/kalm/engine/SimpleHillClimberKt {
+	public static final fun main ()V
+	public static synthetic fun main ([Ljava/lang/String;)V
+}
+
+public abstract interface class cl/ravenhill/kalm/repr/Feature {
+	public abstract fun flatMap (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/kalm/repr/Feature;
+	public abstract fun map (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/kalm/repr/Feature;
+}
+
+public final class cl/ravenhill/kalm/repr/ScalarFeature : cl/ravenhill/kalm/repr/Feature {
+	public fun <init> (D)V
+	public final fun component1 ()D
+	public final fun copy (D)Lcl/ravenhill/kalm/repr/ScalarFeature;
+	public static synthetic fun copy$default (Lcl/ravenhill/kalm/repr/ScalarFeature;DILjava/lang/Object;)Lcl/ravenhill/kalm/repr/ScalarFeature;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun flatMap (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/kalm/repr/Feature;
+	public final fun getX ()D
+	public fun hashCode ()I
+	public synthetic fun map (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/kalm/repr/Feature;
+	public fun map (Lkotlin/jvm/functions/Function1;)Lcl/ravenhill/kalm/repr/ScalarFeature;
+	public fun toString ()Ljava/lang/String;
 }
 

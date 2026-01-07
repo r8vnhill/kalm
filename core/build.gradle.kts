@@ -1,18 +1,14 @@
 /*
- * Copyright (c) 2025, Ignacio Slater M.
+ * Copyright (c) 2026, Ignacio Slater-Muñoz.
  * 2-Clause BSD License.
  */
 
 plugins {
     id("kalm.library")
     id("kalm.jvm")
-    alias { libs.plugins.detekt }
+    id("kalm.detekt-redmadrobot")
 }
 
-val detektFormatting = libs.detekt.formatting.get().apply { "$group:$module:$version" }
-val kotestBundle = libs.bundles.kotest
-
 dependencies {
-    detektPlugins(detektFormatting)
-    testImplementation(kotestBundle)
+    testImplementation(libs.bundles.kotest)
 }

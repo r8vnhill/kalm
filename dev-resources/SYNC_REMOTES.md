@@ -13,7 +13,7 @@ The project uses **GitLab as the primary repository** and **GitHub as a mirror**
 To synchronize your local branch with both remotes:
 
 ```powershell
-.\scripts\Sync-Remotes.ps1
+.\scripts/git/Sync-Remotes.ps1
 ```
 
 This will:
@@ -25,22 +25,22 @@ This will:
 
 ### Sync current branch (most common)
 ```powershell
-.\scripts\Sync-Remotes.ps1
+.\scripts/git/Sync-Remotes.ps1
 ```
 
 ### Sync a specific branch
 ```powershell
-.\scripts\Sync-Remotes.ps1 -Branch main
+.\scripts/git/Sync-Remotes.ps1 -Branch main
 ```
 
 ### Preview changes without executing (`WhatIf`)
 ```powershell
-.\scripts\Sync-Remotes.ps1 -WhatIf
+.\scripts/git/Sync-Remotes.ps1 -WhatIf
 ```
 
 ### Sync with verbose output
 ```powershell
-.\scripts\Sync-Remotes.ps1 -Verbose
+.\scripts/git/Sync-Remotes.ps1 -Verbose
 ```
 
 ## Remote Configuration
@@ -85,7 +85,7 @@ git status
 git add <resolved-files>
 git commit
 # Re-run sync
-.\scripts\Sync-Remotes.ps1
+.\scripts/git/Sync-Remotes.ps1
 ```
 
 ### Uncommitted changes
@@ -97,7 +97,7 @@ git commit -m "Your commit message"
 
 # Option 2: Stash changes temporarily
 git stash
-.\scripts\Sync-Remotes.ps1
+.\scripts/git/Sync-Remotes.ps1
 git stash pop
 ```
 
@@ -110,19 +110,19 @@ Ensure SSH keys are configured for both GitLab and GitHub:
 
 1. **Always sync before starting new work**
    ```powershell
-   .\scripts\Sync-Remotes.ps1
+   .\scripts/git/Sync-Remotes.ps1
    ```
 
 2. **Sync after completing a feature**
    ```powershell
    git add --all
    git commit -m "feat: your feature description"
-   .\scripts\Sync-Remotes.ps1
+   .\scripts/git/Sync-Remotes.ps1
    ```
 
 3. **Use `-WhatIf` to preview changes**
    ```powershell
-   .\scripts\Sync-Remotes.ps1 -WhatIf
+   .\scripts/git/Sync-Remotes.ps1 -WhatIf
    ```
 
 4. **Verify sync status**

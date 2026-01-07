@@ -10,11 +10,11 @@ Ensure Gradle runs with the JDK expected by the build (see `gradle.properties`).
 > If the IDE cannot manage the required JDK (e.g., on remote shells or CI):
 > 1. Prefer the PowerShell helper (available cross-platform).
 >    ```powershell
->    .\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'updateDependencies','--no-daemon'
+>    .\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'updateDependencies','--no-daemon'
 >    ```
 > 2. Use the Bash helper only when PowerShell is unavailable.
 >    ```bash
->    ./scripts/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- updateDependencies --no-daemon
+>    ./scripts/gradle/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- updateDependencies --no-daemon
 >    ```
 
 ```powershell
