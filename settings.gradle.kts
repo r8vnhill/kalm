@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Ignacio Slater M.
+ * Copyright (c) 2026, Ignacio Slater-Muñoz.
  * 2-Clause BSD License.
  */
 // Enable typesafe accessors for the version catalog (generated `libs` accessors)

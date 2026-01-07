@@ -26,12 +26,14 @@ container:smoke:
     # Verifies Java, PowerShell, and that Pester is available.
     - >-
       docker run --rm kalm-env:${CI_COMMIT_SHORT_SHA}
-      -c "$ErrorActionPreference='Stop';
-      & java -version; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE };
-      Write-Host \"PowerShell $($PSVersionTable.PSVersion.ToString())\";
+      -c '$ErrorActionPreference="Stop";
+      java -version; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE };
+      $psVersion = $PSVersionTable.PSVersion.ToString();
+      Write-Host ("PowerShell " + $psVersion);
       Import-Module Pester -ErrorAction Stop;
-      Write-Host \"Pester $((Get-Module Pester -ListAvailable | Select-Object -First 1).Version.ToString())\";
-      Write-Host 'Container smoke test OK.'"
+      $pesterVersion = (Get-Module Pester -ListAvailable | Select-Object -First 1).Version.ToString();
+      Write-Host ("Pester " + $pesterVersion);
+      Write-Host "Container smoke test OK."'
 
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
