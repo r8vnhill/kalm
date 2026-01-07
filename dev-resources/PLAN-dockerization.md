@@ -23,9 +23,9 @@ This plan is for maintainers and CI authors, not consumers of the library.
      - Optional `kalm-env:<semver>-jdk<major>` if JDK variants are ever needed.
      - CI-friendly tags like `kalm-env:main` or `kalm-env:<branch>` for bleeding-edge work.
 3. Lock in documentation locations
-   - `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` – maintainer-focused reference.
-   - `dev-resources/CI_CD.md` – CI usage notes and cross-links.
-   - Wiki: `Design-Reproducibility-CI-CD.md` and a design decision entry describing the Dockerization approach.
+   - `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` - minimal, actionable Compose quickstart.
+   - `dev-resources/CI_CD.md` - CI usage notes and cross-links.
+   - Wiki: `Container-Build-and-Run.md` (detailed usage + variants), `Container-Image.md` (contents/rationale), and design docs (`Design-Reproducibility-CI-CD.md`, design decisions).
 
 ---
 
@@ -49,10 +49,8 @@ This plan is for maintainers and CI authors, not consumers of the library.
    - Make sure environment variables for JDK and locale are correctly set.
 3. Document Phase 1 usage (local, experimental)
    - In `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md`:
-     - Describe what the base image is for and its contents at a high level.
-     - Provide a **conceptual** quick-start:
-       - Build the image locally.
-       - Start a container, mount the repo, run PowerShell-based workflows (Gradle, Pester) inside.
+     - Provide the **actionable** Compose quickstart (build image, start container, run Gradle/Pester).
+     - Link to the wiki for deeper rationale and non-Compose variants.
      - Clarify that at this stage, CI is **not** yet using the image; this is a maintainer/researcher preview.
 
 ---
@@ -62,10 +60,7 @@ This plan is for maintainers and CI authors, not consumers of the library.
 **Outcome:** Maintainers can opt-in to using the image for local builds/tests; no CI changes yet.
 
 1. Add helper documentation for local usage
-   - Extend `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` with examples (in psuedo-commands) of:
-     - Running Gradle tasks inside the container.
-     - Running Pester tests inside the container.
-     - Mapping the host user ID or bind-mounting the working directory to preserve file permissions where relevant.
+   - Extend the wiki (`Container-Build-and-Run.md`) with examples and advanced scenarios (Buildx, `docker run`, permissions, caching), keeping `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` minimal.
    - Add a small section to `scripts/README.md`:
      - Note that all scripts (`Invoke-GradleWithJdk.ps1`, `Invoke-PesterWithConfig.ps1`, Git sync scripts, etc.) can be used inside the container as long as the repo is mounted and Git is available.
 2. Validate parity with native runs

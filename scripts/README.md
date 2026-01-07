@@ -168,12 +168,18 @@ All scripts in this repository (Gradle invocations, Pester test runners, Git syn
 ### Running Scripts Inside a Container
 
 ```bash
-# Mount the repo and run scripts interactively
-docker run --rm -it -v /path/to/kalm:/workspace kalm-env:latest
+# Recommended: use Docker Compose from the repo root
+docker compose run --rm kalm
 
 # Inside the container, use scripts as normal:
 $ ./gradlew verifyAll
 $ .\scripts\testing\Invoke-PesterWithConfig.ps1
+```
+
+Variant (no Compose):
+
+```bash
+docker run --rm -it -v /path/to/kalm:/workspace kalm-env:local
 ```
 
 ### Container Compatibility
@@ -187,7 +193,7 @@ If a script assumes a specific platform or tool version, it will clearly documen
 
 ### Further Reading
 
-See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for detailed container setup, usage, and troubleshooting.
+See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for the minimal Compose quickstart, and `wiki/Container-Build-and-Run.md` for Buildx/docker run variants and advanced scenarios.
 
 **Usage:**
 ```bash

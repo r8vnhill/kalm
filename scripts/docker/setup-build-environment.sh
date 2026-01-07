@@ -70,6 +70,10 @@ apt-get install -y --no-install-recommends \
 	powershell \
 	openjdk-22-jdk-headless
 
+# Install Pester (PowerShell testing framework) for running test suites
+printf "Installing Pester...\n"
+pwsh -NoProfile -Command 'Install-Module -Name Pester -Repository PSGallery -Force -Scope AllUsers -SkipPublisherCheck'
+
 # Configure UTF-8 locale (important for reproducibility)
 printf "Configuring UTF-8 locale...\n"
 # -q - **quiet mode**: no output; exit status indicates match presence

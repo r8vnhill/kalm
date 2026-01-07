@@ -62,7 +62,7 @@ As KALM transitions to container-based reproducibility (tracked in `dev-resource
 
 - **Local-only:** A Dockerfile and supporting documentation exist for developers and researchers to use locally.
 - **Opt-in:** No CI jobs yet use the container image; this is a maintainer preview.
-- **Documentation:** See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for building and running the image locally.
+- **Documentation:** See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for the recommended `docker compose` quickstart; the wiki page `Container-Build-and-Run` covers Buildx/docker run variants.
 
 ### Future Phases (2–5)
 
