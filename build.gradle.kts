@@ -26,7 +26,7 @@ plugins {
     // Ensures byte-for-byte reproducible archives and metadata (via kalm.reproducible plugin).
     id("kalm.reproducible")
 
-    // Applies dependency locking conventions without relying on allprojects{}.
+    // Applies dependency locking conventions without relying on allprojects {}.
     id("kalm.dependency-locking")
 
     id("kalm.build-tasks")

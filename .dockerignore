@@ -23,12 +23,8 @@ dist/
 logs/
 logs-test/
 *.log
-tmp/
-
 # OS-specific
 Thumbs.db
-.DS_Store
-
 # Documentation artifacts (not needed in image)
 *.md
 wiki/

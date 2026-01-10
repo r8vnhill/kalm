@@ -3,9 +3,9 @@
  * 2-Clause BSD License.
  */
 import org.gradle.api.GradleException
+
 // Enable typesafe accessors for the version catalog (generated `libs` accessors)
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-// region PLUGIN MANAGEMENT
 
 // Include local builds that define convention and build logic plugins.
 //
@@ -37,14 +37,14 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention")
 }
 
-@Suppress("UnstableApiUsage") // Incubating API used for repository mode and dependency resolution config
 dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
     repositoriesMode = RepositoriesMode.PREFER_SETTINGS // Forces using only the repositories declared here
 
+    @Suppress("UnstableApiUsage")
     repositories {
         mavenCentral()
     }
-
 }
 
 // Root project name used in logs and outputs

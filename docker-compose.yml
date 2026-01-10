@@ -3,7 +3,7 @@ services:
     <<: &kalm-base
       build:
         # Build context: the directory sent to the Docker daemon for the build.
-        # Files under this path are available to the Dockerfile (e.g. via COPY/ADD).
+        # Files under this path are available to the Dockerfile (e.g., via COPY/ADD).
         # Using `.` sends the repository root so the Dockerfile can access repo files.
         context: .
         dockerfile: Dockerfile
@@ -39,7 +39,7 @@ services:
     <<: *kalm-base
     profiles:
       - pester
-    # Keep pwsh entrypoint; pass the script as a command argument
+    # Keep the `pwsh` entrypoint; pass the script as a command argument
     command: ["-File", "./scripts/testing/Invoke-PesterWithConfig.ps1"]
 
 volumes:

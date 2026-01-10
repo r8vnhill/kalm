@@ -1,7 +1,7 @@
 import org.gradle.api.artifacts.dsl.LockMode
 
 /*
- * Applies consistent dependency locking policy to the current project.
+ * Applies a consistent dependency locking policy to the current project.
  *
  * We avoid blanket `allprojects`/`subprojects` configuration by attaching the locking
  * behavior through a dedicated convention plugin. Projects opt-in explicitly, which

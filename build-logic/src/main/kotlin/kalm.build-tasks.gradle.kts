@@ -4,15 +4,6 @@
  */
 
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
-import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
-import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.TaskAction
-import org.gradle.kotlin.dsl.withType
-import org.gradle.process.ExecOperations
-import java.io.File
-import javax.inject.Inject
 import tasks.SyncVersionPropertiesTask
 
 /**
