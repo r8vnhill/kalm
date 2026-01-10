@@ -1,74 +1,35 @@
-# AI Assistant Guide for this Repo (KALM)
+# AI Assistant Instructions for KALM
+Multi-module Kotlin/Gradle optimization sandbox with strict reproducibility and PowerShell-first automation.
 
-Purpose: give agents the minimum, precise context to work productively here. Keep answers concrete and aligned with how this project is structured and built.
+## Hard rules
+1. Never stage/commit/push or touch wiki remotes unless the user explicitly requests it.
+2. Announce planned multi-file edits before touching them; keep diffs laser-focused.
+3. Preserve published APIs (`core/api/core.api`) and Kotlin style unless breaking changes are requested + justified.
+4. Read `dev-resources/AGENT_GUIDELINES.md` once per session and respect its shell guidance (already in pwsh).
+5. Default to a TDD flow: add or adjust tests first to capture expected behavior, then implement/minimally change code until tests pass (unless the user explicitly opts out).
 
-## Hard rules (must follow)
-1) Never stage, commit, push, or open PRs unless the user explicitly asks in a message.
-2) Explain intended multi-file changes before applying them; keep diffs minimal and scoped.
-3) Preserve existing style and public API unless a change is requested or required by tests/fixes.
+## Architecture snapshot
+- `core/` hosts algorithm contracts such as `OptimizationEngine` and the self-referential `Feature<T, F>` hierarchy; treat generics carefully to keep type safety.
+- `platform/` exposes the BOM (`kalm-platform`) so consumers import aligned versions — don’t add dependencies directly to downstream modules.
+- `build-logic/` defines convention plugins (`kalm.jvm`, `.library`, `.dependency-locking`, `.detekt-redmadrobot`, `.reproducible`) that modules opt into via `plugins {}`; never re-introduce `allprojects {}` blocks.
+- `scripts/` PowerShell modules (see `scripts/README.md`) wrap Git, wiki, Gradle, Pester, and logging behaviors; reuse them instead of crafting ad-hoc automation.
+- `wiki/` is a git submodule that stores design docs; update it only through the provided sync scripts.
 
-# AI assistant instructions for this repository (KALM)
+## Day-to-day workflows
+- Full guardrail: `./gradlew verifyAll` (tests + Detekt + API checks). `preflight` adds dependency reports.
+- Module focus: `./gradlew :core:test`, `:core:detekt`, `:core:apiCheck`; regenerate dumps with `:core:apiDump` only when the user approves API changes.
+- Static analysis: `detektAll` for everything, `detektDiff` for branch deltas, `detektFormat` to auto-fix. Config lives in `config/detekt/detekt.yml`.
+- Dependency locking is strict (`gradle.lockfile`, `<module>/gradle.lockfile`, `settings-gradle.lockfile`); only rerun tasks with `--write-locks` when explicitly asked and commit every touched lockfile.
+- Need a specific JDK? Run `./scripts/gradle/Invoke-GradleWithJdk.ps1 -JdkPath <path> -GradleArgument 'verifyAll'`.
+- PowerShell quality gates: `./scripts/quality/Invoke-PSSA.ps1` for linting and `./scripts/testing/Invoke-PesterWithConfig.ps1` for tests (reads `scripts/testing/pester.config.psd1`).
 
-Purpose: give an AI agent exactly the repo-level facts and commands needed to be productive. Be concrete, conservative, and cite files.
+## Git + wiki expectations
+- Prefer script-first syncs: `./scripts/git/Sync-RepoAndWiki.ps1` for the whole repo, `Sync-WikiOnly.ps1 -UpdatePointer` for docs. Always dry-run with `-WhatIf` when touching remotes or submodules.
+- Avoid redundant `pwsh -NoProfile` wrappers when already inside pwsh; consult `dev-resources/AGENT_GUIDELINES.md`.
+- When wiki diverges, use the script’s `-PullStrategy merge|rebase` switches instead of manual git commands.
 
-## Hard rules (must follow)
-- Never stage, commit, push, or open PRs unless the user explicitly asks.
-- Explain multi-file changes before applying them; keep diffs minimal and scoped.
-- Preserve public APIs and coding style unless tests or the user request otherwise.
-
-## Quick repo summary (why this matters)
-- Multi-module Gradle (Kotlin/JVM) project. Primary modules: `core` (domain + algorithms), `platform` (BOM), and `build-logic` (convention plugins).
-- Key example types: `core/src/main/kotlin/cl/ravenhill/kalm/engine/OptimizationEngine.kt`, `core/.../repr/Feature.kt`, `core/.../engine/SimpleHillClimber.kt`.
-
-## Essential commands (what you'll run)
-- Full verification (tests + lint + API checks): `./gradlew verifyAll`
-- Preflight (verifyAll + dependency helpers): `./gradlew preflight`
-- Run a single module's tests: `./gradlew :core:test`
-- Run Detekt for `core`: `./gradlew :core:detekt`
-- Run Gradle with a specific JDK (preferred scripts): `./scripts/Invoke-GradleWithJdk.ps1` (Windows) or `./scripts/invoke_gradle_with_jdk.sh`
-
-## Project-specific conventions & traps
-- Dependency locking is strict (see `dev-resources/DEPENDENCY_LOCKING.md`). Do not regenerate lockfiles unless the user requests and they run `--write-locks` explicitly.
-- Use the version catalog at `gradle/libs.versions.toml` and provider-safe accessors; avoid eager resolution in build scripts.
-- Detekt config lives at `config/detekt/detekt.yml`. Thresholds are intentionally low — justify any suppression with tests.
-- Binary compatibility is enforced: API dumps live under `<module>/api/*.api` and are the source-of-truth for public API changes.
-
-## Integration points & automation
-- Convention plugins: `build-logic/src/main/kotlin/*.gradle.kts` (look for `kalm.*` plugins).
-- Automation scripts: `scripts/` (use them for Git tasks, syncing wiki, invoking Gradle with a chosen JDK). Prefer those over raw git for user-requested commits.
-
-## When to use PullStrategy (git divergence handling)
-Quick examples for choosing a pull strategy when a fast-forward isn't possible:
-
-- ff-only (default): fail fast. Use when you want strict CI-like behavior and require a manual merge/rebase before automated syncs. Example: automated CI or a gated pipeline.
-
-- merge: safe automatic merge. Use when the wiki or a submodule may receive external edits and you prefer auto-merging remote changes into your local branch (creates a merge commit). Example:
-
-```powershell
-./scripts/Sync-WikiOnly.ps1 -PullStrategy merge -SkipPush -WikiCommitMessage "chore(wiki): integrate remote"
-```
-
-- rebase: linear history. Use when you want to replay local commits on top of remote changes and keep history linear; prefer when local changes are small and you can tolerate rebases. Example:
-
-```powershell
-./scripts/Sync-WikiOnly.ps1 -PullStrategy rebase -SkipPush -WikiCommitMessage "chore(wiki): rebase onto remote"
-```
-
-Recommendation: keep `ff-only` as the default for automation and opt-in to `merge`/`rebase` interactively when you understand the branch state.
-
-## Minimal contract for agent edits (copy when proposing changes)
-- Inputs: precise file paths to edit, reason, and tests or verification to run.
-- Outputs: list of files changed, test results, and any new lint/API failures produced.
-- Error modes: failing build, detekt violations, API dump mismatch — report and stop.
-
-## Useful file references (examples to cite in edits)
-- `core/src/main/kotlin/cl/ravenhill/kalm/engine/OptimizationEngine.kt` — engine contract example
-- `build-logic/` — how project-wide conventions are applied
-- `dev-resources/AGENT_GUIDELINES.md` — workspace runtime tips (shell behavior)
-- `dev-resources/DEPENDENCY_LOCKING.md` — exact lockfile workflows
-
-## Final notes
-- Read `dev-resources/AGENT_GUIDELINES.md` at session start (it contains shell-specific hints — e.g., avoid pwsh wrapper when already in pwsh).
-- Keep responses terse and actionable. Ask one clarifying question only when truly blocked.
-
-Last updated: 2025-11-08
+## Key references
+- Version catalog: `gradle/libs.versions.toml`.
+- Detekt + RedMadRobot tuning: `config/detekt/detekt.yml`, convention plugin sources in `build-logic/src/main/kotlin/`.
+- Dependency-locking how-to: `dev-resources/DEPENDENCY_LOCKING.md`.
+- Git standards & CI/CD expectations: `dev-resources/GIT_STANDARD.md`, `dev-resources/CI_CD.md`.

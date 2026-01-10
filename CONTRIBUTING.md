@@ -36,7 +36,7 @@ git commit -m "📚 docs: sync wiki to latest"
 
 - **Sync entire repository + all submodules** (fetch, commit, push):
   ```powershell
-  .\scripts\Sync-RepoAndWiki.ps1
+  .\scripts/git/Sync-RepoAndWiki.ps1
   ```
   
   Common flags:
@@ -47,13 +47,13 @@ git commit -m "📚 docs: sync wiki to latest"
   
   Example (dry-run before actual sync):
   ```powershell
-  .\scripts\Sync-RepoAndWiki.ps1 -WhatIf
-  .\scripts\Sync-RepoAndWiki.ps1
+  .\scripts/git/Sync-RepoAndWiki.ps1 -WhatIf
+  .\scripts/git/Sync-RepoAndWiki.ps1
   ```
 
 - **Sync only the wiki submodule** (focused workflow):
   ```powershell
-  .\scripts\Sync-WikiOnly.ps1 -UpdatePointer
+  .\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer
   ```
   
   Flags:
@@ -66,7 +66,7 @@ Additional flag:
   Example (update wiki content and pointer):
   ```powershell
   # Edit wiki files, then:
-  .\scripts\Sync-WikiOnly.ps1 -UpdatePointer
+  .\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer
   ```
 
 **When to use each tool:**
@@ -95,37 +95,37 @@ These examples show the recommended, script-driven workflows for common edit sce
 
     ```powershell
   # Dry-run first: commit wiki changes + update pointer (messages required when commits occur)
-  .\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)" -WhatIf
+  .\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)" -WhatIf
 
   # Execute: commit wiki changes, push wiki, update pointer, push root
-  .\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)"
+  .\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)"
     ```
 
   3. Alternatively, if you prefer the script to perform the wiki push and pointer update in one step, use the full sync script (runs submodule push then updates pointer):
 
     ```powershell
-    .\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "📚 docs: update wiki and pointer (feature X)" -WhatIf
-    .\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "📚 docs: update wiki and pointer (feature X)"
+    .\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "📚 docs: update wiki and pointer (feature X)" -WhatIf
+    .\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "📚 docs: update wiki and pointer (feature X)"
     ```
 
 - Edit only files in the main repository (docs, scripts, build files):
 
   ```powershell
   # Preview staging, commit and push all root changes
-  .\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts" -WhatIf
+  .\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts" -WhatIf
 
   # Commit and push
-  .\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts"
+  .\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts"
   ```
 
 - Edit both wiki and root (single workflow):
 
   ```powershell
   # Dry-run: will fetch/push submodule + stage/commit root changes when -IncludeRootChanges is set
-  .\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -WhatIf
+  .\scripts/git/Sync-RepoAndWiki.ps1 -IncludeRootChanges -WhatIf
 
   # Execute (commits and pushes submodule changes, updates pointer, stages/commits root changes, and pushes)
-  .\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "🚀 chore(release): publish docs and scripts"
+  .\scripts/git/Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "🚀 chore(release): publish docs and scripts"
   ```
 
 Notes:

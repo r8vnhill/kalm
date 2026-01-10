@@ -11,22 +11,29 @@ function Invoke-Git {
     )
 
     # Always ask ShouldProcess for safety so -WhatIf prevents any git invocation
+    $exe = 'git'
+    $argsList = @('-C', $WorkingDirectory) + $GitArgs
+    $commandText = "git $($GitArgs -join ' ') (cwd: $WorkingDirectory)"
+    if ($Description) { $commandText = "$commandText - $Description" }
+    [KalmScriptLogger]::LogIfConfigured([KalmLogLevel]::Debug, "Prepared command: $commandText", 'GitInvoke')
+
     # If a top-level caller set the dry-run flag via the singleton, avoid any git invocation
     if ((Get-Command -Name Get-KalmDryRun -ErrorAction SilentlyContinue) -and (Get-KalmDryRun)) {
         if ($Description -and -not $Quiet) { Write-Information "[WhatIf] $Description" }
+        [KalmScriptLogger]::LogIfConfigured([KalmLogLevel]::Info, "[DryRun] $commandText", 'GitInvoke')
         return $null
     }
 
     $target = "$($GitArgs -join ' ') in $WorkingDirectory"
     if (-not $PSCmdlet.ShouldProcess($target, 'git')) {
         if ($Description -and -not $Quiet) { Write-Information "[WhatIf] $Description" }
+        [KalmScriptLogger]::LogIfConfigured([KalmLogLevel]::Info, "[WhatIf] Skipping command: $commandText", 'GitInvoke')
         return $null
     }
 
     if ($Description -and -not $Quiet) { Write-Information $Description }
-    $exe = 'git'
-    $argsList = @('-C', $WorkingDirectory) + $GitArgs
     Write-Verbose ('Executing: {0}' -f ($argsList -join ' '))
+    [KalmScriptLogger]::LogIfConfigured([KalmLogLevel]::Debug, "Executing command: $commandText", 'GitInvoke')
 
     if ($CaptureOutput) {
         $output = & $exe @argsList 2>&1

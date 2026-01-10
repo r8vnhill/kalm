@@ -5,18 +5,18 @@
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD--2--Clause-blue.svg)](LICENSE)
 [![Pre-Alpha](https://img.shields.io/badge/status-pre--alpha-orange)](#)
 
-**KALM** aims to be a flexible and extensible optimization framework for solving a wide range of optimization problems, including combinatorial, numerical, and multi-objective domains.
-
 > [!warning] Project status: Early-stage / pre-alpha  
-> KALM is currently under active development. At this stage, the repository primarily contains project configuration and build setup. No user-facing features are implemented yet.
+> This project is in active development. APIs and features are subject to change.
 
-## ✨ Goals (planned)
+**Planned features:**
 - Support for modular optimization algorithms (e.g., genetic algorithms, differential evolution)
 - Extensible components for selection, mutation, and evaluation
 - Integration with analysis and visualization tools
 
 ## 🚧 Current State
 - ✅ Kotlin + Gradle project setup
+- ✅ Docker-based reproducible build environment (fully functional)
+- ⚠️ Project is not yet executable — Docker container and CI/CD infrastructure were prioritized to ensure reproducible development and testing before implementing core features
 - ❌ No functional optimization features implemented yet
 
 ## 🛠️ Getting Started
@@ -40,11 +40,11 @@ Prefer configuring the IDE first. When that is not possible (e.g., CI pipelines 
 
 1. PowerShell (recommended even on Unix when available)
 	```powershell
-	.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build', '--no-daemon'
+	.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build', '--no-daemon'
 	```
 2. Bash / POSIX shells (fallback compatibility)
 	```bash
-	./scripts/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build --no-daemon
+	./scripts/gradle/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build --no-daemon
 	```
 
 ### Syncing GitLab and GitHub Mirrors
@@ -52,7 +52,7 @@ Prefer configuring the IDE first. When that is not possible (e.g., CI pipelines 
 The project maintains GitLab as the primary repository with a GitHub mirror. To synchronize your local branch with both remotes:
 
 ```powershell
-.\scripts\Sync-Remotes.ps1
+.\scripts/git/Sync-Remotes.ps1
 ```
 
 See [dev-resources/SYNC_REMOTES.md](dev-resources/SYNC_REMOTES.md) for detailed usage and troubleshooting.
@@ -63,10 +63,10 @@ The project includes PowerShell scripts for Git and wiki submodule workflows:
 
 ```powershell
 # Sync entire repo + all submodules
-.\scripts\Sync-RepoAndWiki.ps1
+./scripts/git/Sync-RepoAndWiki.ps1
 
 # Sync only wiki submodule (and optionally update pointer)
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer
+./scripts/git/Sync-WikiOnly.ps1 -UpdatePointer
 ```
 
 See **[`scripts/README.md`](scripts/README.md)** for comprehensive documentation on all automation scripts.
@@ -81,8 +81,8 @@ Once artefacts are published (local or remote Maven repository), import the BOM 
 
 ```kotlin
 dependencies {
-	implementation(platform("cl.ravenhill.kalm:kalm-platform:0.1.0-SNAPSHOT"))
-	implementation("cl.ravenhill.kalm:kalm-core:0.1.0-SNAPSHOT")
+	implementation(platform("cl.ravenhill.kalm:kalm-platform:0.2.0-SNAPSHOT"))
+	implementation("cl.ravenhill.kalm:kalm-core:0.2.0-SNAPSHOT")
 }
 ```
 
@@ -97,10 +97,9 @@ $env:JAVA_HOME = '/path/to/jdk-22'
 ./gradlew --write-locks preflight --no-daemon
 ```
 
-For detailed guidance and troubleshooting on dependency locking (strict mode, writing locks, and common errors), see
-[dev-resources/DEPENDENCY_LOCKING.md](dev-resources/DEPENDENCY_LOCKING.md).
+For detailed guidance and troubleshooting on dependency locking (strict mode, writing locks, and common errors), see [`dev-resources/DEPENDENCY_LOCKING.md`](dev-resources/DEPENDENCY_LOCKING.md).
 
-## 🧹 Static analysis
+## 🧪 Quality & Verification
 
 Run all verification in one go:
 
@@ -113,7 +112,6 @@ This aggregates tests, Detekt static analysis, and API surface checks across mod
 ```powershell
 # Run Detekt across all modules
 ./gradlew detektAll
-
 # Check only changes vs. main (faster local and CI diffs)
 ./gradlew detektDiff
 

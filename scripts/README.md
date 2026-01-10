@@ -8,6 +8,31 @@ PowerShell automation tools for Git, Gradle, and project maintenance workflows.
 - **Git 2.20+**
 - **JDK 22 or newer** (for Gradle scripts; JDK 25 not yet supported by Detekt)
 
+For a deeper, maintainer-focused overview of how repository scripts are structured (logging, strict mode, dry-run behavior, testing, and static analysis), see the wiki page **“PowerShell Scripting Practices (KALM)”** under the `wiki/` submodule.
+
+## Module Loading Guidelines
+
+For scripts in this folder, prefer the following patterns:
+
+- Use `using module` when you need types at parse time (for example, classes or enums defined in a `.psm1`, such as `KalmScriptLogger` in `./lib/ScriptLogging.psm1`). It must appear at the very top of the file and cannot be conditional.
+- Use `Import-Module` when you want runtime and/or conditional loading (for example, inside functions, with `try/catch`, or when you need `-Scope`, `-Prefix`, or selective import). This loads functions and cmdlets but does not make PowerShell classes available at parse time.
+- Use `#Requires -Modules` when a script cannot run without a module and you want PowerShell to fail early with a clear error. If you also need classes from that module, combine `#Requires -Modules` with `using module` at the top.
+
+## Logging
+
+All entry-point scripts initialize the `KalmScriptLogger` class from `scripts/lib/ScriptLogging.psm1`. Logs are written under `logs/<script>.log`, rotated at ~5 MB (five archives kept). Include the module via `using module` at the top of any new script and emit log lines as needed:
+
+```powershell
+#Requires -Version 7.4
+using module ./lib/ScriptLogging.psm1
+
+$logger = [KalmScriptLogger]::Start('MyScript', $null)
+$logger.LogInfo('Script started.','Startup')
+[KalmScriptLogger]::LogIfConfigured([KalmLogLevel]::Debug, 'Detailed trace message', 'Diagnostics')
+```
+
+Logging is enabled even in `-WhatIf` scenarios so CI/local runs share a consistent audit trail.
+
 ## Git & Submodule Sync
 
 ### GitSync.psm1 Module
@@ -30,22 +55,22 @@ Full repository sync: main repo + all submodules (pull → commit → push).
 **Usage:**
 ```powershell
 # Full sync (fetch, commit, push everything)
-.\scripts\Sync-RepoAndWiki.ps1
+.\scripts/git/Sync-RepoAndWiki.ps1
 
 # Preview without making changes
-.\scripts\Sync-RepoAndWiki.ps1 -WhatIf
+.\scripts/git/Sync-RepoAndWiki.ps1 -WhatIf
 
 # Sync only submodules (skip main repo)
-.\scripts\Sync-RepoAndWiki.ps1 -SubmoduleOnly
+.\scripts/git/Sync-RepoAndWiki.ps1 -SubmoduleOnly
 
 # Commit local changes without fetching
-.\scripts\Sync-RepoAndWiki.ps1 -SkipPull
+.\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull
 
 # Fetch and commit without pushing
-.\scripts\Sync-RepoAndWiki.ps1 -SkipPush
+.\scripts/git/Sync-RepoAndWiki.ps1 -SkipPush
 
 # Custom remote
-.\scripts\Sync-RepoAndWiki.ps1 -Remote upstream
+.\scripts/git/Sync-RepoAndWiki.ps1 -Remote upstream
 ```
 
 **Parameters:**
@@ -67,19 +92,19 @@ Wiki-focused sync: operate only on the wiki submodule.
 **Usage:**
 ```powershell
 # Sync wiki content (pull, commit, push)
-.\scripts\Sync-WikiOnly.ps1
+.\scripts/git/Sync-WikiOnly.ps1
 
 # Sync wiki AND update pointer in main repo
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer
+.\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer
 
 # Preview pointer update
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
+.\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
 
 # Custom commit messages (required when commits are needed)
 # - Wiki commit (inside wiki submodule)
-.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X"
+.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X"
 # - Pointer commit (in main repo)
-.\scripts\Sync-WikiOnly.ps1 -UpdatePointer -RootCommitMessage "📚 docs: update wiki (new benchmark)"
+.\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer -RootCommitMessage "📚 docs: update wiki (new benchmark)"
 ```
 
 **Parameters:**
@@ -102,10 +127,10 @@ If the wiki has diverged from the remote (fast-forward not possible), run with a
 
 ```powershell
 # Auto-merge remote/main into local main (no prompt, creates a merge commit if needed)
-./scripts/Sync-WikiOnly.ps1 -PullStrategy merge -SkipPush
+./scripts/git/Sync-WikiOnly.ps1 -PullStrategy merge -SkipPush
 
 # Or rebase local commits on top of remote/main
-./scripts/Sync-WikiOnly.ps1 -PullStrategy rebase -SkipPush
+./scripts/git/Sync-WikiOnly.ps1 -PullStrategy rebase -SkipPush
 ```
 
 ## Gradle with JDK
@@ -117,13 +142,13 @@ Run Gradle with a specific JDK version (bypasses JAVA_HOME).
 **Usage:**
 ```powershell
 # Windows
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build'
 
 # Pass through gradle arguments after JdkPath
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath '/usr/lib/jvm/java-22-openjdk' -GradleArgument '--no-daemon', 'verifyAll'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath '/usr/lib/jvm/java-22-openjdk' -GradleArgument '--no-daemon', 'verifyAll'
 
 # Example: run preflight with JDK 22
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'preflight', '--no-parallel'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'preflight', '--no-parallel'
 ```
 
 **Parameters:**
@@ -134,13 +159,49 @@ Run Gradle with a specific JDK version (bypasses JAVA_HOME).
 
 Bash/Zsh equivalent of the PowerShell script.
 
+---
+
+## Container Usage
+
+All scripts in this repository (Gradle invocations, Pester test runners, Git sync scripts, etc.) work inside the KALM Docker/OCI image. For container-based local development or CI:
+
+### Running Scripts Inside a Container
+
+```bash
+# Recommended: use Docker Compose from the repo root
+docker compose run --rm kalm
+
+# Inside the container, use scripts as normal:
+$ ./gradlew verifyAll
+$ .\scripts\testing\Invoke-PesterWithConfig.ps1
+```
+
+Variant (no Compose):
+
+```bash
+docker run --rm -it -v /path/to/kalm:/workspace kalm-env:local
+```
+
+### Container Compatibility
+
+Scripts are **container-agnostic** by default:
+- All paths use PowerShell's cross-platform operators (`Join-Path`, relative paths).
+- No hard-coded Windows drive letters or assumptions.
+- Git and PowerShell behaviors are consistent inside and outside the container.
+
+If a script assumes a specific platform or tool version, it will clearly document that in its `#Requires` or error messages.
+
+### Further Reading
+
+See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for the minimal Compose quickstart, and `wiki/Container-Build-and-Run.md` for Buildx/docker run variants and advanced scenarios.
+
 **Usage:**
 ```bash
 # Unix/Linux/macOS
-./scripts/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build
+./scripts/gradle/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build
 
 # Example with multiple gradle arguments
-./scripts/invoke_gradle_with_jdk.sh --jdk ~/sdkman/candidates/java/22.0.2-tem -- test --info --no-daemon
+./scripts/gradle/invoke_gradle_with_jdk.sh --jdk ~/sdkman/candidates/java/22.0.2-tem -- test --info --no-daemon
 ```
 
 **Arguments:**
@@ -155,7 +216,7 @@ Sync changes between multiple Git remotes (e.g., GitHub ↔ GitLab).
 
 **Usage:**
 ```powershell
-.\scripts\Sync-Remotes.ps1
+.\scripts/git/Sync-Remotes.ps1
 ```
 
 See script header for configuration details.
@@ -169,13 +230,48 @@ Run PSScriptAnalyzer on PowerShell scripts with project-specific rules.
 **Usage:**
 ```powershell
 # Analyze all scripts
-.\scripts\Invoke-PSSA.ps1
+.\scripts/quality/Invoke-PSSA.ps1
 
 # Analyze specific file
-.\scripts\Invoke-PSSA.ps1 -Path .\scripts\Sync-RepoAndWiki.ps1
+.\scripts/quality/Invoke-PSSA.ps1 -Path .\scripts/git/Sync-RepoAndWiki.ps1
 ```
 
 **Settings:** `scripts/PSScriptAnalyzerSettings.psd1`
+
+### Invoke-PesterWithConfig.ps1
+
+Run Pester using the repository's canonical configuration file. This helper loads
+`scripts/testing/pester.config.psd1`, constructs a `PesterConfiguration` and
+invokes `Invoke-Pester` so tests run consistently on developer machines and CI.
+
+Requirements:
+- Pester 5.x (the script uses `New-PesterConfiguration`)
+- PowerShell 7.4+
+
+Usage:
+```powershell
+# From the repository root
+.\scripts\testing\Invoke-PesterWithConfig.ps1
+
+# Explicit pwsh invocation (useful in CI)
+pwsh -NoProfile -Command "./scripts/testing/Invoke-PesterWithConfig.ps1"
+```
+
+Notes:
+- The script will report a clear error if `scripts/testing/pester.config.psd1`
+	is missing.
+- Use `-Verbose` when troubleshooting test runs to see the resolved settings path
+	and Pester invocation details.
+
+**CI/CD Integration:**
+
+The Pester test job is automatically executed in GitLab CI/CD on:
+- Merge request events
+- Commits to the default branch
+- Git tag pushes
+
+Test results are published as JUnit XML artifacts for pipeline reporting. See `.gitlab-ci.yml` and `dev-resources/CI_CD.md` for pipeline configuration details.
+
 
 ## Design Principles
 
@@ -194,17 +290,17 @@ All scripts follow these principles:
 ```powershell
 # Edit wiki content locally (edit files under `wiki/` using your editor)
 # Then use the script to push changes and update the pointer (dry-run first):
-.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)" -WhatIf
-.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)"
+.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)" -WhatIf
+.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)"
 ```
 
 ### Full Project Sync
 ```powershell
 # Preview all operations
-.\scripts\Sync-RepoAndWiki.ps1 -WhatIf
+.\scripts/git/Sync-RepoAndWiki.ps1 -WhatIf
 
 # Execute full sync
-.\scripts\Sync-RepoAndWiki.ps1 -Verbose
+.\scripts/git/Sync-RepoAndWiki.ps1 -Verbose
 ```
 
 ### Full add → commit → push workflows (script-first)
@@ -215,25 +311,25 @@ The repository provides script-driven workflows to safely stage, commit and push
 
 	```powershell
 	# Use the script-first approach to push wiki content and update pointer (dry-run first)
-	.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)" -WhatIf
-	.\scripts\Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)"
+	.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)" -WhatIf
+	.\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain algorithm X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (algorithm X)"
 	```
 
 - Edit only root files (docs, scripts, build files):
 
 	```powershell
 	# Preview
-	.\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts" -WhatIf
+	.\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts" -WhatIf
 
 	# Commit & push
-	.\scripts\Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts"
+	.\scripts/git/Sync-RepoAndWiki.ps1 -SkipPull -IncludeRootChanges -RootCommitMessage "🧹 chore(docs): update contributing and scripts"
 	```
 
 - Edit both wiki and root (single command):
 
 	```powershell
-	.\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -WhatIf
-	.\scripts\Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "🚀 chore(release): publish docs and scripts"
+	.\scripts/git/Sync-RepoAndWiki.ps1 -IncludeRootChanges -WhatIf
+	.\scripts/git/Sync-RepoAndWiki.ps1 -IncludeRootChanges -RootCommitMessage "🚀 chore(release): publish docs and scripts"
 	```
 
 Notes:
@@ -244,10 +340,10 @@ Notes:
 ### Run Gradle with Specific JDK
 ```powershell
 # Verify build with JDK 22
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'verifyAll'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'verifyAll'
 
 # Run benchmarks with JDK 22
-.\scripts\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument ':benchmark:jmh'
+.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument ':benchmark:jmh'
 ```
 
 ## Troubleshooting
@@ -261,7 +357,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 **Module import errors:**
 ```powershell
 # Verify module loads correctly
-Import-Module .\scripts\GitSync.psm1 -Verbose
+Import-Module .\scripts/git/GitSync.psm1 -Verbose
 Get-Command -Module GitSync
 ```
 
@@ -278,3 +374,21 @@ Get-Command -Module GitSync
 - **Contribution guide:** [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 - **Git workflows:** [`dev-resources/GIT_STANDARD.md`](../dev-resources/GIT_STANDARD.md)
 - **Dependency locking:** [`dev-resources/DEPENDENCY_LOCKING.md`](../dev-resources/DEPENDENCY_LOCKING.md)
+
+## Testing (Pester)
+
+- Run all tests from Windows PowerShell (pwsh):
+
+```powershell
+./scripts/testing/Invoke-PesterWithConfig.ps1
+```
+
+- Run tests inside WSL using pwsh (useful for cross-platform verification):
+
+```powershell
+wsl.exe -e bash -lc 'cd "$(wslpath -a .)" && pwsh -NoLogo -NoProfile -File ./scripts/testing/Invoke-PesterWithConfig.ps1'
+```
+
+Notes:
+- The harness isolates each test file in its own pwsh process to avoid class redefinition issues and writes results to `build/test-results/pester`.
+- If `wsl.exe -e pwsh` fails due to PATH, invoking via `bash -lc` ensures the shell environment is initialized so `pwsh` is resolvable.

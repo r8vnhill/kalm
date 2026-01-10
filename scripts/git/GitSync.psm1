@@ -1,4 +1,5 @@
 #Requires -Version 7.4
+using module ..\lib\ScriptLogging.psm1
 <#
 .SYNOPSIS
 Lightweight loader module for Git helper components.
@@ -12,8 +13,17 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
 # Dot-source component scripts (keep load order: low-level helpers first)
-$libDir = Join-Path -Path $PSScriptRoot -ChildPath 'lib'
-. (Join-Path -Path $libDir -ChildPath 'DryRunState.ps1')
+# The lib components live under scripts/lib; compute that path relative to this
+# module which now resides in scripts/git.
+$libDir = Join-Path -Path (Join-Path $PSScriptRoot '..') -ChildPath 'lib'
+# Load DryRunState as a module (prefer module import over dot-sourcing)
+$dryRunModule = Join-Path -Path $libDir -ChildPath 'DryRunState.psm1'
+if (Test-Path $dryRunModule) {
+    Import-Module $dryRunModule -Force
+}
+else {
+    Throw "Missing module: $dryRunModule"
+}
 . (Join-Path -Path $libDir -ChildPath 'GitInvoke.ps1')
 . (Join-Path -Path $libDir -ChildPath 'GitHelpers.ps1')
 . (Join-Path -Path $libDir -ChildPath 'GitSubmodule.ps1')
