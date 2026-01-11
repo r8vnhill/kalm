@@ -6,43 +6,7 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import tasks.SyncVersionPropertiesTask
 
-/**
- * Shared wiki sync task used by the root project.
- */
-abstract class SyncWikiTask @Inject constructor(
-    private val execOps: ExecOperations
-) : DefaultTask() {
-
-    @get:InputDirectory
-    abstract val wikiDirectory: DirectoryProperty
-
-    @get:InputDirectory
-    abstract val rootDirectory: DirectoryProperty
-
-    @TaskAction
-    fun sync() {
-        val wikiDir = wikiDirectory.asFile.get()
-
-        if (!wikiDir.exists()) {
-            throw GradleException(
-                "Wiki submodule not initialized. Run: git submodule update --init --recursive"
-            )
-        }
-
-        execOps.exec {
-            workingDir(wikiDir)
-            commandLine("git", "pull", "origin", "main")
-        }
-
-        execOps.exec {
-            workingDir(rootDirectory.asFile.get())
-            commandLine("git", "add", "wiki")
-        }
-
-        println("✓ Wiki synced to latest. Run 'git commit -m \"📚 docs: update wiki submodule\"' to finalize.")
-    }
-}
-
+// Configures the dependency update task; rejects prerelease versions.
 tasks.withType<DependencyUpdatesTask>().configureEach {
     rejectVersionIf {
         val v = candidate.version.lowercase()
@@ -105,11 +69,4 @@ tasks.register("preflight") {
     group = "verification"
     description = "Runs verification gates and dependency maintenance helpers."
     dependsOn(verifyAll, dependencyMaintenance, syncVersionProperties, syncBuildLogicVersionProperties)
-}
-
-tasks.register<SyncWikiTask>("syncWiki") {
-    group = "documentation"
-    description = "Pulls latest wiki changes and stages the submodule pointer."
-    wikiDirectory.set(project.layout.projectDirectory.dir("wiki"))
-    rootDirectory.set(project.layout.projectDirectory)
 }
