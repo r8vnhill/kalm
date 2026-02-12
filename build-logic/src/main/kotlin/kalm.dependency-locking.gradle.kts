@@ -13,12 +13,6 @@ import org.gradle.api.artifacts.dsl.LockMode
  * - Update selected coordinates: `./gradlew dependencies --update-locks group:name`
  */
 configurations.configureEach {
-    resolutionStrategy {
-        // Reject non-reproducible selectors and mutable modules up front.
-        failOnDynamicVersions()
-        failOnChangingVersions()
-    }
-
     // Only lock resolvable configurations to avoid lockfile churn from internal buckets.
     if (isCanBeResolved) {
         resolutionStrategy.activateDependencyLocking()

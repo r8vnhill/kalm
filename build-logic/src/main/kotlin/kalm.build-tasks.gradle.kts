@@ -124,6 +124,15 @@ val versionPropertyMappings = mapOf(
 )
 
 val versionCatalogUpdate = "versionCatalogUpdate"
+val dependencyUpdatesNoParallel = "dependencyUpdatesNoParallel"
+
+val dependencyUpdatesNoParallelTask: TaskProvider<Task> = tasks.register(
+    dependencyUpdatesNoParallel
+) {
+    group = "dependencies"
+    description = "Runs dependencyUpdates. Use --no-parallel at invocation time when required."
+    dependsOn(tasks.named("dependencyUpdates"))
+}
 
 /**
  * ## dependencyMaintenance
@@ -154,7 +163,7 @@ val dependencyMaintenance: TaskProvider<Task> = tasks.register("dependencyMainte
     description = "Runs version catalog updates and dependency update reports."
     dependsOn(
         tasks.named(versionCatalogUpdate),
-        tasks.named("dependencyUpdates")
+        dependencyUpdatesNoParallelTask
     )
 }
 
@@ -201,7 +210,7 @@ val versionCatalog = "gradle/libs.versions.toml"
  *
  * ### Execution Order:
  *
- * - Depends on versionCatalogUpdate.
+ * - Reads the current version catalog state.
  *
  * ### Usage:
  *
@@ -215,7 +224,6 @@ val syncVersionProperties by tasks.registering(SyncVersionPropertiesTask::class)
     propertiesFile.set(
         rootProject.layout.projectDirectory.file("gradle.properties")
     )
-    dependsOn(tasks.named(versionCatalogUpdate))
 }
 
 /**
@@ -277,9 +285,8 @@ subprojects {
  * ### Orchestrates:
  *
  * 1. verifyAll
- * 2. dependencyMaintenance
- * 3. syncVersionProperties
- * 4. syncBuildLogicVersionProperties
+ * 2. syncVersionProperties
+ * 3. syncBuildLogicVersionProperties
  *
  * ### Intended Use Cases:
  *
@@ -304,7 +311,6 @@ tasks.register("preflight") {
     description = "Runs verification gates and dependency maintenance helpers."
     dependsOn(
         verifyAll,
-        dependencyMaintenance,
         syncVersionProperties,
         syncBuildLogicVersionProperties
     )
