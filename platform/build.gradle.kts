@@ -22,6 +22,7 @@ plugins {
     id("java-platform")
 
     // Reuse dependency locking conventions without cross-project blocks.
+    id("kalm.reproducible")
     id("kalm.dependency-locking")
 
     // Adds support for publishing this platform as a Maven artifact.

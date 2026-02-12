@@ -7,157 +7,305 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import tasks.SyncVersionPropertiesTask
 
 /**
- * Configures the Gradle dependency updates task (ben-manes/gradle-versions-plugin).
+ * ## Dependency Updates Policy (ben-manes/gradle-versions-plugin)
  *
- * Policy:
- * - Rejects all pre-release versions (alpha, beta, RC, preview, snapshot, etc.)
- * - Only recommends stable releases for version upgrades
- * - Generates both JSON and plain text reports
+ * Centralized configuration for all [DependencyUpdatesTask] instances.
  *
- * Constraints:
- * - Incompatible with Gradle configuration cache (inspects live configurations)
- * - Reports written to build/dependencyUpdates/
- * - Used by dependencyMaintenance composite task
+ * ### Purpose:
+ *
+ * - Enforce a *stable-only* upgrade policy.
+ * - Generate structured upgrade reports for review.
+ * - Integrate with the `dependencyMaintenance` composite workflow.
+ *
+ * ### Version Filtering Policy:
+ *
+ * - Rejects all known pre-release qualifiers: alpha, beta, rc, cr, milestone, preview, eap, snapshot, mX, etc.
+ * - Only stable versions are recommended in upgrade reports.
+ *
+ * ### Reproducibility Rationale:
+ *
+ * - Pre-release versions introduce instability and non-determinism.
+ * - Stable-only upgrades align with strict dependency locking.
+ *
+ * ### Reporting:
+ *
+ * - JSON output -> machine-readable (automation, CI parsing).
+ * - Plain output -> human-readable (local inspection).
+ * - Written to: build/dependencyUpdates/
+ *
+ * ### Configuration Cache:
+ *
+ * - Explicitly marked incompatible.
+ * - The task inspects live configurations, which violates configuration cache constraints.
+ *
+ * ### Workflow:
+ *
+ *     ./gradlew dependencyUpdates
+ *     ./gradlew dependencyMaintenance
  */
 tasks.withType<DependencyUpdatesTask>().configureEach {
+
+    /**
+     * Regex detecting common pre-release qualifiers.
+     *
+     * Matches tokens are separated by: `. - +`
+     *
+     * ## Examples rejected:
+     *
+     * - 1.0.0-alpha
+     * - 2.0.0-RC1
+     * - 3.1.0-M2
+     * - 4.0.0-preview
+     * - 5.0.0-SNAPSHOT
+     */
+    val preRelease = Regex(
+        """(?i)(?:^|[.\-+])(?:alpha|beta|rc|cr|m\d*|milestone|preview|eap|snapshot)(?:$|[.\-+])"""
+    )
+
     rejectVersionIf {
         val v = candidate.version.lowercase()
-        listOf("alpha", "beta", "rc", "cr", "m", "milestone", "preview", "eap", "snapshot")
-            .any(v::contains)
+        preRelease.containsMatchIn(v)
     }
 
+    /**
+     * Also checks for newer Gradle releases. Useful for proactively tracking wrapper updates.
+     */
     checkForGradleUpdate = true
+
+    /**
+     * Dual-format output:
+     * - JSON for CI tooling
+     * - Plain text for humans
+     */
     outputFormatter = "json,plain"
-    outputDir = layout.buildDirectory.dir("dependencyUpdates").get().asFile.toString()
     reportfileName = "report"
+
+    /**
+     * Lazily resolves the output directory at execution time (avoids provider realization during configuration).
+     */
+    doFirst {
+        outputDir = layout.buildDirectory
+            .dir("dependencyUpdates")
+            .get()
+            .asFile
+            .absolutePath
+    }
+
     notCompatibleWithConfigurationCache(
         "This task inspects configurations, which breaks configuration cache compatibility."
     )
 }
 
 /**
- * Mapping of gradle.properties entries to their corresponding version catalog keys.
- * Used by syncVersionProperties and syncBuildLogicVersionProperties tasks to keep
- * property files in sync with gradle/libs.versions.toml.
+ * ## Version Property Synchronization
+ *
+ * Maps selected gradle.properties entries to version catalog aliases.
+ *
+ * ### Purpose:
+ *
+ * - Maintain a single source of truth: gradle/libs.versions.toml
+ * - Avoid version drift between:
+ *     - version catalog
+ *     - root gradle.properties
+ *     - build-logic/gradle.properties
+ *
+ * ### Example mapping:
+ *
+ *     "plugin.foojay-resolver.version" -> alias "foojay-resolver"
+ *
+ * ### Behavior:
+ *
+ * - Reads version from catalog
+ * - Updates the property file if out-of-sync
+ * - Preserves other properties
  */
 val versionPropertyMappings = mapOf(
     "plugin.foojay-resolver.version" to "foojay-resolver"
 )
 
+val versionCatalogUpdate = "versionCatalogUpdate"
+
 /**
- * Composite task: Runs version catalog updates and generates dependency reports.
+ * ## dependencyMaintenance
  *
- * Depends on:
- * - versionCatalogUpdate: Refreshes gradle/libs.versions.toml with latest versions
- * - dependencyUpdates: Generates upgrade reports (ben-manes plugin)
+ * Composite lifecycle task for dependency review.
  *
- * Output: Reports in build/dependencyUpdates/, updated version catalog
- * Usage: ./gradlew dependencyMaintenance
+ * ### Responsibilities:
+ *
+ * 1. Update the version catalog (via versionCatalogUpdate).
+ * 2. Generate upgrade reports (dependencyUpdates).
+ *
+ * ### Output:
+ *
+ * - Updated gradle/libs.versions.toml
+ * - build/dependencyUpdates/report.{json,txt}
+ *
+ * ### Usage:
+ *
+ *     ./gradlew dependencyMaintenance
+ *
+ * ### Intended for:
+ *
+ * - Scheduled dependency audits
+ * - Manual version review
  */
-val dependencyMaintenance by tasks.registering {
+val dependencyMaintenance: TaskProvider<Task> = tasks.register("dependencyMaintenance") {
     group = "dependencies"
     description = "Runs version catalog updates and dependency update reports."
-    dependsOn("versionCatalogUpdate", "dependencyUpdates")
+    dependsOn(
+        tasks.named(versionCatalogUpdate),
+        tasks.named("dependencyUpdates")
+    )
 }
 
 /**
- * Composite task: Comprehensive verification gate that must pass before release.
+ * ## verifyAll
  *
- * Dynamically aggregates all subproject tasks:
- * - test: Unit and integration tests
- * - detekt: Static analysis and code quality checks
- * - apiCheck: Kotlin binary compatibility verification (against core.api)
+ * Root-level verification gate.
  *
- * Configuration: gradle.projectsEvaluated {} block below populates dependencies
- * Usage: ./gradlew verifyAll (part of preflight)
- * CI/CD: This is the primary quality gate in build pipelines
+ * Lazily aggregates matching subproject tasks:
+ * - test
+ * - detekt
+ * - apiCheck
+ *
+ * ### Design Goals:
+ *
+ * - No hardcoded task paths.
+ * - Adapts to optional convention plugins.
+ * - Avoids eager task realization.
+ *
+ * ### Usage:
+ *
+ *     ./gradlew verifyAll
+ *
+ * ### CI Role:
+ *
+ * - Primary quality gate before release.
  */
-val verifyAll = tasks.register("verifyAll") {
+val verifyAll: TaskProvider<Task> = tasks.register("verifyAll") {
     group = "verification"
     description = "Runs tests, static analysis, and API compatibility checks in one go."
 }
 
+val versionCatalog = "gradle/libs.versions.toml"
+
 /**
- * Synchronizes root gradle.properties with version catalog entries.
+ * ## syncVersionProperties
  *
- * Purpose: Keeps selected version variables in sync between gradle/libs.versions.toml
- * and gradle.properties to ensure consistency across build configuration.
+ * Synchronizes root gradle.properties with version catalog.
  *
- * Constraint: Must run after versionCatalogUpdate to process newly updated versions
- * Mappings: Defined by versionPropertyMappings above
- * Output: Updated gradle.properties file
+ * ### Guarantees:
+ *
+ * - Catalog remains canonical.
+ * - Property files mirror selected aliases.
+ *
+ * ### Execution Order:
+ *
+ * - Depends on versionCatalogUpdate.
+ *
+ * ### Usage:
+ *
+ *     ./gradlew syncVersionProperties
  */
-val syncVersionProperties = tasks.register<SyncVersionPropertiesTask>("syncVersionProperties") {
+val syncVersionProperties by tasks.registering(SyncVersionPropertiesTask::class) {
     propertyMappings.set(versionPropertyMappings)
-    versionCatalogFile.set(rootProject.layout.projectDirectory.file("gradle/libs.versions.toml"))
-    propertiesFile.set(rootProject.layout.projectDirectory.file("gradle.properties"))
-    mustRunAfter("versionCatalogUpdate")
+    versionCatalogFile.set(
+        rootProject.layout.projectDirectory.file(versionCatalog)
+    )
+    propertiesFile.set(
+        rootProject.layout.projectDirectory.file("gradle.properties")
+    )
+    dependsOn(tasks.named(versionCatalogUpdate))
 }
 
 /**
- * Synchronizes build-logic/gradle.properties with version catalog entries.
+ * ## syncBuildLogicVersionProperties
  *
- * Purpose: Same as syncVersionProperties but for the build-logic subproject,
- * ensuring convention plugins have consistent version definitions.
+ * Same as syncVersionProperties but scoped to build-logic.
  *
- * Constraint: Must run after versionCatalogUpdate and syncVersionProperties
- * (allows root sync to complete first)
- * Output: Updated build-logic/gradle.properties file
+ * ### Rationale:
+ *
+ * - Convention plugins must remain version-aligned with the root version catalog.
+ *
+ * ### Execution Order:
+ *
+ * - Depends on syncVersionProperties
  */
 val syncBuildLogicVersionProperties = tasks.register<SyncVersionPropertiesTask>("syncBuildLogicVersionProperties") {
     propertyMappings.set(versionPropertyMappings)
-    versionCatalogFile.set(rootProject.layout.projectDirectory.file("gradle/libs.versions.toml"))
-    propertiesFile.set(rootProject.layout.projectDirectory.file("build-logic/gradle.properties"))
-    mustRunAfter("versionCatalogUpdate", "syncVersionProperties")
+    versionCatalogFile.set(
+        rootProject.layout.projectDirectory.file(versionCatalog)
+    )
+    propertiesFile.set(
+        rootProject.layout.projectDirectory.file("build-logic/gradle.properties")
+    )
+    dependsOn(syncVersionProperties)
 }
 
 /**
- * Lifecycle callback: Dynamically wires all subproject quality tasks into verifyAll.
+ * ## Dynamic Subproject Wiring
  *
- * Runs after project evaluation phase to discover:
- * - All test tasks (unit/integration testing)
- * - All detekt tasks (static analysis)
- * - All apiCheck tasks (binary compatibility validation)
+ * Lazily connects quality-related tasks from all subprojects into verifyAll.
  *
- * Rationale: Subprojects may opt into convention plugins conditionally;
- * this ensures verifyAll adapts to actual project configuration without
- * hardcoding task paths in the root build script.
+ * ### Matching task names:
  *
- * Performance: Deduplicates discovered paths to avoid redundant task runs.
+ * - test
+ * - detekt
+ * - apiCheck
+ *
+ * ### Implementation Notes:
+ *
+ * - Uses `tasks.matching { }.configureEach { }`
+ * - Avoids projectsEvaluated lifecycle hook.
+ * - Preserves configuration cache friendliness.
  */
-gradle.projectsEvaluated {
-    val detektPaths = subprojects.mapNotNull { it.tasks.findByName("detekt")?.path }
-    val apiCheckPaths = subprojects.mapNotNull { it.tasks.findByName("apiCheck")?.path }
-    val testPaths = subprojects.mapNotNull { it.tasks.findByName("test")?.path }
-    val additional = (detektPaths + apiCheckPaths + testPaths).distinct()
-
-    if (additional.isNotEmpty()) {
-        tasks.named("verifyAll").configure {
-            dependsOn(additional)
+subprojects {
+    listOf("test", "detekt", "apiCheck").forEach { taskName ->
+        tasks.matching { it.name == taskName }.configureEach {
+            rootProject.tasks.named("verifyAll").configure {
+                dependsOn(this@configureEach)
+            }
         }
     }
 }
 
 /**
- * Master composite task: Full pre-release workflow and dependency auditing.
+ * ## preflight
  *
- * Orchestrates:
- * 1. verifyAll: Quality gates (tests, detekt, API checks)
- * 2. dependencyMaintenance: Version updates and reports
- * 3. syncVersionProperties: Sync root gradle.properties
- * 4. syncBuildLogicVersionProperties: Sync build-logic gradle.properties
+ * Master release-readiness workflow.
  *
- * Use cases:
- * - Local pre-commit: Validate code quality before pushing
- * - CI/CD gate: Primary release readiness check
- * - Dependency review: Check for available updates with full verification
+ * ### Orchestrates:
  *
- * Duration: Typically 1-2 minutes depending on test suite size
- * Output: Test reports, detekt reports, API diffs, dependency upgrade suggestions
- * Usage: ./gradlew preflight
+ * 1. verifyAll
+ * 2. dependencyMaintenance
+ * 3. syncVersionProperties
+ * 4. syncBuildLogicVersionProperties
+ *
+ * ### Intended Use Cases:
+ *
+ * - Local pre-push validation
+ * - CI release gate
+ * - Dependency audit cycle
+ *
+ * ### Command:
+ *
+ *     ./gradlew preflight
+ *
+ * ### Produces:
+ *
+ * - Test reports
+ * - Static analysis results
+ * - API compatibility verification
+ * - Dependency upgrade reports
+ * - Synchronized property files
  */
 tasks.register("preflight") {
     group = "verification"
     description = "Runs verification gates and dependency maintenance helpers."
-    dependsOn(verifyAll, dependencyMaintenance, syncVersionProperties, syncBuildLogicVersionProperties)
+    dependsOn(
+        verifyAll,
+        dependencyMaintenance,
+        syncVersionProperties,
+        syncBuildLogicVersionProperties
+    )
 }

@@ -17,8 +17,8 @@ import java.io.File
 /**
  * Keeps version properties that mirror the version catalog aligned with the TOML source.
  *
- * Properties that are missing from the catalog still trigger a warning so maintainers can reconcile
- * the duplication, while catalog updates automatically flow back into `gradle.properties`.
+ * Missing catalog aliases fail the task to prevent silent drift, while catalog updates
+ * automatically flow back into `gradle.properties`.
  */
 abstract class SyncVersionPropertiesTask : DefaultTask() {
 
@@ -34,7 +34,7 @@ abstract class SyncVersionPropertiesTask : DefaultTask() {
     init {
         group = "versioning"
         description =
-            "Keeps property-defined versions in sync with the libs catalog and warns when aliases are missing."
+            "Keeps property-defined versions in sync with the libs catalog and fails when aliases are missing."
     }
 
     @TaskAction
@@ -50,6 +50,12 @@ abstract class SyncVersionPropertiesTask : DefaultTask() {
             throw GradleException("Version catalog '${catalogFile.path}' is missing.")
         }
         val catalogVersions = catalogFile.parseVersionCatalog()
+        val missingAliases = mappings.values.distinct().filterNot(catalogVersions::containsKey)
+        if (missingAliases.isNotEmpty()) {
+            throw GradleException(
+                "Missing version catalog aliases required by property mappings: ${missingAliases.joinToString(", ")}"
+            )
+        }
 
         val propertyFile = propertiesFile.asFile.get()
         if (!propertyFile.exists()) {
@@ -61,16 +67,8 @@ abstract class SyncVersionPropertiesTask : DefaultTask() {
 
         mappings.forEach { (propertyKey, catalogAlias) ->
             val aliasVersion = catalogVersions[catalogAlias]
+                ?: throw GradleException("Version catalog alias '$catalogAlias' is missing.")
             val lineIndex = snapshot.lines.indexOfFirst { matchesPropertyKey(it, propertyKey) }
-
-            if (aliasVersion == null) {
-                if (lineIndex >= 0) {
-                    logger.warn(
-                        "Property '$propertyKey' is configured but version catalog alias '$catalogAlias' is missing."
-                    )
-                }
-                return@forEach
-            }
 
             val updatedLine = if (lineIndex >= 0) {
                 rewriteLineWithValue(snapshot.lines[lineIndex], aliasVersion)
