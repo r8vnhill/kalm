@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - TBD
 
+## [0.2.1] - 2026-02-12
+
+### Added
+- New `SyncVersionPropertiesTask` (`build-logic/src/main/kotlin/tasks/SyncVersionPropertiesTask.kt`) to synchronize selected `gradle.properties` entries from `gradle/libs.versions.toml`.
+- Dedicated `build-logic/gradle.properties` for build-logic-scoped mirrored version properties and defaults.
+- New root tasks `syncVersionProperties` and `syncBuildLogicVersionProperties` for catalog-to-properties synchronization.
+- New `dependencyUpdatesNoParallel` helper task for dependency report runs that require `--no-parallel`.
+
+### Changed
+- Gradle wrapper upgraded from `9.1.0` to `9.3.1`.
+- Build logic now reads Foojay resolver version frgit pom mirrored properties in both root and included build settings, failing fast when missing.
+- `preflight` workflow now runs verification + version-property synchronization (`verifyAll`, `syncVersionProperties`, `syncBuildLogicVersionProperties`) instead of invoking dependency-maintenance tasks.
+- `verifyAll` task wiring moved to lazy task matching (`tasks.matching { ... }.configureEach`) instead of `projectsEvaluated`.
+- Dependency update policy for `dependencyUpdates` now uses stricter pre-release filtering and lazier output directory resolution.
+- Dependency locking convention now activates locking only on resolvable configurations while keeping strict lock mode.
+- Build-logic toolchain configuration was unified around a property-driven Java version (`buildlogic.java.version`) and aligned Kotlin/Java toolchains.
+- Build-logic functional test task metadata is normalized for better discoverability in Gradle task listings.
+- Version catalog and lockfiles were refreshed for current build state (including JUnit `6.0.2` and additional plugin/library aliases used by build logic).
+- Automation and docs updates:
+  - `Invoke-GradleWithJdk.ps1` now resolves platform-specific wrapper names and executes Gradle via `System.Diagnostics.Process`.
+  - Dependency update documentation now reflects automatic property synchronization flow.
+  - README requirements were clarified for supported JDK range.
+  - Wiki submodule pointer updated to include current Gradle build/task documentation.
+
+### Removed
+- Removed `syncWiki` Gradle task from build logic (wiki synchronization remains a Git/submodule workflow).
+
 ## [0.0.3] – 2025-07-23
 
 ### ✨ Added
@@ -60,12 +87,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pre-push Git hook to ensure version updates.
 
 ### Changed
-- Switched `kotlin.gradle.plugin` to `implementation` scope.
-- Refined project naming from `keen-ii` to `keen-go` across files.
-- Improved internal build clarity through inline documentation in:
-    - `build.gradle.kts`
-    - `settings.gradle.kts`
-    - `libs.versions.toml`
-- Removed legacy `lib` module and test files.
-- Centralized plugin management and version catalogs.
-- Enhanced reproducibility with archive task settings.
+- Renamed published coordinates and source packages to the `cl.ravenhill.kalm` namespace and refreshed repository references to the new project name.
+- Updated build logic conventions, wiring for the version-catalog-update plugin, and centralized Foojay resolver configuration.
+- Refined issue and merge request templates, `.gitattributes`, `.gitignore`, and blame-ignore settings to match the new repo layout.
+
+### Removed
+- Dropped legacy PowerShell Git helper scripts in favor of the consolidated `Sync-Remotes` workflow.
+
+[unreleased]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.2.1...HEAD
+[0.2.1]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.2.0...v0.2.1
+[0.2.0]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.1.0...v0.2.0
+[0.1.0]: https://gitlab.com/r8vnhill/kalm/-/releases/v0.1.0
