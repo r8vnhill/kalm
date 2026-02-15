@@ -1,0 +1,44 @@
+FROM eclipse-temurin:21-jdk-jammy
+
+ARG KOTLIN_VERSION=2.1.20
+ARG KOTLIN_SHA256=A118197B0DE55FFAB2BC8D5CD03A5E39033CFB53383D6931BC761DEC0784891A
+ARG HADOLINT_VERSION=v2.12.0
+ARG HADOLINT_SHA256_X86_64=56DE6D5E5EC427E17B74FA48D51271C7FC0D61244BF5C90E828AAB8362D55010
+ARG HADOLINT_SHA256_ARM64=5798551BF19F33951881F15EB238F90AEF023F11E7EC7E9F4C37961CB87C5DF6
+ARG USER_NAME=kalm
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends ca-certificates curl unzip coreutils; \
+    rm -rf /var/lib/apt/lists/*; \
+    curl -fsSL -o /tmp/kotlin-compiler.zip "https://github.com/JetBrains/kotlin/releases/download/v${KOTLIN_VERSION}/kotlin-compiler-${KOTLIN_VERSION}.zip"; \
+    echo "${KOTLIN_SHA256}  /tmp/kotlin-compiler.zip" | sha256sum -c -; \
+    mkdir -p "/opt/kotlin/${KOTLIN_VERSION}"; \
+    unzip -q /tmp/kotlin-compiler.zip -d "/opt/kotlin/${KOTLIN_VERSION}"; \
+    ln -sfn "/opt/kotlin/${KOTLIN_VERSION}/kotlinc" /opt/kotlin/current; \
+    ln -sfn /opt/kotlin/current/bin/kotlin /usr/local/bin/kotlin; \
+    ln -sfn /opt/kotlin/current/bin/kotlinc /usr/local/bin/kotlinc; \
+    rm /tmp/kotlin-compiler.zip; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+        amd64) hadolint_arch="x86_64"; hadolint_sha="${HADOLINT_SHA256_X86_64}" ;; \
+        arm64) hadolint_arch="arm64"; hadolint_sha="${HADOLINT_SHA256_ARM64}" ;; \
+        *) echo "Unsupported architecture: ${arch}" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /usr/local/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-${hadolint_arch}"; \
+    echo "${hadolint_sha}  /usr/local/bin/hadolint" | sha256sum -c -; \
+    chmod +x /usr/local/bin/hadolint; \
+    groupadd --gid "${GROUP_ID}" "${USER_NAME}"; \
+    useradd --uid "${USER_ID}" --gid "${GROUP_ID}" --create-home "${USER_NAME}"; \
+    mkdir -p /workspace; \
+    chown "${USER_NAME}:${USER_NAME}" /workspace
+
+WORKDIR /workspace
+
+USER ${USER_NAME}
+
+CMD ["kotlin", "./scripts/quality/Invoke-Hadolint.kts"]

@@ -29,6 +29,10 @@ The project uses GitLab CI/CD (`.gitlab-ci.yml`) to automate testing and verific
 2. **build** — Compiles and packages project artifacts (Gradle builds)
 3. **verify** — Executes static analysis, API compatibility checks, and comprehensive verification tasks
 
+Current test-stage jobs include:
+- **dockerfile:lint** — Runs Hadolint against the repository Dockerfile with `--failure-threshold warning`
+- **container:smoke** — Builds the container image and verifies Java, PowerShell, and Pester availability
+
 ### 🧪 Pester Tests (PowerShell Scripts)
 
 The `pester:tests` job validates PowerShell automation scripts using [Pester 5.x](https://pester.dev):
@@ -61,7 +65,8 @@ As KALM transitions to container-based reproducibility (tracked in `dev-resource
 ### Current Status (Phase 1)
 
 - **Local-only:** A Dockerfile and supporting documentation exist for developers and researchers to use locally.
-- **Opt-in:** No CI jobs yet use the container image; this is a maintainer preview.
+- **CI linting enabled:** Hadolint validates `Dockerfile` in GitLab pipelines.
+- **Container validation enabled:** GitLab CI builds and smoke-tests the container image.
 - **Documentation:** See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for the recommended `docker compose` quickstart; the wiki page `Container-Build-and-Run` covers Buildx/docker run variants.
 
 ### Future Phases (2–5)

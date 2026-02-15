@@ -42,5 +42,19 @@ services:
     # Keep the `pwsh` entrypoint; pass the script as a command argument
     command: ["-File", "./scripts/testing/Invoke-PesterWithConfig.ps1"]
 
+  hadolint-kts:
+    build:
+      context: .
+      dockerfile: scripts/docker/Dockerfile.hadolint-kts
+    image: kalm-hadolint-kts:local
+    profiles:
+      - hadolint
+    volumes:
+      - .:/workspace:cached
+    working_dir: /workspace
+    entrypoint: ["kotlin", "./scripts/quality/Invoke-Hadolint.kts"]
+    # Pass script args at runtime, e.g.:
+    # docker compose --profile hadolint run --rm hadolint-kts --failure-threshold error --dockerfile Dockerfile
+
 volumes:
   gradle-cache: {}

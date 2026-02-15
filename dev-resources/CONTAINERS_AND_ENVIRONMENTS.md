@@ -48,6 +48,11 @@ docker compose --profile gradle run --rm gradle verifyAll
 
 # Pester
 docker compose --profile pester run --rm pester
+
+# Hadolint Kotlin script
+docker compose --profile hadolint run --rm hadolint-kts
+# Example with options
+docker compose --profile hadolint run --rm hadolint-kts --failure-threshold error --dockerfile Dockerfile
 ```
 
 ### Linux file ownership note
@@ -57,4 +62,3 @@ If you create files inside the container and want them owned by your host user:
 ```bash
 docker compose run --rm --user "$(id -u):$(id -g)" kalm
 ```
-

@@ -9,6 +9,15 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   DOCKER_DRIVER: overlay2
 
+dockerfile:lint:
+  stage: test
+  image: hadolint/hadolint:latest-debian
+  script:
+    - hadolint --failure-threshold warning Dockerfile
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+
 container:smoke:
   stage: test
   image: docker:24.0

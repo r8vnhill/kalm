@@ -238,6 +238,26 @@ Run PSScriptAnalyzer on PowerShell scripts with project-specific rules.
 
 **Settings:** `scripts/PSScriptAnalyzerSettings.psd1`
 
+### Invoke-Hadolint.kts / Invoke-Hadolint.ps1
+
+Lint Dockerfiles with Hadolint using the Kotlin script implementation (`Invoke-Hadolint.kts`) with a PowerShell compatibility wrapper.
+
+**Usage:**
+```powershell
+# Preferred: Kotlin script
+kotlinc -script .\scripts\quality\Invoke-Hadolint.kts
+
+# Lint multiple Dockerfiles with a stricter failure threshold
+kotlinc -script .\scripts\quality\Invoke-Hadolint.kts --failure-threshold error --dockerfile Dockerfile --dockerfile Dockerfile.dev
+
+# Compatibility wrapper (delegates to .kts when Kotlin runtime is available)
+.\scripts\quality\Invoke-Hadolint.ps1 -Dockerfiles 'Dockerfile', 'Dockerfile.dev' -FailureThreshold error
+```
+
+**Kotlin script options:**
+- `--dockerfile <path>`: Dockerfile path to lint (repeat for multiple files)
+- `--failure-threshold <error|warning|info|style|ignore>`: Hadolint failure threshold (default: `warning`)
+
 ### Invoke-PesterWithConfig.ps1
 
 Run Pester using the repository's canonical configuration file. This helper loads
