@@ -11,12 +11,12 @@ import java.nio.file.Path
  * - Testable
  * - Independent of system availability
  *
- * Implementations may execute:
+ * ## Implementations may execute:
  *
  * - A locally installed `hadolint` binary
  * - A Docker container (`hadolint/hadolint`)
  *
- * The abstraction enables:
+ * ## The abstraction enables:
  *
  * - Dependency inversion (CLI depends on interface, not implementation)
  * - Use of test doubles (e.g., FakeRunner)
@@ -52,7 +52,7 @@ interface HadolintRunner {
  *
  * This runner assumes `hadolint` is available on the system PATH.
  *
- * Characteristics:
+ * ## Characteristics:
  *
  * - Fastest execution path (no container startup)
  * - Direct file access
@@ -64,8 +64,7 @@ class BinaryHadolintRunner : HadolintRunner {
         "hadolint --failure-threshold $threshold $file"
 
     /**
-     * Launches a new process using [ProcessBuilder] and inherits
-     * the parent process I/O streams.
+     * Launches a new process using [ProcessBuilder] and inherits the parent process I/O streams.
      *
      * The current JVM blocks until the process completes.
      */
@@ -86,14 +85,14 @@ class BinaryHadolintRunner : HadolintRunner {
 /**
  * Executes Hadolint via Docker.
  *
- * This runner is used when:
+ * ## This runner is used when:
  *
  * - The `hadolint` binary is not available locally
  * - Docker is available
  *
  * It streams the Dockerfile content to the container via stdin.
  *
- * Characteristics:
+ * ## Characteristics:
  *
  * - Environment-independent
  * - Slightly slower (container startup cost)
