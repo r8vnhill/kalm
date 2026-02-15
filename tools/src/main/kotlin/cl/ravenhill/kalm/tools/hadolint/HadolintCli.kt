@@ -90,7 +90,7 @@ object HadolintCli {
             when (val arg = args[i]) {
                 "--dockerfile", "-f" -> {
                     if (i + 1 >= args.size) {
-                        error("Missing value for --dockerfile")
+                        throw IllegalArgumentException("Missing value for --dockerfile")
                     }
                     dockerfiles += args[i + 1]
                     i += 2
@@ -98,7 +98,7 @@ object HadolintCli {
 
                 "--failure-threshold", "-t" -> {
                     if (i + 1 >= args.size) {
-                        error("Missing value for --failure-threshold")
+                        throw IllegalArgumentException("Missing value for --failure-threshold")
                     }
                     failureThreshold = args[i + 1].lowercase()
                     i += 2
@@ -114,12 +114,14 @@ object HadolintCli {
                     kotlin.system.exitProcess(0)
                 }
 
-                else -> error("Unknown argument: $arg")
+                else -> throw IllegalArgumentException("Unknown argument: $arg")
             }
         }
 
         if (failureThreshold !in VALID_THRESHOLDS) {
-            error("Invalid --failure-threshold '$failureThreshold'. Valid values: ${VALID_THRESHOLDS.joinToString(", ")}")
+            throw IllegalArgumentException(
+                "Invalid --failure-threshold '$failureThreshold'. Valid values: ${VALID_THRESHOLDS.joinToString(", ")}"
+            )
         }
 
         return CliOptions(

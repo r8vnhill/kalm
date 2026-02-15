@@ -5,7 +5,6 @@ detekt-redmadrobot = "0.19.1"
 foojay-resolver = "1.0.0"
 junit = "6.0.2"
 kotest = "6.0.4"
-kotest-framework-datatest = "5.9.1"
 kotlin = "2.3.0-Beta2"
 kotlin-bin-compatibility-validator = "0.18.1"
 version-catalog-update = "1.0.1"
@@ -20,7 +19,6 @@ detekt-redmadrobot-plugin = { module = "com.redmadrobot.detekt:com.redmadrobot.d
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
-kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest-framework-datatest" }
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
@@ -42,7 +40,6 @@ version-catalog-update = { id = "nl.littlerobots.version-catalog-update", versio
 [bundles]
 kotest = [
     "kotest-assertions-core",
-    "kotest-framework-datatest",
     "kotest-framework-engine",
     "kotest-property",
     "kotest-runner-junit5",
