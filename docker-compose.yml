@@ -1,22 +1,21 @@
 services:
-  kalm:
-    <<: &kalm-base
-      build:
-        # Build context: the directory sent to the Docker daemon for the build.
-        # Files under this path are available to the Dockerfile (e.g., via COPY/ADD).
-        # Using `.` sends the repository root so the Dockerfile can access repo files.
-        context: .
-        dockerfile: Dockerfile
-      image: kalm-env:local
-      volumes:
-        # Mount repo at /workspace with cached mode for performance
-        - .:/workspace:cached
-      working_dir: /workspace
-      environment:
-        # Ensure consistent locale inside container
-        LANG: en_US.UTF-8
-        LC_ALL: en_US.UTF-8
-      init: true
+  kalm: &kalm-base
+    build:
+      # Build context: the directory sent to the Docker daemon for the build.
+      # Files under this path are available to the Dockerfile (e.g., via COPY/ADD).
+      # Using `.` sends the repository root so the Dockerfile can access repo files.
+      context: .
+      dockerfile: Dockerfile
+    image: kalm-env:local
+    volumes:
+      # Mount repo at /workspace
+      - .:/workspace
+    working_dir: /workspace
+    environment:
+      # Use a locale that is commonly available in base images
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+    init: true
     # Interactive terminal for pwsh
     tty: true
     stdin_open: true
@@ -27,11 +26,13 @@ services:
     profiles:
       - gradle
     volumes:
-      - .:/workspace:cached
+      - .:/workspace
       - gradle-cache:/gradle-cache
-    working_dir: /workspace
-    # Override entrypoint to run gradle directly
-    entrypoint: ./gradlew
+    environment:
+      GRADLE_USER_HOME: /gradle-cache
+    # Clear image entrypoint for easier command override
+    entrypoint: []
+    command: ["./gradlew"]
     # Users pass gradle arguments like: docker compose --profile gradle run --rm gradle verifyAll
 
   # Convenience service for running Pester tests
@@ -43,15 +44,13 @@ services:
     command: ["-File", "./scripts/testing/Invoke-PesterWithConfig.ps1"]
 
   hadolint-kts:
+    <<: *kalm-base
     build:
       context: .
       dockerfile: scripts/docker/Dockerfile.hadolint-kts
     image: kalm-hadolint-kts:local
     profiles:
       - hadolint
-    volumes:
-      - .:/workspace:cached
-    working_dir: /workspace
     entrypoint: ["kotlin", "-classpath", "/opt/hadolint-cli.jar", "cl.ravenhill.kalm.tools.hadolint.HadolintCli"]
     # Pass CLI args at runtime, e.g.:
     # `docker compose --profile hadolint run --rm hadolint-kts --failure-threshold error --dockerfile Dockerfile`
