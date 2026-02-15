@@ -5,7 +5,7 @@
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD--2--Clause-blue.svg)](LICENSE)
 [![Pre-Alpha](https://img.shields.io/badge/status-pre--alpha-orange)](#)
 
-> [!warning] Project status: Early-stage / pre-alpha  
+> [!warning] Project status: Early-stage / pre-alpha
 > This project is in active development. APIs and features are subject to change.
 
 **Planned features:**
@@ -81,8 +81,8 @@ Once artefacts are published (local or remote Maven repository), import the BOM 
 
 ```kotlin
 dependencies {
-	implementation(platform("cl.ravenhill.kalm:kalm-platform:0.2.0-SNAPSHOT"))
-	implementation("cl.ravenhill.kalm:kalm-core:0.2.0-SNAPSHOT")
+	implementation(platform("cl.ravenhill.kalm:kalm-platform:0.2.2"))
+	implementation("cl.ravenhill.kalm:kalm-core:0.2.2")
 }
 ```
 

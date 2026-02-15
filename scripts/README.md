@@ -40,7 +40,7 @@ Logging is enabled even in `-WhatIf` scenarios so CI/local runs share a consiste
 Reusable functions for Git operations (imported automatically by sync scripts):
 
 | Function                      | Purpose                                            |
-| ----------------------------- | -------------------------------------------------- |
+|-------------------------------|----------------------------------------------------|
 | `Invoke-Git`                  | Safe git command wrapper with error handling       |
 | `Get-GitCurrentBranch`        | Get current branch name for a repository           |
 | `Test-GitClean`               | Check if working directory has uncommitted changes |
@@ -237,6 +237,27 @@ Run PSScriptAnalyzer on PowerShell scripts with project-specific rules.
 ```
 
 **Settings:** `scripts/PSScriptAnalyzerSettings.psd1`
+
+### Invoke-Hadolint.ps1
+
+Lint Dockerfiles with Hadolint via the Gradle task that runs `cl.ravenhill.kalm.tools.hadolint.HadolintCli`.
+
+**Usage:**
+```powershell
+# Lint default Dockerfile with default threshold (warning)
+.\scripts\quality\Invoke-Hadolint.ps1
+
+# Lint multiple Dockerfiles with stricter threshold
+.\scripts\quality\Invoke-Hadolint.ps1 -Dockerfile 'Dockerfile', 'Dockerfile.dev' -FailureThreshold error
+
+# Enable strict missing-file behavior
+.\scripts\quality\Invoke-Hadolint.ps1 -Dockerfile 'Dockerfile' -StrictFiles
+```
+
+**Parameters:**
+- `-Dockerfile <path[]>`: Dockerfile path(s) to lint (default: `Dockerfile`)
+- `-FailureThreshold <error|warning|info|style|ignore>`: Hadolint failure threshold (default: `warning`)
+- `-StrictFiles`: Fail if any specified Dockerfile is missing
 
 ### Invoke-PesterWithConfig.ps1
 

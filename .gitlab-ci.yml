@@ -4,37 +4,63 @@ stages:
   - test
 
 variables:
-  # Use Docker-in-Docker
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
   DOCKER_DRIVER: overlay2
+  DOCKER_BUILDKIT: "1"
+  BUILDKIT_INLINE_CACHE: "1"
+
+.rules_mr_default: &rules_mr_default
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+dockerfile:lint:
+  stage: test
+  image: hadolint/hadolint:v2.12.0-debian
+  interruptible: true
+  retry: 1
+  script:
+    - set -eu
+    - hadolint --failure-threshold warning Dockerfile
+  <<: *rules_mr_default
 
 container:smoke:
   stage: test
-  image: docker:24.0
+  image: docker:24.0.9
   services:
-    - name: docker:24.0-dind
+    - name: docker:24.0.9-dind
       command: ["--mtu=1460"]
+  interruptible: true
+  retry: 1
+  cache:
+    key: buildx-$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG
+    paths:
+      - .buildx-cache/
   before_script:
+    - set -eu
     - docker version
     - docker info
+    - docker buildx create --name kalm-builder --use || docker buildx use kalm-builder
+    - docker buildx inspect --bootstrap
   script:
-    # Build the image from the repo Dockerfile
-    - docker build --pull -t kalm-env:${CI_COMMIT_SHORT_SHA} -f Dockerfile .
-
-    # Run a simple smoke test inside the container using its pwsh entrypoint.
-    # Verifies Java, PowerShell, and that Pester is available.
-    - >-
-      docker run --rm kalm-env:${CI_COMMIT_SHORT_SHA}
-      -c '$ErrorActionPreference="Stop";
-      java -version; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE };
-      $psVersion = $PSVersionTable.PSVersion.ToString();
-      Write-Host ("PowerShell " + $psVersion);
-      Import-Module Pester -ErrorAction Stop;
-      $pesterVersion = (Get-Module Pester -ListAvailable | Select-Object -First 1).Version.ToString();
-      Write-Host ("Pester " + $pesterVersion);
-      Write-Host "Container smoke test OK."'
-
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH
+    - mkdir -p .buildx-cache
+    - >
+      docker buildx build
+      --pull
+      --load
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --cache-from type=local,src=.buildx-cache
+      --cache-to type=local,dest=.buildx-cache-new,mode=max
+      -t kalm-env:${CI_COMMIT_SHORT_SHA}
+      -f Dockerfile
+      .
+    - rm -rf .buildx-cache
+    - mv .buildx-cache-new .buildx-cache
+    - >
+      docker run --rm
+      -v "$CI_PROJECT_DIR/scripts:/scripts:ro"
+      --entrypoint pwsh
+      kalm-env:${CI_COMMIT_SHORT_SHA}
+      -NoLogo -NoProfile -File /scripts/Invoke-ContainerSmokeTest.ps1
+  <<: *rules_mr_default
