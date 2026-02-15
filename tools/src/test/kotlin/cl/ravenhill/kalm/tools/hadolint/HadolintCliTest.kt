@@ -17,14 +17,10 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.element
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filter
-import io.kotest.property.arbitrary.flatMap
-import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.stringPattern
 import io.kotest.property.checkAll
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
@@ -140,7 +136,12 @@ class HadolintCliTest : FreeSpec({
             "Then they are separated and normalized correctly" {
                 withTempDockerfile { existingFile ->
                     val weirdPath =
-                        Paths.get(existingFile.parent.toString(), "subdir", "..", existingFile.fileName.toString())
+                        Paths.get(
+                            existingFile.parent.toString(),
+                            "subdir",
+                            "..",
+                            existingFile.fileName.toString()
+                        )
                     val options = CliOptions(dockerfiles = listOf(weirdPath.toString(), "missing"))
 
                     HadolintCli.resolveDockerfiles(options) { it == existingFile }
@@ -176,7 +177,7 @@ class HadolintCliTest : FreeSpec({
                     result.threshold shouldBe "error"
                     result.strictFiles shouldBe false
                     result.targets shouldContainExactly listOf(existingFile.toString())
-                    result.missing shouldContainExactly emptyList<String>()
+                    result.missing shouldContainExactly emptyList()
                     result.failed shouldContainExactly listOf(existingFile.toString())
                     result.runner shouldBe "FakeRunner"
                     result.startedAtEpochMs shouldBe 100L
@@ -212,7 +213,7 @@ class HadolintCliTest : FreeSpec({
 
                     result.exitCode shouldBe 0
                     result.threshold shouldBe ValidThreshold.default.value
-                    result.failed shouldContainExactly emptyList<String>()
+                    result.failed shouldContainExactly emptyList()
                     runner.runs shouldContainExactly listOf(existingFile to ValidThreshold.default)
                     Json.decodeFromString<HadolintCliResult>(
                         out.toString(Charsets.UTF_8).trim()
@@ -236,12 +237,11 @@ class HadolintCliTest : FreeSpec({
             }
 
             "Then neither available throws a clear error" {
-                val error = shouldThrow<IllegalStateException> {
+                shouldThrowWithMessage<IllegalStateException>(
+                    "Could not find `hadolint` and Docker is not available. Install one of them and try again."
+                ) {
                     HadolintCli.selectRunner(hadolintAvailable = false, dockerAvailable = false)
                 }
-
-                error.message shouldBe
-                        "Could not find `hadolint` and Docker is not available. Install one of them and try again."
             }
         }
     }
@@ -411,7 +411,7 @@ private class FakeRunner(private val exitCode: Int) : HadolintRunner {
      * No filesystem or process interaction occurs.
      */
     override fun run(file: Path, threshold: ValidThreshold): Int {
-        runs.add(file to threshold)
+        runs += file to threshold
         return exitCode
     }
 }
