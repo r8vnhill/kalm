@@ -5,10 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.1] - TBD
+## [0.2.2] - 2026-02-15
 
 ### Added
-- Hadolint...
+- Kotlin-based Hadolint CLI under `tools` with typed options/results, runner abstraction (`binary`/`docker`), and JSON output contract.
+- Dedicated Hadolint module support (`tools/build.gradle.kts`, lockfile updates) and Dockerized Hadolint runtime (`scripts/docker/Dockerfile.hadolint-kts`).
+- PowerShell wrappers for Hadolint and container smoke testing (`scripts/quality/Invoke-Hadolint.ps1`, `scripts/Invoke-ContainerSmokeTest.ps1`).
+- Shared PowerShell helper for repository-root discovery (`scripts/lib/Get-KalmRepoRoot.ps1`).
+- Comprehensive Hadolint CLI test suite (`tools/src/test/kotlin/cl/ravenhill/kalm/tools/hadolint/HadolintCliTest.kt`).
+
+### Changed
+- Improved GitLab CI reliability and speed: pinned Docker/Hadolint images, BuildKit + buildx local cache, interruptible/retry behavior, and explicit PowerShell container entrypoint.
+- Moved smoke-test logic to a reusable script (`scripts/smoke.ps1`) and simplified CI command quoting.
+- Updated dependency/tooling baselines (Kotlin/Kotest catalog updates, Gradle wrapper/properties, lockfiles).
+- Updated docs for CI/CD, containers, and script usage (`README.md`, `dev-resources/*`, `scripts/README.md`).
+
+---
+
+## [0.2.1] - 2026-02-12
+
+### Added
+
+- New `SyncVersionPropertiesTask` (`build-logic/src/main/kotlin/tasks/SyncVersionPropertiesTask.kt`) to synchronize selected `gradle.properties` entries from `gradle/libs.versions.toml`.
+- Dedicated `build-logic/gradle.properties` for build-logic-scoped mirrored version properties and defaults.
+- New root tasks `syncVersionProperties` and `syncBuildLogicVersionProperties` for catalog-to-properties synchronization.
+- New `dependencyUpdatesNoParallel` helper task for dependency report runs that require `--no-parallel`.
+
+### Changed
+
+- Gradle wrapper upgraded from `9.1.0` to `9.3.1`.
+- Build logic now reads Foojay resolver version frgit pom mirrored properties in both root and included build settings, failing fast when missing.
+- `preflight` workflow now runs verification + version-property synchronization (`verifyAll`, `syncVersionProperties`, `syncBuildLogicVersionProperties`) instead of invoking dependency-maintenance tasks.
+- `verifyAll` task wiring moved to lazy task matching (`tasks.matching { ... }.configureEach`) instead of `projectsEvaluated`.
+- Dependency update policy for `dependencyUpdates` now uses stricter pre-release filtering and lazier output directory resolution.
+- Dependency locking convention now activates locking only on resolvable configurations while keeping strict lock mode.
+- Build-logic toolchain configuration was unified around a property-driven Java version (`buildlogic.java.version`) and aligned Kotlin/Java toolchains.
+- Build-logic functional test task metadata is normalized for better discoverability in Gradle task listings.
+- Version catalog and lockfiles were refreshed for current build state (including JUnit `6.0.2` and additional plugin/library aliases used by build logic).
+- Automation and docs updates:
+  - `Invoke-GradleWithJdk.ps1` now resolves platform-specific wrapper names and executes Gradle via `System.Diagnostics.Process`.
+  - Dependency update documentation now reflects automatic property synchronization flow.
+  - README requirements were clarified for supported JDK range.
+  - Wiki submodule pointer updated to include current Gradle build/task documentation.
+
+### Removed
+
+- Removed `syncWiki` Gradle task from build logic (wiki synchronization remains a Git/submodule workflow).
+-
+---
 
 ## [0.2.0] - 2026-01-07
 
@@ -48,6 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enforced strict dependency locking across all modules (gradle.lockfile, settings-gradle.lockfile, module-level lockfiles)
 - Added non-root `builder` user in Docker image for improved security
 
+---
+
 ## [0.1.0] - 2025-10-27
 
 ### Added
@@ -63,6 +109,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Dropped legacy PowerShell Git helper scripts in favor of the consolidated `Sync-Remotes` workflow.
 
-[unreleased]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.2.0...HEAD
+---
+
+[unreleased]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.2.2...HEAD
+[0.2.2]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.2.1...v0.2.2
+[0.2.1]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.2.0...v0.2.1
 [0.2.0]: https://gitlab.com/r8vnhill/kalm/-/compare/v0.1.0...v0.2.0
 [0.1.0]: https://gitlab.com/r8vnhill/kalm/-/releases/v0.1.0

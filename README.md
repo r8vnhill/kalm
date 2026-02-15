@@ -81,8 +81,8 @@ Once artefacts are published (local or remote Maven repository), import the BOM 
 
 ```kotlin
 dependencies {
-	implementation(platform("cl.ravenhill.kalm:kalm-platform:0.2.0-SNAPSHOT"))
-	implementation("cl.ravenhill.kalm:kalm-core:0.2.0-SNAPSHOT")
+	implementation(platform("cl.ravenhill.kalm:kalm-platform:0.2.2"))
+	implementation("cl.ravenhill.kalm:kalm-core:0.2.2")
 }
 ```
 
