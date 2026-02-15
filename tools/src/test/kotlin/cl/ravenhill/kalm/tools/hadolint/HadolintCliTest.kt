@@ -24,6 +24,8 @@ import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.stringPattern
 import io.kotest.property.checkAll
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.file.Files
@@ -153,25 +155,36 @@ class HadolintCliTest : FreeSpec({
 
     "Given a runner that reports failure" - {
         "When running the CLI" - {
-            "Then it returns a non-zero exit code and prints diagnostics" {
+            "Then it returns JSON on stdout and diagnostics on stderr" {
                 withTempDockerfile { existingFile ->
                     val runner = FakeRunner(exitCode = 1)
                     val out = ByteArrayOutputStream()
                     val err = ByteArrayOutputStream()
 
-                    val exitCode = HadolintCli.runCli(
+                    val result = HadolintCli.runCliJson(
                         args = arrayOf("--dockerfile", existingFile.toString(), "--failure-threshold", "error"),
                         runnerSelector = { _, _ -> runner },
                         hadolintAvailable = { false },
                         dockerAvailable = { false },
                         exists = { path -> path == existingFile },
+                        nowEpochMs = sequenceOf(100L, 110L).iterator()::next,
                         out = PrintStream(out),
                         err = PrintStream(err)
                     )
 
-                    exitCode shouldBe 1
+                    result.exitCode shouldBe 1
+                    result.threshold shouldBe "error"
+                    result.strictFiles shouldBe false
+                    result.targets shouldContainExactly listOf(existingFile.toString())
+                    result.missing shouldContainExactly emptyList<String>()
+                    result.failed shouldContainExactly listOf(existingFile.toString())
+                    result.runner shouldBe "FakeRunner"
+                    result.startedAtEpochMs shouldBe 100L
+                    result.finishedAtEpochMs shouldBe 110L
                     runner.runs shouldContainExactly listOf(existingFile to ValidThreshold.ERROR)
-                    out.toString(Charsets.UTF_8) shouldContain "Linting Dockerfiles"
+                    Json.decodeFromString<HadolintCliResult>(
+                        out.toString(Charsets.UTF_8).trim()
+                    ) shouldBe result
                     err.toString(Charsets.UTF_8) shouldContain existingFile.toString()
                 }
             }
@@ -180,25 +193,31 @@ class HadolintCliTest : FreeSpec({
 
     "Given a runner that reports success" - {
         "When running the CLI" - {
-            "Then it returns zero and produces no stderr" {
+            "Then stdout is JSON only and stderr has logs" {
                 withTempDockerfile { existingFile ->
                     val runner = FakeRunner(exitCode = 0)
                     val out = ByteArrayOutputStream()
                     val err = ByteArrayOutputStream()
 
-                    val exitCode = HadolintCli.runCli(
+                    val result = HadolintCli.runCliJson(
                         args = arrayOf("--dockerfile", existingFile.toString()),
                         runnerSelector = { _, _ -> runner },
                         hadolintAvailable = { false },
                         dockerAvailable = { false },
                         exists = { path -> path == existingFile },
+                        nowEpochMs = sequenceOf(200L, 220L).iterator()::next,
                         out = PrintStream(out),
                         err = PrintStream(err)
                     )
 
-                    exitCode shouldBe 0
+                    result.exitCode shouldBe 0
+                    result.threshold shouldBe ValidThreshold.default.value
+                    result.failed shouldContainExactly emptyList<String>()
                     runner.runs shouldContainExactly listOf(existingFile to ValidThreshold.default)
-                    err.toString(Charsets.UTF_8) shouldBe ""
+                    Json.decodeFromString<HadolintCliResult>(
+                        out.toString(Charsets.UTF_8).trim()
+                    ) shouldBe result
+                    err.toString(Charsets.UTF_8) shouldContain "Linting Dockerfiles"
                 }
             }
         }
@@ -250,6 +269,50 @@ class HadolintCliTest : FreeSpec({
                         )
                     }
                 }
+            }
+        }
+    }
+
+    "Given --help" - {
+        "When running the CLI" - {
+            "Then JSON is still emitted and exitCode is zero" {
+                val out = ByteArrayOutputStream()
+                val err = ByteArrayOutputStream()
+
+                val result = HadolintCli.runCliJson(
+                    args = arrayOf("--help"),
+                    out = PrintStream(out),
+                    err = PrintStream(err),
+                    nowEpochMs = sequenceOf(300L, 330L).iterator()::next
+                )
+
+                result.exitCode shouldBe 0
+                Json.decodeFromString<HadolintCliResult>(
+                    out.toString(Charsets.UTF_8).trim()
+                ) shouldBe result
+                err.toString(Charsets.UTF_8) shouldContain "Usage:"
+            }
+        }
+    }
+
+    "Given invalid arguments" - {
+        "When running the CLI" - {
+            "Then JSON is emitted with a non-zero exit code" {
+                val out = ByteArrayOutputStream()
+                val err = ByteArrayOutputStream()
+
+                val result = HadolintCli.runCliJson(
+                    args = arrayOf("--unknown"),
+                    out = PrintStream(out),
+                    err = PrintStream(err),
+                    nowEpochMs = sequenceOf(400L, 430L).iterator()::next
+                )
+
+                result.exitCode shouldBe 1
+                Json.decodeFromString<HadolintCliResult>(
+                    out.toString(Charsets.UTF_8).trim()
+                ) shouldBe result
+                err.toString(Charsets.UTF_8) shouldContain "Unknown argument"
             }
         }
     }

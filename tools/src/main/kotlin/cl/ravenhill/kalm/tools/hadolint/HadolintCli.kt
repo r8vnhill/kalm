@@ -1,6 +1,7 @@
 package cl.ravenhill.kalm.tools.hadolint
 
-import cl.ravenhill.kalm.tools.hadolint.HadolintCli.runCli
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.PrintStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -40,6 +41,12 @@ import kotlin.system.exitProcess
  * - Returns `1` when any target fails, or when validation fails (e.g., strict missing files).
  */
 object HadolintCli {
+    private class HelpRequested : RuntimeException()
+
+    private val json = Json {
+        prettyPrint = false
+        encodeDefaults = true
+    }
 
     /**
      * Prints the CLI usage message.
@@ -52,7 +59,7 @@ object HadolintCli {
         out.println(
             """
             |Usage:
-            |  kotlin scripts/quality/Invoke-Hadolint.kts [options]
+            |  cl.ravenhill.kalm.tools.hadolint.HadolintCli [options]
             |
             |Options:
             |  --dockerfile, -f <path>          Dockerfile path to lint (repeatable)
@@ -100,8 +107,7 @@ object HadolintCli {
                 }
 
                 "--help", "-h" -> {
-                    printUsage()
-                    exitProcess(0)
+                    throw HelpRequested()
                 }
 
                 else -> throw IllegalArgumentException("Unknown argument: $arg")
@@ -271,32 +277,104 @@ object HadolintCli {
      * @param err Output stream for error diagnostics.
      * @return `0` if lint succeeds for all targets, otherwise `1`.
      */
-    fun runCli(
+    fun runCliJson(
         args: Array<String>,
         runnerSelector: (Boolean, Boolean) -> HadolintRunner = ::selectRunner,
         hadolintAvailable: () -> Boolean = { hasCommand("hadolint") },
         dockerAvailable: () -> Boolean = { canRun("docker", "version") },
         exists: (Path) -> Boolean = Files::exists,
         out: PrintStream = System.out,
-        err: PrintStream = System.err
-    ): Int {
-        val options = parseArgs(args)
-        val runner = runnerSelector(hadolintAvailable(), dockerAvailable())
-        val resolved = resolveDockerfilePaths(options, exists, out)
-        validateDockerfiles(resolved, options)
+        err: PrintStream = System.err,
+        nowEpochMs: () -> Long = { System.currentTimeMillis() }
+    ): HadolintCliResult {
+        val started = nowEpochMs()
+        val defaultOptions = CliOptions(
+            dockerfiles = listOf("Dockerfile"),
+            failureThreshold = ValidThreshold.default,
+            strictFiles = false
+        )
+        val options = try {
+            parseArgs(args)
+        } catch (_: HelpRequested) {
+            printUsage(err)
+            return emitResult(
+                out = out,
+                result = HadolintCliResult(
+                    exitCode = 0,
+                    threshold = defaultOptions.failureThreshold.value,
+                    strictFiles = defaultOptions.strictFiles,
+                    targets = emptyList(),
+                    missing = emptyList(),
+                    failed = emptyList(),
+                    runner = "unknown",
+                    startedAtEpochMs = started,
+                    finishedAtEpochMs = nowEpochMs()
+                )
+            )
+        } catch (e: Exception) {
+            err.println(e.message ?: e.toString())
+            return emitResult(
+                out = out,
+                result = HadolintCliResult(
+                    exitCode = 1,
+                    threshold = defaultOptions.failureThreshold.value,
+                    strictFiles = defaultOptions.strictFiles,
+                    targets = emptyList(),
+                    missing = emptyList(),
+                    failed = emptyList(),
+                    runner = "unknown",
+                    startedAtEpochMs = started,
+                    finishedAtEpochMs = nowEpochMs()
+                )
+            )
+        }
+        val resolved = resolveDockerfilePaths(options, exists, err)
 
-        out.println("Linting Dockerfiles with threshold '${options.failureThreshold}'...")
-        out.println("Targets: ${resolved.existing.joinToString(", ")}")
+        var runnerId = "unknown"
+        val (exitCode, failed) = try {
+            val runner = runnerSelector(hadolintAvailable(), dockerAvailable())
+            runnerId = when (runner) {
+                is BinaryHadolintRunner -> "binary"
+                is DockerHadolintRunner -> "docker"
+                else -> runner::class.simpleName ?: "unknown"
+            }
 
-        val failed = runHadolintOnResolvedFiles(resolved, out, runner, options, err)
+            validateDockerfiles(resolved, options)
+            err.println("Linting Dockerfiles with threshold '${options.failureThreshold.value}'...")
+            err.println("Targets: ${resolved.existing.joinToString(", ")}")
 
-        if (failed.isNotEmpty()) {
-            err.println("Hadolint reported issues in: ${failed.joinToString(", ")}")
-            return 1
+            val failedPaths = runHadolintOnResolvedFiles(resolved, err, runner, options, err)
+            if (failedPaths.isNotEmpty()) {
+                err.println("Hadolint reported issues in: ${failedPaths.joinToString(", ")}")
+                1 to failedPaths
+            } else {
+                0 to emptyList()
+            }
+        } catch (e: Exception) {
+            err.println(e.message ?: e.toString())
+            1 to emptyList<Path>()
         }
 
-        out.println("Hadolint completed successfully.")
-        return 0
+        val result = HadolintCliResult(
+            exitCode = exitCode,
+            threshold = options.failureThreshold.value,
+            strictFiles = options.strictFiles,
+            targets = resolved.existing.map(Path::toString),
+            missing = resolved.missing.map(Path::toString),
+            failed = failed.map(Path::toString),
+            runner = runnerId,
+            startedAtEpochMs = started,
+            finishedAtEpochMs = nowEpochMs()
+        )
+        return emitResult(out, result)
+    }
+
+    private fun emitResult(
+        out: PrintStream,
+        result: HadolintCliResult
+    ): HadolintCliResult {
+        out.println(json.encodeToString(result))
+        return result
     }
 
     /**
@@ -318,15 +396,15 @@ object HadolintCli {
      */
     private fun runHadolintOnResolvedFiles(
         resolved: ResolveResult,
-        out: PrintStream,
+        log: PrintStream,
         runner: HadolintRunner,
         options: CliOptions,
         err: PrintStream
-    ): MutableList<Path> {
+    ): List<Path> {
         val failed = mutableListOf<Path>()
         // Runs linter; tracks files with non‑zero exit codes
         for (file in resolved.existing) {
-            out.println("Running Hadolint on: $file")
+            log.println("Running Hadolint on: $file")
             val exitCode = runner.run(file, options.failureThreshold)
             if (exitCode != 0) {
                 err.println(
@@ -379,11 +457,11 @@ object HadolintCli {
     private fun resolveDockerfilePaths(
         options: CliOptions,
         exists: (Path) -> Boolean,
-        out: PrintStream
+        err: PrintStream
     ): ResolveResult {
         val resolved = resolveDockerfiles(options, exists)
-        resolved.missing.forEach { out.println("WARNING: Dockerfile not found and will be skipped: $it") }
-        out.println("Found ${resolved.existing.size} Dockerfile(s); ${resolved.missing.size} missing.")
+        resolved.missing.forEach { err.println("WARNING: Dockerfile not found and will be skipped: $it") }
+        err.println("Found ${resolved.existing.size} Dockerfile(s); ${resolved.missing.size} missing.")
         return resolved
     }
 
@@ -396,6 +474,7 @@ object HadolintCli {
      */
     @JvmStatic
     fun main(args: Array<String>) {
-        exitProcess(runCli(args))
+        val result = runCliJson(args)
+        exitProcess(result.exitCode)
     }
 }

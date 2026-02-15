@@ -88,8 +88,17 @@
 plugins {
     id("kalm.library")
     id("kalm.jvm")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 dependencies {
+    implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.bundles.kotest)
+}
+
+tasks.register<JavaExec>("runHadolintCli") {
+    group = "verification"
+    description = "Runs cl.ravenhill.kalm.tools.hadolint.HadolintCli"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("cl.ravenhill.kalm.tools.hadolint.HadolintCli")
 }
