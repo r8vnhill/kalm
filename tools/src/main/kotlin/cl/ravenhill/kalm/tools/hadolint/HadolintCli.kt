@@ -5,48 +5,50 @@ import java.io.PrintStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.jvm.Throws
 import kotlin.system.exitProcess
 
 /**
- * Command-line entry point for running Hadolint against one or more Dockerfiles.
+ * JSON-oriented command-line interface for running Hadolint against one or more Dockerfiles.
  *
- * This object provides a small orchestration layer around Hadolint execution:
+ * ## High-level flow
  *
- * - Parses CLI arguments into a validated [CliOptions] instance.
- * - Resolves Dockerfile paths into a [ResolveResult] (existing vs. missing).
- * - Selects an execution strategy ([HadolintRunner]) based on availability:
- *   - [BinaryHadolintRunner] if `hadolint` is available locally.
- *   - [DockerHadolintRunner] as a fallback when Docker is available.
- * - Runs Hadolint for each resolved Dockerfile and aggregates failures.
+ * 1. Parse arguments into [CliOptions] ([parseArgs]).
+ * 2. Resolve inputs into existing vs. missing paths ([resolveDockerfilePaths] via [resolveDockerfiles]).
+ * 3. Select the execution strategy ([HadolintRunner]) through [selectRunner]:
+ *    - [BinaryHadolintRunner] when `{sh} hadolint` is available.
+ *    - [DockerHadolintRunner] when Docker is available.
+ * 4. Execute linting ([executeLinting]) and aggregate failures into [LintExecution].
+ * 5. Emit a JSON [HadolintCliResult] and exit with its exit code ([main]).
  *
- * ## Testability
+ * ## Logging contract
  *
- * The orchestration is designed to be deterministic and straightforward to test:
+ * The CLI uses two output streams:
  *
- * - Tool availability checks can be injected (`hadolintAvailable`, `dockerAvailable`).
- * - File existence checks can be injected (`exists`).
- * - Output streams can be injected (`out`, `err`).
- * - Runner selection can be injected (`runnerSelector`) to use test doubles.
+ * - [System.out]: **JSON only** (single object, suitable for parsing).
+ * - [System.err]: human-readable diagnostics (warnings, progress, failure reasons).
  *
- * ### This avoids requiring:
+ * This separation is critical when the caller expects clean JSON on stdout.
  *
- * - A real Docker daemon
- * - A real `hadolint` binary
- * - A real filesystem layout
+ * ## Exit code policy
  *
- * ## Exit Code Contract
+ * The process exit code is derived from [HadolintCliResult.exitCode]:
  *
- * - Returns `0` when all lint targets succeed.
- * - Returns `1` when any target fails, or when validation fails (e.g., strict missing files).
+ * - `0`: successful execution and no lint failures.
+ * - `1`: lint failures or expected CLI/validation failures.
  */
 object HadolintCli {
-    /**
-     *
-     */
-    private class HelpRequested : RuntimeException()
 
     /**
+     * Internal control-flow throwable used to model `--help` / `-h`.
      *
+     * This is intentionally *not* exposed as an error to callers: help is a normal termination path. The throwable is
+     * caught in [parseAndExecute] and translated into a successful JSON result.
+     */
+    private class HelpRequested : Throwable()
+
+    /**
+     * JSON encoder for serializing [HadolintCliResult].
      */
     private val json = Json {
         prettyPrint = false
@@ -54,11 +56,12 @@ object HadolintCli {
     }
 
     /**
-     * Prints the CLI usage message.
+     * Prints a human-readable usage message.
      *
-     * The output stream is injectable to keep this method test-friendly.
+     * This prints to an injected stream (defaults to [System.out]) so tests can capture output. In JSON mode, callers
+     * typically invoke `--help` and read the usage from [System.err], while [out] remains valid JSON.
      *
-     * @param out Target stream for usage text.
+     * @param out Destination stream for usage output.
      */
     fun printUsage(out: PrintStream = System.out) {
         out.println(
@@ -78,17 +81,17 @@ object HadolintCli {
     /**
      * Parses CLI arguments into an immutable, validated [CliOptions].
      *
-     * Parsing rules:
+     * ## Rules:
      *
      * - `--dockerfile` / `-f` may be repeated to lint multiple files.
-     * - If no dockerfiles are specified, defaults to `["Dockerfile"]`.
+     * - If no Dockerfiles are specified, defaults to `["Dockerfile"]`.
      * - `--failure-threshold` / `-t` is validated and normalized via [ValidThreshold.fromString].
-     * - `--strict-files` enables strict missing-file handling (see [CliOptions.strictFiles]).
-     * - `--help` / `-h` prints usage and terminates the process with exit code `0`.
+     * - `--strict-files` enforces missing-file failures (see [CliOptions.strictFiles]).
+     * - `--help` / `-h` triggers [HelpRequested] (handled upstream as a successful termination path).
      *
      * @param args Raw command-line arguments.
-     * @return Parsed and validated [CliOptions].
-     * @throws IllegalArgumentException If an unknown flag is found or a required value is missing.
+     * @return Parsed [CliOptions].
+     * @throws IllegalArgumentException If a flag is unknown, a value is missing, or a value is invalid.
      */
     fun parseArgs(args: Array<String>): CliOptions {
         val dockerfiles = mutableListOf<String>()
@@ -127,15 +130,12 @@ object HadolintCli {
     }
 
     /**
-     * Parses a `--failure-threshold` / `-t` argument pair.
-     *
-     * This method enforces presence of the value argument and delegates validation and normalization to
-     * [ValidThreshold.fromString].
+     * Parses a `--failure-threshold` / `-t` flag and its value.
      *
      * @param i Index of the flag argument in [args].
      * @param args Full CLI argument array.
-     * @return A pair `(threshold, nextIndex)` where `nextIndex` is the updated parsing position.
-     * @throws IllegalArgumentException If the threshold value is missing or invalid.
+     * @return A pair `(threshold, nextIndex)` where `nextIndex` points after the consumed pair.
+     * @throws IllegalArgumentException If the value is missing or not a valid [ValidThreshold].
      */
     private fun parseFailureThreshold(
         i: Int,
@@ -151,13 +151,13 @@ object HadolintCli {
     }
 
     /**
-     * Parses a `--dockerfile` / `-f` argument pair and appends its value to [dockerfiles].
+     * Parses a `--dockerfile` / `-f` flag and its value.
      *
      * @param i Index of the flag argument in [args].
      * @param args Full CLI argument array.
-     * @param dockerfiles Accumulator for dockerfile path strings.
-     * @return Updated parsing position (index after the consumed pair).
-     * @throws IllegalArgumentException If the dockerfile value is missing.
+     * @param dockerfiles Accumulator list for dockerfile path strings.
+     * @return Updated parsing index after consuming the pair.
+     * @throws IllegalArgumentException If the value is missing.
      */
     private fun parseDockerfileArgument(
         i: Int,
@@ -176,17 +176,17 @@ object HadolintCli {
     /**
      * Resolves dockerfile path strings from [options] into a [ResolveResult].
      *
-     * ## Resolution behavior:
+     * ## Resolution policy:
      *
-     * - Converts each input string to a normalized absolute [Path].
-     * - Splits results into existing and missing lists.
-     * - Preserves input order.
-     *
-     * The filesystem check is injectable to support deterministic unit tests.
+     * - Each string is converted to a normalized absolute [Path].
+     * - Results are partitioned into:
+     *   - [ResolveResult.existing] (paths where [exists] returns true)
+     *   - [ResolveResult.missing] (paths where [exists] returns false)
+     * - Input order is preserved within each partition.
      *
      * @param options Parsed CLI options.
-     * @param exists Predicate that determines whether a path exists on disk.
-     * @return [ResolveResult] containing existing and missing paths.
+     * @param exists Predicate used to test filesystem existence (injectable for tests).
+     * @return [ResolveResult] containing normalized existing and missing paths.
      */
     fun resolveDockerfiles(
         options: CliOptions,
@@ -199,15 +199,12 @@ object HadolintCli {
     }
 
     /**
-     * Checks whether a command appears to be available on the current system PATH.
+     * Checks whether a command appears runnable (available on PATH).
      *
-     * This method attempts to run `<command> --version` and returns:
+     * Implementation detail: attempts to run `{sh} <command> --version` and returns true iff it exits with code `0`.
      *
-     * - `true` if the process starts and exits with code `0`
-     * - `false` if execution fails or returns a non-zero exit code
-     *
-     * @param command Program name (expected to be resolvable on PATH).
-     * @return `true` if the command appears runnable, otherwise `false`.
+     * @param command Program name expected to be resolvable on PATH.
+     * @return True if the command appears runnable.
      */
     fun hasCommand(command: String): Boolean = try {
         val process = ProcessBuilder(command, "--version")
@@ -222,10 +219,10 @@ object HadolintCli {
     /**
      * Checks whether a command line can be executed successfully.
      *
-     * This is primarily used for probing Docker availability, e.g. `docker version`.
+     * This is primarily used to probe Docker availability, e.g. `{sh} docker version`.
      *
      * @param command Command and arguments.
-     * @return `true` if the process exits with code `0`, otherwise `false`.
+     * @return True if the process exits with code `0`.
      */
     fun canRun(vararg command: String): Boolean = try {
         val process = ProcessBuilder(*command)
@@ -238,18 +235,15 @@ object HadolintCli {
     }
 
     /**
-     * Selects a [HadolintRunner] based on tool availability.
+     * Selects a [HadolintRunner] based on environment availability.
      *
-     * ## Runner selection policy:
+     * ## Policy:
      *
      * - Prefer local `hadolint` when available.
-     * - Otherwise fall back to Docker if available.
-     * - If neither is available, fail with a clear diagnostic message.
+     * - Otherwise, use Docker-based execution if Docker is available.
+     * - If neither is available, fail with a clear message.
      *
-     * @param hadolintAvailable Whether the local `hadolint` binary is available.
-     * @param dockerAvailable Whether Docker is available.
-     * @return A concrete [HadolintRunner] implementation.
-     * @throws IllegalStateException If neither execution strategy is available.
+     * @throws IllegalStateException If no supported execution strategy is available.
      */
     fun selectRunner(hadolintAvailable: Boolean, dockerAvailable: Boolean): HadolintRunner =
         if (hadolintAvailable) {
@@ -260,11 +254,54 @@ object HadolintCli {
             error("Could not find `hadolint` and Docker is not available. Install one of them and try again.")
         }
 
+    /**
+     * Internal representation of parse outcomes.
+     *
+     * This avoids early returns in [runCliJson] by modeling:
+     *
+     * - [Ok] -> parsing succeeded; continue execution.
+     * - [Done] -> parsing triggered an immediate result (help or parse error).
+     */
     private sealed interface Parsed {
+
+        /**
+         * Parsing succeeded.
+         *
+         * @property options Parsed [CliOptions].
+         */
         data class Ok(val options: CliOptions) : Parsed
+
+        /**
+         * Parsing resulted in a terminal response.
+         *
+         * Examples:
+         * - Help requested
+         * - Invalid flag/value detected
+         *
+         * @property result Final [HadolintCliResult] to emit.
+         */
         data class Done(val result: HadolintCliResult) : Parsed
     }
 
+    /**
+     * Runs the CLI workflow and returns a structured JSON-friendly result.
+     *
+     * ## Contract:
+     *
+     * - Always returns a [HadolintCliResult].
+     * - Always prints exactly one JSON object to [out] via [emitResult].
+     * - Diagnostic/progress output is written to [err].
+     *
+     * @param args Raw CLI arguments.
+     * @param runnerSelector Strategy for selecting the runner (injectable for tests).
+     * @param hadolintAvailable Probe for local `hadolint` availability.
+     * @param dockerAvailable Probe for Docker availability.
+     * @param exists Filesystem existence predicate (injectable for tests).
+     * @param out JSON output stream.
+     * @param err Diagnostic output stream.
+     * @param nowEpochMs Time source (injectable for deterministic tests).
+     * @return The emitted [HadolintCliResult].
+     */
     fun runCliJson(
         args: Array<String>,
         runnerSelector: (Boolean, Boolean) -> HadolintRunner = ::selectRunner,
@@ -276,6 +313,9 @@ object HadolintCli {
         nowEpochMs: () -> Long = { System.currentTimeMillis() }
     ): HadolintCliResult {
         val started = nowEpochMs()
+
+        // Defaults used when parsing fails or help is requested. This keeps the schema stable even for early
+        // termination paths.
         val defaultOptions = CliOptions(
             dockerfiles = listOf("Dockerfile"),
             failureThreshold = ValidThreshold.default,
@@ -284,23 +324,39 @@ object HadolintCli {
 
         val result = when (val parsed: Parsed = parseAndExecute(args, err, defaultOptions, started, nowEpochMs)) {
             is Parsed.Done -> parsed.result
-            is Parsed.Ok -> {
-                lintDockerfiles(
-                    parsed,
-                    exists,
-                    err,
-                    runnerSelector,
-                    hadolintAvailable,
-                    dockerAvailable,
-                    nowEpochMs,
-                    started
-                )
-            }
+            is Parsed.Ok -> lintDockerfiles(
+                parsed = parsed,
+                exists = exists,
+                err = err,
+                runnerSelector = runnerSelector,
+                hadolintAvailable = hadolintAvailable,
+                dockerAvailable = dockerAvailable,
+                nowEpochMs = nowEpochMs,
+                started = started
+            )
         }
 
         return emitResult(out, result)
     }
 
+    /**
+     * Runs resolution and linting for parsed options and builds the final [HadolintCliResult].
+     *
+     * This function is intentionally side-effect-light:
+     *
+     * - All user-facing logs are sent through [PrintStreamLintLogger] to [err].
+     * - It returns a fully populated result object, including timestamps and runner identification.
+     *
+     * @param parsed Successful parse result containing [CliOptions].
+     * @param exists Filesystem existence predicate.
+     * @param err Diagnostic stream (human output).
+     * @param runnerSelector Runner selection strategy.
+     * @param hadolintAvailable Availability probe.
+     * @param dockerAvailable Availability probe.
+     * @param nowEpochMs Time source.
+     * @param started Start timestamp captured by [runCliJson].
+     * @return Fully populated [HadolintCliResult].
+     */
     private fun lintDockerfiles(
         parsed: Parsed.Ok,
         exists: (Path) -> Boolean,
@@ -313,15 +369,18 @@ object HadolintCli {
     ): HadolintCliResult {
         val options = parsed.options
         val logger = PrintStreamLintLogger(err)
+
         val resolved = resolveDockerfilePaths(options, exists, logger)
+
         val execution = executeLinting(
-            runnerSelector,
-            hadolintAvailable,
-            dockerAvailable,
-            resolved,
-            options,
-            logger
+            runnerSelector = runnerSelector,
+            hadolintAvailable = hadolintAvailable,
+            dockerAvailable = dockerAvailable,
+            resolved = resolved,
+            options = options,
+            logger = logger
         )
+
         val finished = nowEpochMs()
 
         return HadolintCliResult(
@@ -337,6 +396,24 @@ object HadolintCli {
         )
     }
 
+    /**
+     * Parses arguments and materializes early-termination results.
+     *
+     * This function centralizes the “parse stage” policy:
+     *
+     * - Help requested -> print usage to [err], return exit code `0`.
+     * - Parse/validation error -> print a message to [err], return exit code `1`.
+     * - Success -> return [Parsed.Ok].
+     *
+     * Returning [Parsed.Done] avoids early returns in [runCliJson] and keeps the control flow easy to follow and test.
+     *
+     * @param args Raw CLI arguments.
+     * @param err Diagnostic stream for help/errors.
+     * @param defaultOptions Defaults used when parse does not yield [CliOptions].
+     * @param started Start timestamp captured by the caller.
+     * @param nowEpochMs Time source for the termination timestamp.
+     * @return [Parsed.Ok] on success, otherwise [Parsed.Done].
+     */
     private fun parseAndExecute(
         args: Array<String>,
         err: PrintStream,
@@ -377,6 +454,17 @@ object HadolintCli {
         )
     }
 
+    /**
+     * Serializes [result] to JSON and writes it to [out].
+     *
+     * This is the *only* place where JSON is emitted. Keeping emission centralized:
+     *
+     * - ensures stdout stays parseable,
+     * - avoids partial JSON,
+     * - and makes it easy to evolve the schema.
+     *
+     * @return The same [HadolintCliResult] for convenient call chaining/testing.
+     */
     private fun emitResult(
         out: PrintStream,
         result: HadolintCliResult
@@ -386,9 +474,10 @@ object HadolintCli {
     }
 
     /**
-     * CLI entry point.
+     * Process entry point.
      *
-     * Delegates to [runCli] and terminates the JVM with the returned exit code.
+     * - Executes [runCliJson], which prints JSON to stdout.
+     * - Exits with [HadolintCliResult.exitCode] so the CLI remains shell-friendly.
      *
      * @param args Raw CLI arguments.
      */
