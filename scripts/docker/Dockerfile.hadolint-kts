@@ -1,4 +1,4 @@
-# ## Kotlin + Hadolint Quality Runner ##
+# ## Kotlin + Hadolint Quality Runner
 #
 # ### This image provides:
 #
@@ -19,33 +19,29 @@
 # - Ensure ./scripts/quality/invoke-hadolint.kts exists in the workdir
 # - Run the container; the default command executes the Kotlin script
 #
-# Example:
-#   docker run --rm -v "$PWD:/workspace" <image>
+# ### Example:
 #
-# Notes:
-# - This Dockerfile assumes BuildKit is enabled to use --mount=type=cache.
-#   If BuildKit is disabled, remove the --mount lines (the rest still works).
-# - The Kotlin distribution is installed under /opt/kotlin/<version> with a
-#   stable symlink at /opt/kotlin/current.
+#     docker run --rm -v "$PWD:/workspace" <image>
+#
+# ### Notes:
+#
+# - This Dockerfile assumes BuildKit is enabled to use --mount=type=cache. If BuildKit is disabled,
+#   remove the --mount lines (the rest still works).
+# - The Kotlin distribution is installed under /opt/kotlin/<version> with a stable symlink at
+#   /opt/kotlin/current.
 # - Kotlin CLI entry points are available on PATH via /usr/local/bin:
 #     - kotlin
 #     - kotlinc
-# -----------------------------------------------------------------------------
 
 FROM eclipse-temurin:21-jdk-jammy
 
-# -----------------------------------------------------------------------------
-# Version pins and integrity checks
-# -----------------------------------------------------------------------------
+# ## Version pins and integrity checks
 #
-# Kotlin is fetched from:
-#   https://github.com/JetBrains/kotlin/releases
+# - Kotlin is fetched from: https://github.com/JetBrains/kotlin/releases
+# - Hadolint is fetched from: https://github.com/hadolint/hadolint/releases
 #
-# Hadolint is fetched from:
-#   https://github.com/hadolint/hadolint/releases
-#
-# SHA-256 pins provide supply-chain integrity: the build fails if the downloaded
-# artifact does not match the expected checksum.
+# SHA-256 pins provide supply-chain integrity: the build fails if the downloaded artifact does not
+# match the expected checksum.
 ARG KOTLIN_VERSION=2.1.20
 ARG KOTLIN_SHA256=A118197B0DE55FFAB2BC8D5CD03A5E39033CFB53383D6931BC761DEC0784891A
 
@@ -53,19 +49,15 @@ ARG HADOLINT_VERSION=v2.12.0
 ARG HADOLINT_SHA256_X86_64=56DE6D5E5EC427E17B74FA48D51271C7FC0D61244BF5C90E828AAB8362D55010
 ARG HADOLINT_SHA256_ARM64=5798551BF19F33951881F15EB238F90AEF023F11E7EC7E9F4C37961CB87C5DF6
 
-# -----------------------------------------------------------------------------
-# Runtime user configuration
-# -----------------------------------------------------------------------------
+# ## Runtime user configuration
 #
-# Runs as a non-root user by default for safer execution. The UID/GID are
-# configurable so CI can align ownership with the host runner user.
+# Runs as a non-root user by default for safer execution. The UID/GID are configurable so CI can
+# align ownership with the host runner user.
 ARG USER_NAME=kalm
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
-# -----------------------------------------------------------------------------
-# Install tooling + Kotlin + hadolint (single layer for smaller images)
-# -----------------------------------------------------------------------------
+# ## Install tooling + Kotlin + hadolint (single layer for smaller images)
 #
 # BuildKit cache mounts:
 # - /var/cache/apt       speeds up package downloads across builds
@@ -79,7 +71,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     set -eux; \
     \
-    # Base utilities:
+    # ### Base utilities:
     # - ca-certificates: TLS trust store
     # - curl: downloads
     # - unzip: Kotlin compiler ZIP extraction
@@ -88,12 +80,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends ca-certificates curl unzip coreutils; \
     rm -rf /var/lib/apt/lists/*; \
     \
-    # -------------------------------------------------------------------------
-    # Install Kotlin compiler distribution
-    # -------------------------------------------------------------------------
+    # ### Install Kotlin compiler distribution
     curl -fsSL -o /tmp/kotlin-compiler.zip \
       "https://github.com/JetBrains/kotlin/releases/download/v${KOTLIN_VERSION}/kotlin-compiler-${KOTLIN_VERSION}.zip"; \
-    echo "${KOTLIN_SHA256}  /tmp/kotlin-compiler.zip" | sha256sum -c -; \
+    printf '%s  %s\n' "${KOTLIN_SHA256}" "/tmp/kotlin-compiler.zip" | sha256sum -c -; \
     mkdir -p "/opt/kotlin/${KOTLIN_VERSION}"; \
     unzip -q /tmp/kotlin-compiler.zip -d "/opt/kotlin/${KOTLIN_VERSION}"; \
     \
@@ -105,9 +95,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     ln -sfn /opt/kotlin/current/bin/kotlinc /usr/local/bin/kotlinc; \
     rm /tmp/kotlin-compiler.zip; \
     \
-    # -------------------------------------------------------------------------
-    # Install hadolint (arch-aware)
-    # -------------------------------------------------------------------------
+    # ### Install hadolint (arch-aware)
     #
     # dpkg --print-architecture outputs Debian-style arch names:
     # - amd64
@@ -116,20 +104,18 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # hadolint releases use:
     # - x86_64
     # - arm64
-    arch="$(dpkg --print-architecture)"; \
-    case "$arch" in \
+    arch="$$(dpkg --print-architecture)"; \
+    case "$${arch}" in \
         amd64) hadolint_arch="x86_64"; hadolint_sha="${HADOLINT_SHA256_X86_64}" ;; \
         arm64) hadolint_arch="arm64"; hadolint_sha="${HADOLINT_SHA256_ARM64}" ;; \
-        *) echo "Unsupported architecture: ${arch}" >&2; exit 1 ;; \
+        *) printf 'Unsupported architecture: %s\n' "${arch}" >&2; exit 1 ;; \
     esac; \
     curl -fsSL -o /usr/local/bin/hadolint \
       "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-${hadolint_arch}"; \
-    echo "${hadolint_sha}  /usr/local/bin/hadolint" | sha256sum -c -; \
+    printf '%s  %s\n' "${hadolint_sha}" "/usr/local/bin/hadolint" | sha256sum -c -; \
     chmod +x /usr/local/bin/hadolint; \
     \
-    # -------------------------------------------------------------------------
-    # Non-root user + workspace setup
-    # -------------------------------------------------------------------------
+    # ### Non-root user + workspace setup
     groupadd --gid "${GROUP_ID}" "${USER_NAME}"; \
     useradd --uid "${USER_ID}" --gid "${GROUP_ID}" --create-home "${USER_NAME}"; \
     mkdir -p /workspace; \
@@ -141,7 +127,8 @@ WORKDIR /workspace
 # Drop privileges: run container commands as the dedicated user
 USER ${USER_NAME}
 
-# Default command:
+# ## Default command:
+#
 # - Executes the Kotlin script that drives hadolint checks.
 # - Can be overridden via: docker run ... <image> <other-command>
 CMD ["kotlin", "./scripts/quality/invoke-hadolint.kts"]
