@@ -179,7 +179,7 @@ class HadolintCliTest : FreeSpec({
                     result.targets shouldContainExactly listOf(existingFile.toString())
                     result.missing shouldContainExactly emptyList()
                     result.failed shouldContainExactly listOf(existingFile.toString())
-                    result.runner shouldBe "FakeRunner"
+                    result.runner shouldBe "unknown"
                     result.startedAtEpochMs shouldBe 100L
                     result.finishedAtEpochMs shouldBe 110L
                     runner.runs shouldContainExactly listOf(existingFile to ValidThreshold.ERROR)
