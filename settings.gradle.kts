@@ -53,3 +53,4 @@ rootProject.name = "kalm"
 // Include project modules
 include(":core")
 include(":platform")
+include(":tools")

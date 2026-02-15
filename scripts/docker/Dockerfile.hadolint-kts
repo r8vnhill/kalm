@@ -16,8 +16,7 @@
 # ### Usage:
 #
 # - Place the repository under /workspace (bind mount in CI/local)
-# - Ensure ./scripts/quality/invoke-hadolint.kts exists in the workdir
-# - Run the container; the default command executes the Kotlin script
+# - Run the container; the default command executes the Kotlin CLI
 #
 # ### Example:
 #
@@ -104,11 +103,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     # hadolint releases use:
     # - x86_64
     # - arm64
-    arch="$$(dpkg --print-architecture)"; \
-    case "$${arch}" in \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
         amd64) hadolint_arch="x86_64"; hadolint_sha="${HADOLINT_SHA256_X86_64}" ;; \
         arm64) hadolint_arch="arm64"; hadolint_sha="${HADOLINT_SHA256_ARM64}" ;; \
-        *) printf 'Unsupported architecture: %s\n' "${arch}" >&2; exit 1 ;; \
+        *) printf 'Unsupported architecture: %s\n' "$arch" >&2; exit 1 ;; \
     esac; \
     curl -fsSL -o /usr/local/bin/hadolint \
       "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-${hadolint_arch}"; \
@@ -121,6 +120,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     mkdir -p /workspace; \
     chown "${USER_NAME}:${USER_NAME}" /workspace
 
+# Build the hadolint CLI from source to enable unit testing and reuse
+COPY tools/src/main/kotlin /opt/hadolint-cli-src
+
+RUN kotlinc /opt/hadolint-cli-src -d /opt/hadolint-cli.jar
+
 # Default working directory for builds/lint scripts
 WORKDIR /workspace
 
@@ -129,6 +133,6 @@ USER ${USER_NAME}
 
 # ## Default command:
 #
-# - Executes the Kotlin script that drives hadolint checks.
+# - Executes the Kotlin CLI that drives hadolint checks.
 # - Can be overridden via: docker run ... <image> <other-command>
-CMD ["kotlin", "./scripts/quality/invoke-hadolint.kts"]
+CMD ["kotlin", "-classpath", "/opt/hadolint-cli.jar", "cl.ravenhill.kalm.tools.hadolint.HadolintCli"]

@@ -52,7 +52,9 @@ services:
     volumes:
       - .:/workspace:cached
     working_dir: /workspace
-    entrypoint: ["kotlin", "./scripts/quality/invoke-hadolint.kts"]
+    entrypoint: ["kotlin", "-classpath", "/opt/hadolint-cli.jar", "cl.ravenhill.kalm.tools.hadolint.HadolintCli"]
+    # Pass CLI args at runtime, e.g.:
+    # `docker compose --profile hadolint run --rm hadolint-kts --failure-threshold error --dockerfile Dockerfile`
 
 volumes:
   gradle-cache: {}
