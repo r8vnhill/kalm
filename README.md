@@ -5,7 +5,7 @@
 [![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD--2--Clause-blue.svg)](LICENSE)
 [![Pre-Alpha](https://img.shields.io/badge/status-pre--alpha-orange)](#)
 
-> [!warning] Project status: Early-stage / pre-alpha  
+> [!warning] Project status: Early-stage / pre-alpha
 > This project is in active development. APIs and features are subject to change.
 
 **Planned features:**
@@ -120,31 +120,6 @@ This aggregates tests, Detekt static analysis, and API surface checks across mod
 ```
 
 Advanced configuration examples (e.g., diff branch selection, file extensions) live in `dev-resources/DOCUMENTATION_RULES.md` under “RedMadRobot Detekt Plugin”.
-
-Lint the repository Dockerfile(s) with Hadolint (Kotlin script):
-
-```powershell
-kotlinc -script ./scripts/quality/Invoke-Hadolint.kts
-```
-
-You can set a stricter or looser threshold and lint multiple files:
-
-```powershell
-kotlinc -script ./scripts/quality/Invoke-Hadolint.kts --failure-threshold error --dockerfile Dockerfile --dockerfile Dockerfile.dev
-```
-
-PowerShell compatibility wrapper (migration path):
-
-```powershell
-./scripts/quality/Invoke-Hadolint.ps1
-```
-
-Run the Kotlin Hadolint script via Docker Compose:
-
-```bash
-docker compose --profile hadolint run --rm hadolint-kts
-docker compose --profile hadolint run --rm hadolint-kts --failure-threshold error --dockerfile Dockerfile
-```
 
 ## 📚 Research Documentation
 

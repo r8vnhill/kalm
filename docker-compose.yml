@@ -52,9 +52,7 @@ services:
     volumes:
       - .:/workspace:cached
     working_dir: /workspace
-    entrypoint: ["kotlin", "./scripts/quality/Invoke-Hadolint.kts"]
-    # Pass script args at runtime, e.g.:
-    # docker compose --profile hadolint run --rm hadolint-kts --failure-threshold error --dockerfile Dockerfile
+    entrypoint: ["kotlin", "./scripts/quality/invoke-hadolint.kts"]
 
 volumes:
   gradle-cache: {}

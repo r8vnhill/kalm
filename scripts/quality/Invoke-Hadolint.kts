@@ -16,7 +16,7 @@ fun printUsage() {
     println(
         """
         Usage:
-          kotlin scripts/quality/Invoke-Hadolint.kts [options]
+          kotlin scripts/quality/invoke-hadolint.kts [options]
 
         Options:
           --dockerfile <path>           Dockerfile path to lint (repeatable)

@@ -238,17 +238,17 @@ Run PSScriptAnalyzer on PowerShell scripts with project-specific rules.
 
 **Settings:** `scripts/PSScriptAnalyzerSettings.psd1`
 
-### Invoke-Hadolint.kts / Invoke-Hadolint.ps1
+### invoke-hadolint.kts / Invoke-Hadolint.ps1
 
-Lint Dockerfiles with Hadolint using the Kotlin script implementation (`Invoke-Hadolint.kts`) with a PowerShell compatibility wrapper.
+Lint Dockerfiles with Hadolint using the Kotlin script implementation (`invoke-hadolint.kts`) with a PowerShell compatibility wrapper.
 
 **Usage:**
 ```powershell
 # Preferred: Kotlin script
-kotlinc -script .\scripts\quality\Invoke-Hadolint.kts
+kotlinc -script .\scripts\quality\invoke-hadolint.kts
 
 # Lint multiple Dockerfiles with a stricter failure threshold
-kotlinc -script .\scripts\quality\Invoke-Hadolint.kts --failure-threshold error --dockerfile Dockerfile --dockerfile Dockerfile.dev
+kotlinc -script .\scripts\quality\invoke-hadolint.kts --failure-threshold error --dockerfile Dockerfile --dockerfile Dockerfile.dev
 
 # Compatibility wrapper (delegates to .kts when Kotlin runtime is available)
 .\scripts\quality\Invoke-Hadolint.ps1 -Dockerfiles 'Dockerfile', 'Dockerfile.dev' -FailureThreshold error
