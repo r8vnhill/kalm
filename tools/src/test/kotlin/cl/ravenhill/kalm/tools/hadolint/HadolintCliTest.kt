@@ -18,6 +18,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.element
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.of
@@ -77,7 +78,7 @@ class HadolintCliTest : FreeSpec({
             "Then defaults are applied" {
                 HadolintCli.parseArgs(emptyArray()).apply {
                     dockerfiles.shouldContainExactly("Dockerfile")
-                    failureThreshold shouldBe "warning"
+                    failureThreshold shouldBe ValidThreshold.default
                     strictFiles.shouldBeFalse()
                 }
             }
@@ -99,7 +100,7 @@ class HadolintCliTest : FreeSpec({
                     )
                 ).apply {
                     dockerfiles.shouldContainExactly("Dockerfile", "Dockerfile.alt")
-                    failureThreshold shouldBe "error"
+                    failureThreshold shouldBe ValidThreshold.ERROR
                     strictFiles.shouldBeTrue()
                 }
             }
@@ -112,9 +113,9 @@ class HadolintCliTest : FreeSpec({
                 withData(
                     nameFn = { "input=${it.first}" },
                     listOf(
-                        "ERROR" to "error",
-                        "error" to "error",
-                        "Warning" to "warning"
+                        "ERROR" to ValidThreshold.ERROR,
+                        "error" to ValidThreshold.ERROR,
+                        "Warning" to ValidThreshold.WARNING,
                     )
                 ) { (input, expected) ->
                     HadolintCli.parseArgs(arrayOf("--failure-threshold", input))
@@ -169,7 +170,7 @@ class HadolintCliTest : FreeSpec({
                     )
 
                     exitCode shouldBe 1
-                    runner.runs shouldContainExactly listOf(existingFile to "error")
+                    runner.runs shouldContainExactly listOf(existingFile to ValidThreshold.ERROR)
                     out.toString(Charsets.UTF_8) shouldContain "Linting Dockerfiles"
                     err.toString(Charsets.UTF_8) shouldContain existingFile.toString()
                 }
@@ -196,7 +197,7 @@ class HadolintCliTest : FreeSpec({
                     )
 
                     exitCode shouldBe 0
-                    runner.runs shouldContainExactly listOf(existingFile to "warning")
+                    runner.runs shouldContainExactly listOf(existingFile to ValidThreshold.default)
                     err.toString(Charsets.UTF_8) shouldBe ""
                 }
             }
@@ -231,9 +232,9 @@ class HadolintCliTest : FreeSpec({
             "Then they are accepted and normalized" {
                 checkAll(validThresholdArb) { input ->
                     val options = HadolintCli.parseArgs(
-                        arrayOf("--failure-threshold", input)
+                        arrayOf("--failure-threshold", input.value)
                     )
-                    options.failureThreshold shouldBe input.lowercase()
+                    options.failureThreshold shouldBe input
                 }
             }
         }
@@ -276,9 +277,7 @@ private val validThresholds = setOf("error", "warning", "info", "style", "ignore
  * This validates that parsing is case-insensitive while still normalizing to lowercase.
  */
 private val validThresholdArb =
-    Arb.element(validThresholds).flatMap { value ->
-        Arb.of(value, value.uppercase(), value.replaceFirstChar { it.uppercase() })
-    }
+    Arb.enum<ValidThreshold>()
 
 /**
  * Property-based generator for **invalid** threshold inputs.
@@ -322,7 +321,7 @@ private val invalidThresholdArb =
  */
 private class FakeRunner(private val exitCode: Int) : HadolintRunner {
 
-    val runs = mutableListOf<Pair<Path, String>>()
+    val runs = mutableListOf<Pair<Path, ValidThreshold>>()
 
     /**
      * Returns a stable, human-readable command description.
@@ -335,7 +334,7 @@ private class FakeRunner(private val exitCode: Int) : HadolintRunner {
      * - Keep output deterministic
      * - Avoid coupling assertions to formatting details
      */
-    override fun commandDescription(file: Path, threshold: String): String =
+    override fun commandDescription(file: Path, threshold: ValidThreshold): String =
         "fake-hadolint"
 
     /**
@@ -348,7 +347,7 @@ private class FakeRunner(private val exitCode: Int) : HadolintRunner {
      *
      * No filesystem or process interaction occurs.
      */
-    override fun run(file: Path, threshold: String): Int {
+    override fun run(file: Path, threshold: ValidThreshold): Int {
         runs.add(file to threshold)
         return exitCode
     }
