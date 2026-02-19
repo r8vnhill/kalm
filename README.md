@@ -97,7 +97,7 @@ $env:JAVA_HOME = '/path/to/jdk-22'
 ./gradlew --write-locks preflight --no-daemon
 ```
 
-For detailed guidance and troubleshooting on dependency locking (strict mode, writing locks, and common errors), see [`dev-resources/DEPENDENCY_LOCKING.md`](dev-resources/DEPENDENCY_LOCKING.md).
+For dependency-locking guidance and troubleshooting, start with the wiki FAQ: [`wiki/Dependency-Locking-FAQ.md`](wiki/Dependency-Locking-FAQ.md). Keep [`dev-resources/DEPENDENCY_LOCKING.md`](dev-resources/DEPENDENCY_LOCKING.md) as a quick operational reference.
 
 ## 🧪 Quality & Verification
 

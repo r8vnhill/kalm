@@ -1,5 +1,11 @@
 # Dependency Locking: How to Use and Troubleshoot
 
+> [!NOTE]
+> This file is a quick operational reference.
+> Canonical documentation lives in:
+> - `wiki/Dependency-Locking-FAQ.md`
+> - `wiki/Gradle-Build-Configuration-and-Tasks.md`
+
 This project uses **Gradle Dependency Locking** to ensure reproducible builds across machines and CI.
 Lock files capture the exact versions that were resolved for each configuration.
 
@@ -78,6 +84,43 @@ You only need to update locks when:
 * The version catalog changes (e.g., updated Kotlin or libraries).
 
 When that happens, regenerate locks with `--write-locks`.
+
+## Quick FAQ
+
+### Do I need `--write-locks` on every build?
+
+No. Use `--write-locks` only when dependency resolution changes and you intentionally want to update lockfiles.
+
+### Why did `dokkaGenerate` or `detekt` fail with “locked but does not have lock state”?
+
+Those tasks introduced or resolved a configuration with no lock entry yet. Run that same task once with `--write-locks`, commit the lockfile diff, and rerun normally.
+
+### Which lockfiles should I commit?
+
+Always commit all changed lockfiles, usually:
+
+* `gradle.lockfile`
+* `settings-gradle.lockfile`
+* `<module>/gradle.lockfile`
+
+### Can I disable strict locking temporarily?
+
+Avoid it. `LockMode.STRICT` is the guardrail that keeps local and CI resolution identical.
+If you are blocked, fix by generating missing lock state instead of relaxing strict mode.
+
+### How do I update only one dependency lock?
+
+Use Gradle’s selective update flag, for example:
+
+```pwsh
+./gradlew :core:dependencies --update-locks org.jetbrains.kotlin:kotlin-stdlib --write-locks
+```
+
+Then verify with a normal build and review the lockfile diff.
+
+### Should CI run with `--write-locks`?
+
+No. CI should validate lockfiles, not mutate them. Lock updates should be explicit maintenance commits.
 
 ### Common Commands
 
