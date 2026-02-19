@@ -39,38 +39,23 @@
             --module :core `
             --configuration testRuntimeClasspath
 
+.EXAMPLE
     Show differences:
         ./scripts/gradle/Invoke-LocksCli.ps1 diff
 
 .PARAMETER CliArgs
-    Arguments forwarded to the locks CLI. All remaining arguments are treated as
-    CLI input and passed through unchanged.
+    Arguments forwarded to the locks CLI. All remaining arguments are treated as CLI input and
+    passed through unchanged.
 
 .OUTPUTS
-    None. The script executes an emitted shell command and exits with that
-    command’s exit code.
+    None. The script executes an emitted shell command and exits with that command’s exit code.
 
 .NOTES
-    Requirements:
-      - PowerShell 7.4+
-      - A valid Gradle wrapper at the repository root
-      - Helper scripts in ../lib:
-          - Get-KalmRepoRoot.ps1
-          - Join-QuotedArgs.ps1
-          - Find-LocksCliCommand.ps1
+    ## Security note:
 
-    Design considerations:
-      - Uses `Set-StrictMode -Version 3.0` for defensive scripting.
-      - Uses `$ErrorActionPreference = 'Stop'` for fail-fast behavior.
-      - Uses `$InformationPreference = 'Continue'` to surface executed commands.
-      - Uses `Write-Verbose` for trace-level diagnostics.
-      - Command extraction is delegated to `Find-LocksCliCommand` to avoid
-        brittle "last-line wins" parsing.
-
-    Security note:
-      The command executed is produced by the repository’s own Gradle task.
-      If the Gradle output is compromised, this script will execute the emitted
-      command. Ensure CI and repository integrity controls are in place.
+    The command executed is produced by the repository’s own Gradle task.
+    If the Gradle output is compromised, this script will execute the emitted
+    command. Ensure CI and repository integrity controls are in place.
 
 .LINK
     Gradle Dependency Locking:
