@@ -137,7 +137,7 @@ $argsString = Join-QuotedArgs -Arguments $cliArgs
 # print JSON to stdout for downstream processing.
 $gradleArgs = @(':tools:runHadolintCli', "--args=$argsString")
 
-Write-Host ("Running: ./gradlew {0}" -f ($gradleArgs -join ' '))
+Write-Information ("Running: ./gradlew {0}" -f ($gradleArgs -join ' ')) -InformationAction Continue
 
 # Ensure Gradle runs from the repository root for consistent resolution of relative paths.
 Push-Location $repoRoot

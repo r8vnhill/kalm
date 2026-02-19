@@ -58,7 +58,7 @@ try {
     if ([string]::IsNullOrWhiteSpace($command)) {
         throw "Locks CLI did not return a command."
     }
-    Write-Host ("Executing: {0}" -f $command)
+    Write-Information ("Executing: {0}" -f $command) -InformationAction Continue
     if ($IsWindows) {
         & cmd /c $command
     } else {
