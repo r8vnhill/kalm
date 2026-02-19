@@ -36,10 +36,18 @@ plugins {
 
     // Registers Detekt for subprojects without applying it to the root.
     alias(libs.plugins.detekt) apply false
+    // Applies Dokka at root to enable aggregated multi-module documentation.
+    alias(libs.plugins.dokka)
 
     // Adds dependency maintenance helpers:
     alias(libs.plugins.version.catalog.update) // Version Catalog Update (VCU)
     alias(libs.plugins.ben.manes.versions) // Ben Manes dependency updates report
+}
+
+dependencies {
+    // Include JVM modules in root Dokka aggregation.
+    dokka(projects.core)
+    dokka(projects.tools)
 }
 
 /**

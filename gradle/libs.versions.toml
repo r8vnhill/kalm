@@ -9,6 +9,7 @@ kotlin = "2.3.20-Beta2"
 kotlin-bin-compatibility-validator = "0.18.1"
 kotlinx-serialization = "1.10.0"
 version-catalog-update = "1.0.1"
+dokka = "2.1.0"
 
 [libraries]
 # Gradle plugins used in build-logic dependencies
@@ -17,6 +18,7 @@ ben-manes-versions-plugin = { module = "com.github.ben-manes:gradle-versions-plu
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 detekt-redmadrobot-plugin = { module = "com.redmadrobot.detekt:com.redmadrobot.detekt.gradle.plugin", version.ref = "detekt-redmadrobot" }
+dokka-gradle-plugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
@@ -39,6 +41,7 @@ foojay-resolver = { id = "org.gradle.toolchains.foojay-resolver-convention", ver
 kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-bin-compatibility-validator" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "version-catalog-update" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 
 [bundles]
 kotest = [

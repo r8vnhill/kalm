@@ -77,6 +77,11 @@ dependencies {
      * convention plugins can reference its classes safely.
      */
     implementation(libs.detekt.redmadrobot.plugin)
+
+    /**
+     * Dokka Gradle Plugin: Enables API documentation tasks from convention plugins.
+     */
+    implementation(libs.dokka.gradle.plugin)
 }
 
 /*
