@@ -45,7 +45,7 @@ plugins {
 }
 
 dependencies {
-    // Include JVM modules in root Dokka aggregation.
+    // Include JVM modules in the root Dokka aggregation.
     dokka(projects.core)
     dokka(projects.tools)
 }

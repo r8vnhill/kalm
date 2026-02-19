@@ -159,6 +159,30 @@ Run Gradle with a specific JDK version (bypasses JAVA_HOME).
 
 Bash/Zsh equivalent of the PowerShell script.
 
+### Invoke-LocksCli.ps1
+
+Runs dependency-lock workflows through the dedicated CLI in `:tools` instead of parameterized Gradle tasks.
+
+**Usage:**
+```powershell
+# Refresh all lockfiles
+.\scripts\gradle\Invoke-LocksCli.ps1 write-all
+
+# Refresh lockfiles for one module
+.\scripts\gradle\Invoke-LocksCli.ps1 write-module --module :core
+
+# Refresh one configuration lock state
+.\scripts\gradle\Invoke-LocksCli.ps1 write-configuration --module :core --configuration testRuntimeClasspath
+
+# Show lockfile diff command
+.\scripts\gradle\Invoke-LocksCli.ps1 diff
+```
+
+**Why this exists:**
+- Keeps Gradle tasks non-interactive and deterministic.
+- Moves argument-heavy workflows into a CLI tool (`cl.ravenhill.kalm.tools.locks.DependencyLocksCli`).
+- Provides a single script entrypoint for contributors.
+
 ---
 
 ## Container Usage

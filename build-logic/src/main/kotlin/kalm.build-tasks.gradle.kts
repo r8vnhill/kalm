@@ -6,6 +6,29 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import tasks.SyncVersionPropertiesTask
 
+val allowUnstableCoordinates: List<String> = providers
+    .gradleProperty("kalm.dependencyUpdates.unstableAllowlist")
+    .orNull
+    ?.split(",")
+    ?.map { it.trim() }
+    ?.filter { it.isNotEmpty() }
+    ?: emptyList()
+
+fun String.matchesCoordinatePattern(group: String, name: String): Boolean {
+    val parts = split(":", limit = 2)
+    if (parts.size != 2) {
+        return false
+    }
+    val groupPattern = parts[0]
+    val namePattern = parts[1]
+    val groupMatches = groupPattern == "*" || groupPattern == group
+    val nameMatches = namePattern == "*" || namePattern == name
+    return groupMatches && nameMatches
+}
+
+fun isAllowedUnstableCoordinate(group: String, name: String): Boolean =
+    allowUnstableCoordinates.any { it.matchesCoordinatePattern(group, name) }
+
 /**
  * ## Dependency Updates Policy (ben-manes/gradle-versions-plugin)
  *
@@ -64,7 +87,9 @@ tasks.withType<DependencyUpdatesTask>().configureEach {
 
     rejectVersionIf {
         val v = candidate.version.lowercase()
-        preRelease.containsMatchIn(v)
+        val isPreRelease = preRelease.containsMatchIn(v)
+        val isAllowlisted = isAllowedUnstableCoordinate(candidate.group, candidate.module)
+        isPreRelease && !isAllowlisted
     }
 
     /**
@@ -165,6 +190,42 @@ val dependencyMaintenance: TaskProvider<Task> = tasks.register("dependencyMainte
         tasks.named(versionCatalogUpdate),
         dependencyUpdatesNoParallelTask
     )
+}
+
+/**
+ * ## Dependency Locking Helpers
+ *
+ * These tasks encode common lockfile workflows so contributors do not need to memorize long commands.
+ * They print copy-paste commands because `--write-locks` is a command-line switch, not a task input.
+ */
+tasks.register("locksWriteAll") {
+    group = "dependencies"
+    description = "Prints the recommended command to refresh all dependency lockfiles."
+    notCompatibleWithConfigurationCache("Guidance task; no need to store configuration cache state.")
+    doLast {
+        logger.lifecycle("./gradlew preflight --write-locks --no-parallel")
+    }
+}
+
+tasks.register("locksCliHelp") {
+    group = "dependencies"
+    description = "Prints examples for the lock workflow CLI wrapper."
+    notCompatibleWithConfigurationCache("Guidance task; no need to store configuration cache state.")
+    doLast {
+        logger.lifecycle("./scripts/gradle/Invoke-LocksCli.ps1 write-module --module :core")
+        logger.lifecycle(
+            "./scripts/gradle/Invoke-LocksCli.ps1 write-configuration --module :core --configuration testRuntimeClasspath"
+        )
+    }
+}
+
+tasks.register("locksDiff") {
+    group = "dependencies"
+    description = "Prints a git diff command for lockfiles."
+    notCompatibleWithConfigurationCache("Guidance task; no need to store configuration cache state.")
+    doLast {
+        logger.lifecycle("git diff -- **/gradle.lockfile settings-gradle.lockfile")
+    }
 }
 
 /**

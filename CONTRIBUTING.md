@@ -78,6 +78,8 @@ Additional flag:
 
 When possible, prefer using the PowerShell automation scripts under the `scripts/` directory for Git and submodule workflows (for example, `Sync-WikiOnly.ps1` and `Sync-RepoAndWiki.ps1`). These scripts encapsulate safety checks (clean working tree assertions), support `-WhatIf`/`-Confirm`, and handle common corner cases such as detecting submodule branches and staging pointer updates. Use the Gradle `syncWiki` task for quick pulls when you only need to refresh the pointer locally without pushing changes.
 
+For Gradle-related operational workflows that need runtime arguments, prefer a `tools/` CLI plus a `scripts/` wrapper over parameterized Gradle tasks. Keep Gradle tasks primarily for deterministic wiring/orchestration.
+
 **Wiki conventions:**
 - Use clear section headers and link liberally between pages.
 - Include code examples from the main repo (reference specific files/lines).

@@ -85,6 +85,13 @@ You only need to update locks when:
 
 When that happens, regenerate locks with `--write-locks`.
 
+> [!TIP]
+> For module/configuration-specific lock workflows, prefer the CLI wrapper:
+> - `./scripts/gradle/Invoke-LocksCli.ps1 write-module --module :core`
+> - `./scripts/gradle/Invoke-LocksCli.ps1 write-configuration --module :core --configuration testRuntimeClasspath`
+>
+> Design principle: keep Gradle tasks wiring-only; use `tools/` CLIs plus `scripts/` wrappers for runtime input.
+
 ## Quick FAQ
 
 ### Do I need `--write-locks` on every build?

@@ -11,6 +11,8 @@ Supported PowerShell
 Imported symbols
 - Set-KalmDryRun ([bool]) — Set the dry-run flag (true = dry-run)
 - Get-KalmDryRun () -> [bool] — Read the current dry-run value
+- Join-QuotedArgs ([string[]]) -> [string] — Quote and join args for Gradle `--args=` forwarding (dot-sourced helper in `scripts/lib/Join-QuotedArgs.ps1`)
+- Find-JsonObjectLine ([string[]]) -> [string|null] — Find the last valid JSON object line in mixed command output (dot-sourced helper in `scripts/lib/Find-JsonObjectLine.ps1`)
 
 Notes
 - `Reset-KalmDryRun` exists as an internal test helper but is not exported by the module's public API.

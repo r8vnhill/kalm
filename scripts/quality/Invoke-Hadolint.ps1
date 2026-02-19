@@ -68,43 +68,8 @@ $ErrorActionPreference = 'Stop'
 # Import helper that discovers the repository root from the current script directory. Keeping this
 # as a separate function avoids duplicating "repo root detection" logic across scripts.
 . (Join-Path $PSScriptRoot '..' 'lib' 'Get-KalmRepoRoot.ps1')
-
-function Join-QuotedArgs {
-    <#
-    .SYNOPSIS
-        Converts an argument list into a single string suitable for Gradle's `--args=` forwarding.
-
-    .DESCRIPTION
-        Gradle expects a single string for `--args=`. That means we must reconstruct the CLI arguments as a single value, including quoting.
-
-        ## Strategy:
-
-        - Quote *every* argument to ensure stable parsing regardless of spaces or special characters.
-        - Escape backslashes and quotes to prevent accidental unquoting or truncation.
-
-        This reduces cross-platform variance (Windows/Linux shells) and avoids subtle parsing bugs.
-
-    .PARAMETER Arguments
-        Argument tokens to quote and join.
-
-    .OUTPUTS
-        System.String. A single command-line string.
-    #>
-    [OutputType([string])]
-    param(
-        [Parameter(Mandatory)]
-        [string[]] $Arguments
-    )
-
-    $escaped = foreach ($argument in $Arguments) {
-        # Quote all args for stable parsing by Gradle's --args forwarding.
-        # - Escape backslashes first so they are not consumed during later parsing.
-        # - Escape double quotes so the argument stays intact.
-        '"' + ($argument -replace '\\', '\\\\' -replace '"', '\"') + '"'
-    }
-
-    return ($escaped -join ' ')
-}
+. (Join-Path $PSScriptRoot '..' 'lib' 'Join-QuotedArgs.ps1')
+. (Join-Path $PSScriptRoot '..' 'lib' 'Find-JsonObjectLine.ps1')
 
 # Resolve the repository root so the wrapper can be executed from any working directory.
 $repoRoot = Get-KalmRepoRoot -StartPath $PSScriptRoot
@@ -178,6 +143,7 @@ Write-Host ("Running: ./gradlew {0}" -f ($gradleArgs -join ' '))
 Push-Location $repoRoot
 try {
     # Capture stdout so we can parse the Kotlin CLI JSON payload into native PowerShell objects.
+    # Gradle may emit additional logs before/after the JSON line.
     $rawOutput = & $gradlew @gradleArgs
     $exitCode = $LASTEXITCODE
 
@@ -185,7 +151,11 @@ try {
         throw "Hadolint CLI did not produce JSON output."
     }
 
-    $jsonText = $rawOutput -join [System.Environment]::NewLine
+    $jsonText = Find-JsonObjectLine -Lines $rawOutput
+    if ([string]::IsNullOrWhiteSpace($jsonText)) {
+        $rawText = $rawOutput -join [System.Environment]::NewLine
+        throw "Failed to locate Hadolint JSON payload in Gradle output. Raw output:`n$rawText"
+    }
 
     try {
         $result = $jsonText | ConvertFrom-Json -ErrorAction Stop

@@ -102,3 +102,10 @@ tasks.register<JavaExec>("runHadolintCli") {
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("cl.ravenhill.kalm.tools.hadolint.HadolintCli")
 }
+
+tasks.register<JavaExec>("runLocksCli") {
+    group = "verification"
+    description = "Runs cl.ravenhill.kalm.tools.locks.DependencyLocksCli"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("cl.ravenhill.kalm.tools.locks.DependencyLocksCli")
+}
