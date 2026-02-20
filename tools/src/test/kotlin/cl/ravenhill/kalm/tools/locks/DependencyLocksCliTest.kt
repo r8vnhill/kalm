@@ -157,4 +157,42 @@ class DependencyLocksCliTest : FreeSpec({
                 DependencyLocksCli.CliResult.Failure("Duplicate option --json")
         }
     }
+
+    "Given --json placement variations" - {
+        "Then JSON flag placement does not change command semantics" - {
+            withData(
+                nameFn = { it.first },
+                listOf(
+                    "json-before-command" to arrayOf("--json", "write-all"),
+                    "json-after-command" to arrayOf("write-all", "--json"),
+                    "json-between-command-and-options" to
+                        arrayOf("write-module", "--json", "--module", ":core")
+                )
+            ) { (_, args) ->
+                val expected = when {
+                    "write-module" in args -> DependencyLocksCli.CliResult.Success(
+                        "./gradlew \":core:dependencies\" --write-locks --no-parallel"
+                    )
+                    else -> DependencyLocksCli.CliResult.Success(
+                        "./gradlew preflight --write-locks --no-parallel"
+                    )
+                }
+                DependencyLocksCli.run(args) shouldBe expected
+            }
+        }
+    }
+
+    "Given -- sentinel behavior" - {
+        "Then options after sentinel are ignored for unknown-option detection" {
+            DependencyLocksCli.run(arrayOf("write-module", "--module", ":core", "--", "--wat")) shouldBe
+                DependencyLocksCli.CliResult.Success(
+                    "./gradlew \":core:dependencies\" --write-locks --no-parallel"
+                )
+        }
+
+        "Then options before sentinel still validate" {
+            DependencyLocksCli.run(arrayOf("write-module", "--module", "--", ":core")) shouldBe
+                DependencyLocksCli.CliResult.Failure("Missing value for option --module")
+        }
+    }
 })
