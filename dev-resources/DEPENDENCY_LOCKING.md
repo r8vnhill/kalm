@@ -6,55 +6,53 @@
 > - `wiki/Dependency-Locking-FAQ.md`
 > - `wiki/Gradle-Build-Configuration-and-Tasks.md`
 
-This project uses **Gradle Dependency Locking** to ensure reproducible builds across machines and CI.
-Lock files capture the exact versions that were resolved for each configuration.
+This project uses **Gradle Dependency Locking** to ensure reproducible builds across machines and CI. Lock files
+capture the exact versions that were resolved for each configuration.
 
 ---
 
 ## Table of Contents
 
 - [Dependency Locking: How to Use and Troubleshoot](#dependency-locking-how-to-use-and-troubleshoot)
-  - [Table of Contents](#table-of-contents)
-  - [How Locking Is Configured in This Repository](#how-locking-is-configured-in-this-repository)
-    - [Example: Before and After](#example-before-and-after)
-  - [Day-to-Day Use](#day-to-day-use)
-    - [Common Commands](#common-commands)
-  - [Troubleshooting](#troubleshooting)
-    - [❗ “Configuration ':core:XYZ' is locked but does not have lock state”](#-configuration-corexyz-is-locked-but-does-not-have-lock-state)
-      - [Cause:](#cause)
-      - [Fix](#fix)
-    - [⚠️ Detekt Fails Under Strict Locking](#️-detekt-fails-under-strict-locking)
-      - [Symptom](#symptom)
-      - [Fix](#fix-1)
-    - [🔄 After Changing `libs.versions.toml`](#-after-changing-libsversionstoml)
-    - [⚙️ Configuration Cache Warnings](#️-configuration-cache-warnings)
-    - [📦 Dependency Update Tasks](#-dependency-update-tasks)
-  - [Policies and CI Checklist](#policies-and-ci-checklist)
-    - [✅ CI Quick Checks](#-ci-quick-checks)
-  - [Why Avoid `allprojects { … }` for Global Wiring?](#why-avoid-allprojects----for-global-wiring)
-  - [📚 Further Reading](#-further-reading)
+    - [Table of Contents](#table-of-contents)
+    - [How Locking Is Configured in This Repository](#how-locking-is-configured-in-this-repository)
+        - [Example: Before and After](#example-before-and-after)
+    - [Day-to-Day Use](#day-to-day-use)
+        - [Common Commands](#common-commands)
+    - [Troubleshooting](#troubleshooting)
+        - [❗ “Configuration ':core:XYZ' is locked but does not have lock state”](#-configuration-corexyz-is-locked-but-does-not-have-lock-state)
+            - [Cause:](#cause)
+            - [Fix](#fix)
+        - [⚠️ Detekt Fails Under Strict Locking](#️-detekt-fails-under-strict-locking)
+            - [Symptom](#symptom)
+            - [Fix](#fix-1)
+        - [🔄 After Changing `libs.versions.toml`](#-after-changing-libsversionstoml)
+        - [⚙️ Configuration Cache Warnings](#️-configuration-cache-warnings)
+        - [📦 Dependency Update Tasks](#-dependency-update-tasks)
+    - [Policies and CI Checklist](#policies-and-ci-checklist)
+        - [✅ CI Quick Checks](#-ci-quick-checks)
+    - [Why Avoid `allprojects { … }` for Global Wiring?](#why-avoid-allprojects----for-global-wiring)
+    - [📚 Further Reading](#-further-reading)
 
 ---
 
 ## How Locking Is Configured in This Repository
 
 * Locking is applied via a **convention plugin**, not with top-level `allprojects` blocks:
-
-  * Plugin file: `build-logic/src/main/kotlin/kalm.dependency-locking.gradle.kts`
-  * It configures:
-
-    * `lockAllConfigurations()` — locks every configuration in the target project
-    * `lockMode = LockMode.STRICT` (Gradle 8.3+) — fails fast when a configuration resolves without lock state
-  * The convention is applied by other project plugins (for example, `kalm.jvm`), so modules opt in explicitly.
-  * **Rationale:** avoids the pitfalls of global `allprojects` configuration and works better with included builds and the configuration cache.
-
+    * Plugin file: `build-logic/src/main/kotlin/kalm.dependency-locking.gradle.kts`
+    * It configures:
+        * `lockAllConfigurations()` — locks every configuration in the target project
+        * `lockMode = LockMode.STRICT` (Gradle 8.3+) — fails fast when a configuration resolves without a lock state
+    * The convention is applied by other project plugins (for example, `kalm.jvm`), so modules opt in explicitly.
+    * **Rationale:** avoids the pitfalls of global `allprojects` configuration and works better with included builds and
+      the configuration cache.
 * Each module stores its own lock file:
-
-  * `core/gradle.lockfile`
-  * Root and settings builds can also persist lock state.
+    * `core/gradle.lockfile`
+    * Root and settings builds can also persist lock state.
 
 > [!IMPORTANT]
-> Using a convention plugin instead of global configuration isolates setup per module, improves reproducibility, and maintains configuration-cache compatibility.
+> Using a convention plugin instead of global configuration isolates setup per module, improves reproducibility, and
+> maintains configuration-cache compatibility.
 
 ### Example: Before and After
 
@@ -77,11 +75,12 @@ plugins {
 
 ## Day-to-Day Use
 
-Most of the time you don’t need to think about locks — Gradle reads from them automatically.
-You only need to update locks when:
+Most of the time, dependency locks can be left alone — Gradle reads them automatically.
+
+Locks only need updating when:
 
 * A new dependency or configuration appears.
-* The version catalog changes (e.g., updated Kotlin or libraries).
+* The version catalog changes (for example, Kotlin or library versions are updated).
 
 When that happens, regenerate locks with `--write-locks`.
 
@@ -94,15 +93,17 @@ When that happens, regenerate locks with `--write-locks`.
 
 ## Quick FAQ
 
-### Do I need `--write-locks` on every build?
+### Is `--write-locks` required on every build?
 
-No. Use `--write-locks` only when dependency resolution changes and you intentionally want to update lockfiles.
+No. The `--write-locks` flag should be used only when dependency resolution changes and lockfiles are intentionally
+updated.
 
-### Why did `dokkaGenerate` or `detekt` fail with “locked but does not have lock state”?
+### Why did `dokkaGenerate` or `detekt` fail with “locked but does not have a lock state”?
 
-Those tasks introduced or resolved a configuration with no lock entry yet. Run that same task once with `--write-locks`, commit the lockfile diff, and rerun normally.
+Those tasks introduced or resolved a configuration with no lock entry yet. Run that same task once with `--write-locks`,
+commit the lockfile diff, and rerun normally.
 
-### Which lockfiles should I commit?
+### Which lockfiles should be committed?
 
 Always commit all changed lockfiles, usually:
 
@@ -110,12 +111,12 @@ Always commit all changed lockfiles, usually:
 * `settings-gradle.lockfile`
 * `<module>/gradle.lockfile`
 
-### Can I disable strict locking temporarily?
+### Is it possible to disable strict locking temporarily?
 
-Avoid it. `LockMode.STRICT` is the guardrail that keeps local and CI resolution identical.
-If you are blocked, fix by generating missing lock state instead of relaxing strict mode.
+Avoid it. `LockMode.STRICT` acts as a guardrail that keeps local and CI resolution identical. If blocked, generate the
+missing lock state rather than relaxing strict mode.
 
-### How do I update only one dependency lock?
+### How can a single dependency lock be updated?
 
 Use Gradle’s selective update flag, for example:
 
@@ -154,11 +155,11 @@ No. CI should validate lockfiles, not mutate them. Lock updates should be explic
 
 ## Troubleshooting
 
-### ❗ “Configuration ':core:XYZ' is locked but does not have lock state”
+### ❗ “Configuration ':core:XYZ' is locked but does not have a lock state”
 
 #### Cause
 
-Strict mode is on and the configuration has no recorded lock state.
+Strict mode is on, and the configuration has no recorded lock state.
 
 #### Fix
 
@@ -178,7 +179,7 @@ Then rerun normally (without `--write-locks`).
 
 #### Symptom
 
-> “Configuration is locked but does not have lock state.”
+> “Configuration is locked but does not have a lock state.”
 
 #### Fix
 
@@ -199,39 +200,23 @@ When bumping library versions (e.g., Kotlin, Kotest):
 ./gradlew :core:test --write-locks
 ```
 
-> [!TIP]
-> You can run a broader *preflight* task (if defined), but note that dependency update or report tasks might not be configuration-cache compatible.
-
----
-
-### ⚙️ Configuration Cache Warnings
-
-Expected situations:
-
-* You passed `--write-locks` (forces reconfiguration).
-* An IDE init script changed (e.g., IntelliJ `ijWrapper*.gradle`).
-
-> [!NOTE]
-> These only skip cached configurations; they do **not** affect correctness.
-
 ---
 
 ### 📦 Dependency Update Tasks
 
-`dependencyUpdates` or `versionCatalogUpdate` may trigger cache warnings — this is expected.
-Prefer `--no-parallel` when running them.
+`dependencyUpdates` or `versionCatalogUpdate` may trigger cache warnings — this is expected. Prefer `--no-parallel` when
+running them.
 
 ---
 
 ## Policies and CI Checklist
 
 * Keep **strict mode** on — it surfaces missing locks early.
-  To fix missing locks, temporarily comment out `lockMode = LockMode.STRICT`, regenerate, then restore it.
 * Use provider-safe catalog lookups (`libs.findLibrary("...")`) to keep configuration lazy.
 * Review lockfiles in PRs — they’re part of reproducibility.
 
 > [!TIP]
-> Lockfiles are part of your reproducibility story — treat them as versioned source of truth, not transient artifacts.
+> Lockfiles are part of the reproducibility story — treat them as versioned source of truth, not transient artifacts.
 
 ### ✅ CI Quick Checks
 
@@ -240,7 +225,8 @@ Prefer `--no-parallel` when running them.
 * Fail builds if lock mismatches occur (`LockMode.STRICT` enforces this).
 
 > [!WARNING]
-> Never disable strict mode globally — use it to ensure consistent dependency resolution across contributors and CI environments.
+> Never disable strict mode globally — use it to ensure consistent dependency resolution across contributors and CI
+> environments.
 
 ---
 
@@ -257,7 +243,8 @@ Community guidance aligns with this:
 > — [Gradle Forum Discussion](https://discuss.gradle.org/t/how-to-avoid-cross-project-configuration-without-buildscripts/44199)
 
 > [!IMPORTANT]
-> Global configuration via `allprojects` runs eagerly across all included builds, introduces implicit dependencies, and breaks configuration-cache isolation.
+> Global configuration via `allprojects` runs eagerly across all included builds, introduces implicit dependencies, and
+> breaks configuration-cache isolation.
 > Convention plugins and explicit per-module configuration make builds faster, clearer, and easier to maintain.
 
 ---
