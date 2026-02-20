@@ -16,7 +16,7 @@ import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 
-internal fun parseExecutionRequest(args: Array<String>): ExecutionRequestResult {
+internal fun parseExecutionRequest(args: List<String>): ExecutionRequestResult {
     val jsonFlags = args.count { it == "--json" }
     if (jsonFlags > 1) {
         return ExecutionRequestResult.Error("Duplicate option --json")

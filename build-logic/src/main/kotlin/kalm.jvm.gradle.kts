@@ -37,7 +37,10 @@ kotlin.jvmToolchain {
 private val warningsAsErrorsSignals = setOf("true", "strict", "enforce", "all")
 
 val warningsAsErrors = project.findProperty("kalm.warningsAsErrors")?.toString()?.lowercase()
-val commonCompilerArgs = listOf("-Xjsr305=strict")
+val commonCompilerArgs = listOf(
+    "-Xjsr305=strict",
+    "-XXLanguage:+LocalTypeAliases"
+)
 
 extensions.configure<KotlinJvmProjectExtension>("kotlin") {
     compilerOptions {

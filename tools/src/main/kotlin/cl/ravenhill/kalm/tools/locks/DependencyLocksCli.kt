@@ -94,7 +94,7 @@ object DependencyLocksCli {
      * @param args Raw command-line arguments passed to the program.
      * @return A [CliResult] representing the outcome of parsing and rendering.
      */
-    fun run(args: Array<String>): CliResult = when (val request = parseExecutionRequest(args)) {
+    fun run(args: List<String>): CliResult = when (val request = parseExecutionRequest(args)) {
         is ExecutionRequestResult.Ok -> run(request.request)
         is ExecutionRequestResult.Error -> CliResult.Failure(request.message)
     }
@@ -142,7 +142,7 @@ object DependencyLocksCli {
      */
     @JvmStatic
     fun main(args: Array<String>) {
-        val requestResult = parseExecutionRequest(args)
+        val requestResult = parseExecutionRequest(args.toList())
 
         val (jsonMode, result) = when (requestResult) {
             is ExecutionRequestResult.Ok ->
