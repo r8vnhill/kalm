@@ -3,69 +3,148 @@ package cl.ravenhill.kalm.tools.hadolint
 import cl.ravenhill.kalm.tools.cli.detectMissingOptionValue
 import cl.ravenhill.kalm.tools.cli.extractNoSuchOptionName
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.NoSuchOption
+import com.github.ajalt.clikt.core.PrintHelpMessage
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.parse
 import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.help
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.validate
 import kotlinx.serialization.json.Json
 import java.io.PrintStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.jvm.Throws
+import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
 /**
  * JSON-oriented command-line interface for running Hadolint against one or more Dockerfiles.
  *
- * ## High-level flow
+ * This CLI is intended for automation and build tooling where stdout is treated as a machine channel and stderr as a
+ * human channel.
  *
- * 1. Parse arguments into [CliOptions] ([parseArgs]).
- * 2. Resolve inputs into existing vs. missing paths ([resolveDockerfilePaths] via [resolveDockerfiles]).
- * 3. Select the execution strategy ([HadolintRunner]) through [selectRunner]:
- *    - [BinaryHadolintRunner] when `{sh} hadolint` is available.
- *    - [DockerHadolintRunner] when Docker is available.
- * 4. Execute linting ([executeLinting]) and aggregate failures into [LintExecution].
- * 5. Emit a JSON [HadolintCliResult] and exit with its exit code ([main]).
+ * ## Contract
  *
- * ## Logging contract
+ * - **Stdout**: emits **exactly one** JSON object, encoded as [HadolintCliResult].
+ * - **Stderr**: prints usage, parse errors, and progress diagnostics.
+ * - **Exit code**: equals the emitted [HadolintCliResult.exitCode].
  *
- * The CLI uses two output streams:
+ * This split allows callers to safely parse stdout even when stderr contains help text or validation errors.
  *
- * - [System.out]: **JSON only** (single object, suitable for parsing).
- * - [System.err]: human-readable diagnostics (warnings, progress, failure reasons).
+ * ## Workflow
  *
- * This separation is critical when the caller expects clean JSON on stdout.
+ * 1. Parse arguments via Clikt ([HadolintCommand]) using [parseHadolintOptions].
+ * 2. Resolve Dockerfile inputs into existing vs. missing paths via [resolveDockerfiles] and `resolveDockerfilePaths`.
+ * 3. Select a [HadolintRunner] via [selectRunner] based on [hasCommand] and [canRun].
+ * 4. Execute linting (see `executeLinting`) and aggregate failures into [LintExecution].
+ * 5. Emit JSON via [emitResult] and terminate via [main].
  *
- * ## Exit code policy
+ * ## Help and errors
  *
- * The process exit code is derived from [HadolintCliResult.exitCode]:
+ * Parsing and usage rendering are delegated to Clikt:
  *
- * - `0`: successful execution and no lint failures.
- * - `1`: lint failures or expected CLI/validation failures.
+ * - `{sh} --help` / `{sh} -h` triggers [PrintHelpMessage] and results in exit code `0`.
+ * - Invalid flags/values trigger [UsageError] and result in exit code `1`.
+ *
+ * The CLI still produces a JSON payload for these early-termination paths to keep automation stable.
  */
 object HadolintCli {
 
     /**
-     * Internal control-flow throwable used to model `--help` / `-h`.
+     * Outcome of parsing the CLI arguments.
      *
-     * This is intentionally *not* exposed as an error to callers: help is a normal termination path. The throwable is
-     * caught in [parseAndExecute] and translated into a successful JSON result.
+     * Parsing either yields a validated [CliOptions] ([Ok]) or an early [HadolintCliResult] that should be emitted
+     * without running linting ([EarlyResult]).
      */
-    private class HelpRequested : Throwable()
+    private sealed interface ParseOutcome {
 
-    private data class ParsedState(var options: CliOptions? = null)
+        /**
+         * Parsing succeeded and produced validated options.
+         *
+         * @property options Parsed [CliOptions] materialized by [HadolintCommand].
+         */
+        data class Ok(val options: CliOptions) : ParseOutcome
 
-    private class HadolintParser(private val state: ParsedState) : CliktCommand(name = "hadolint-cli") {
-        private val dockerfiles by option("--dockerfile", "-f").multiple()
+        /**
+         * Parsing resulted in a terminal response (help or validation failure).
+         *
+         * @property result JSON result to emit without executing linting.
+         */
+        data class EarlyResult(val result: HadolintCliResult) : ParseOutcome
+    }
+
+    /**
+     * Clikt-backed command that defines the CLI interface and materializes [CliOptions].
+     *
+     * This command is responsible for:
+     *
+     * - describing the CLI surface (options, defaults, help),
+     * - validating option values (via `validate { ... }`),
+     * - and converting raw strings into a final [CliOptions] instance in [run].
+     *
+     * This command intentionally does not run Hadolint. Execution is handled by [runCliJson] so that:
+     *
+     * - stdout can remain JSON-only,
+     * - stderr can be used for progress/diagnostics,
+     * - and tests can inject I/O and probes without going through Clikt internals.
+     */
+    private class HadolintCommand : CliktCommand(name = "hadolint-cli") {
+
+        /**
+         * Dockerfile paths to lint.
+         *
+         * This option may be repeated:
+         *
+         * - `{sh} --dockerfile Dockerfile`
+         * - `{sh} -f Dockerfile.api -f Dockerfile.cli`
+         *
+         * If not specified, [run] defaults to `Dockerfile`.
+         */
+        private val dockerfiles by option("--dockerfile", "-f")
+            .multiple()
+            .help(
+                "Path to a Dockerfile to lint. Can be specified multiple times. " +
+                        "Defaults to 'Dockerfile' if not provided."
+            )
+            .validate { value ->
+                require(value.none(String::isBlank)) { "Empty path not allowed." }
+            }
+
+        /**
+         * Hadolint failure threshold.
+         *
+         * This is interpreted by [ValidThreshold.fromString]. Invalid values are rejected during parsing.
+         */
         private val threshold by option("--failure-threshold", "-t")
-        private val strictFiles by option("--strict-files").flag(default = false)
+            .help("Lint failures at or above this threshold will be treated as errors.")
+            .validate { value -> ValidThreshold.fromString(value) }
+
+        /**
+         * When enabled, missing Dockerfiles are treated as a failure rather than a warning.
+         */
+        private val strictFiles by option("--strict-files")
+            .flag(default = false)
+            .help("Fail if any specified Dockerfiles do not exist.")
+
+        /**
+         * Materialized options after parsing.
+         *
+         * Clikt executes [run] once parsing succeeds. This property is set there so that callers (e.g. [runCliJson])
+         * can access the validated configuration.
+         */
+        lateinit var options: CliOptions
+            private set
+
+        override fun help(context: Context): String =
+            "Run Hadolint against one or more Dockerfiles and emit a JSON result."
 
         override fun run() {
-            state.options = CliOptions(
-                dockerfiles = if (dockerfiles.isEmpty()) listOf("Dockerfile") else dockerfiles,
+            options = CliOptions(
+                dockerfiles = dockerfiles.ifEmpty { listOf("Dockerfile") },
                 failureThreshold = threshold?.let(ValidThreshold::fromString) ?: ValidThreshold.default,
                 strictFiles = strictFiles
             )
@@ -73,7 +152,9 @@ object HadolintCli {
     }
 
     /**
-     * JSON encoder for serializing [HadolintCliResult].
+     * JSON encoder for serialising [HadolintCliResult].
+     *
+     * `encodeDefaults = true` keeps the JSON schema stable across early-termination paths (help/usage errors).
      */
     private val json = Json {
         prettyPrint = false
@@ -81,78 +162,107 @@ object HadolintCli {
     }
 
     /**
-     * Prints a human-readable usage message.
-     *
-     * This prints to an injected stream (defaults to [System.out]) so tests can capture output. In JSON mode, callers
-     * typically invoke `--help` and read the usage from [System.err], while [out] remains valid JSON.
-     *
-     * @param out Destination stream for usage output.
-     */
-    fun printUsage(out: PrintStream = System.out) {
-        out.println(
-            """
-            |Usage:
-            |  cl.ravenhill.kalm.tools.hadolint.HadolintCli [options]
-            |
-            |Options:
-            |  --dockerfile, -f <path>          Dockerfile path to lint (repeatable)
-            |  --failure-threshold, -t <level>  error|warning|info|style|ignore (default: warning)
-            |  --strict-files                   Fail if any Dockerfile is missing
-            |  --help                           Show this help
-            """.trimMargin()
-        )
-    }
-
-    /**
      * Parses CLI arguments into an immutable, validated [CliOptions].
      *
-     * ## Rules:
+     * This function exists primarily for unit testing and for code paths that need parsing without executing the full
+     * JSON workflow.
      *
-     * - `--dockerfile` / `-f` may be repeated to lint multiple files.
-     * - If no Dockerfiles are specified, defaults to `["Dockerfile"]`.
-     * - `--failure-threshold` / `-t` is validated and normalized via [ValidThreshold.fromString].
-     * - `--strict-files` enforces missing-file failures (see [CliOptions.strictFiles]).
-     * - `--help` / `-h` triggers [HelpRequested] (handled upstream as a successful termination path).
+     * ## Notes
+     *
+     * - Clikt already provides robust parsing and usage errors; however, this wrapper normalizes errors into
+     *   [IllegalArgumentException] for a simple call contract.
+     * - Missing-value detection is handled before Clikt parsing to provide consistent messages across Clikt versions.
      *
      * @param args Raw command-line arguments.
      * @return Parsed [CliOptions].
-     * @throws IllegalArgumentException If a flag is unknown, a value is missing, or a value is invalid.
+     * @throws IllegalArgumentException If parsing fails, an unknown flag is provided, or a value is missing/invalid.
      */
     fun parseArgs(args: Array<String>): CliOptions {
-        if (args.any { it == "--help" || it == "-h" }) {
-            throw HelpRequested()
-        }
         detectMissingOptionValue(
             args = args.toList(),
             optionNames = setOf("--dockerfile", "-f", "--failure-threshold", "-t")
-        )?.let { missingValue ->
-            when (missingValue) {
-                "Missing value for option --failure-threshold",
-                "Missing value for option -t" -> throw IllegalArgumentException("Missing value for --failure-threshold")
-
-                else -> throw IllegalArgumentException("Missing value for --dockerfile")
+        )?.let { message ->
+            if (message.contains("failure-threshold") || message.contains("-t")) {
+                throw IllegalArgumentException("Missing value for --failure-threshold")
             }
+            throw IllegalArgumentException("Missing value for --dockerfile")
         }
 
+        val command = HadolintCommand()
         return try {
-            val state = ParsedState()
-            HadolintParser(state).parse(args.toList())
-            requireNotNull(state.options)
+            command.parse(args.toList())
+            command.options
+        } catch (_: PrintHelpMessage) {
+            // parseArgs is a "parsing-only" API; printing help is the responsibility of [runCliJson].
+            throw IllegalArgumentException("Unknown argument: --help")
         } catch (error: UsageError) {
-            val message = when (error) {
-                is NoSuchOption -> "Unknown argument: ${extractNoSuchOptionName(error.message.orEmpty())}"
-                else -> error.message ?: "Invalid argument"
-            }
-            throw IllegalArgumentException(message)
+            throw IllegalArgumentException(parseArgsErrorMessage(error))
         }
+    }
+
+    /**
+     * Normalizes Clikt parsing exceptions into a stable, user-facing error message.
+     *
+     * @param error Clikt parse error.
+     * @return A human-readable message suitable for stderr.
+     */
+    private fun parseArgsErrorMessage(error: UsageError): String = when (error) {
+        is NoSuchOption -> "Unknown argument: ${extractNoSuchOptionName(error.message.orEmpty())}"
+        else -> error.message ?: error.toString()
+    }
+
+    /**
+     * Checks whether a command appears runnable (available on PATH).
+     *
+     * Implementation detail: attempts to run `{sh} <command> --version` and returns `true` iff it exits with code `0`.
+     * Execution is bounded by a 2-second timeout.
+     *
+     * @param command Program name expected to be resolvable on PATH.
+     * @return True if the command appears runnable.
+     */
+    fun hasCommand(command: String): Boolean = try {
+        val process = ProcessBuilder(command, "--version")
+            .redirectError(ProcessBuilder.Redirect.DISCARD)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .start()
+        val completed = process.waitFor(2, TimeUnit.SECONDS)
+        if (completed) process.exitValue() == 0 else {
+            process.destroyForcibly()
+            false
+        }
+    } catch (_: Exception) {
+        false
+    }
+
+    /**
+     * Checks whether a command line can be executed successfully.
+     *
+     * This is primarily used to probe Docker availability, e.g. `{sh} docker version`. Execution is bounded by a
+     * 2-second timeout.
+     *
+     * @param command Command and arguments.
+     * @return True if the process exits with code `0` within the timeout.
+     */
+    fun canRun(vararg command: String): Boolean = try {
+        val process = ProcessBuilder(*command)
+            .redirectError(ProcessBuilder.Redirect.DISCARD)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .start()
+        val completed = process.waitFor(2, TimeUnit.SECONDS)
+        if (completed) process.exitValue() == 0 else {
+            process.destroyForcibly()
+            false
+        }
+    } catch (_: Exception) {
+        false
     }
 
     /**
      * Resolves dockerfile path strings from [options] into a [ResolveResult].
      *
-     * ## Resolution policy:
+     * ## Resolution policy
      *
-     * - Each string is converted to a normalized absolute [Path].
+     * - Each input string is converted into a normalized absolute [Path].
      * - Results are partitioned into:
      *   - [ResolveResult.existing] (paths where [exists] returns true)
      *   - [ResolveResult.missing] (paths where [exists] returns false)
@@ -173,51 +283,15 @@ object HadolintCli {
     }
 
     /**
-     * Checks whether a command appears runnable (available on PATH).
-     *
-     * Implementation detail: attempts to run `{sh} <command> --version` and returns true iff it exits with code `0`.
-     *
-     * @param command Program name expected to be resolvable on PATH.
-     * @return True if the command appears runnable.
-     */
-    fun hasCommand(command: String): Boolean = try {
-        val process = ProcessBuilder(command, "--version")
-            .redirectError(ProcessBuilder.Redirect.DISCARD)
-            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-            .start()
-        process.waitFor() == 0
-    } catch (_: Exception) {
-        false
-    }
-
-    /**
-     * Checks whether a command line can be executed successfully.
-     *
-     * This is primarily used to probe Docker availability, e.g. `{sh} docker version`.
-     *
-     * @param command Command and arguments.
-     * @return True if the process exits with code `0`.
-     */
-    fun canRun(vararg command: String): Boolean = try {
-        val process = ProcessBuilder(*command)
-            .redirectError(ProcessBuilder.Redirect.DISCARD)
-            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-            .start()
-        process.waitFor() == 0
-    } catch (_: Exception) {
-        false
-    }
-
-    /**
      * Selects a [HadolintRunner] based on environment availability.
      *
-     * ## Policy:
+     * - Prefer local `{sh} hadolint` when available.
+     * - Otherwise fall back to Docker execution when Docker is available.
      *
-     * - Prefer local `hadolint` when available.
-     * - Otherwise, use Docker-based execution if Docker is available.
-     * - If neither is available, fail with a clear message.
-     *
-     * @throws IllegalStateException If no supported execution strategy is available.
+     * @param hadolintAvailable Whether a local `{sh} hadolint` binary is available.
+     * @param dockerAvailable Whether Docker is available for fallback execution.
+     * @return A [HadolintRunner] compatible with the current environment.
+     * @throws IllegalStateException If neither strategy is available.
      */
     fun selectRunner(hadolintAvailable: Boolean, dockerAvailable: Boolean): HadolintRunner =
         if (hadolintAvailable) {
@@ -229,42 +303,73 @@ object HadolintCli {
         }
 
     /**
-     * Internal representation of parse outcomes.
+     * Builds a default [HadolintCliResult] for early-termination paths.
      *
-     * This avoids early returns in [runCliJson] by modeling:
+     * Used when parsing fails or help is requested. This keeps the JSON schema stable even when no linting occurs.
      *
-     * - [Ok] -> parsing succeeded; continue execution.
-     * - [Done] -> parsing triggered an immediate result (help or parse error).
+     * @param exitCode Process exit code for the early result.
+     * @param started Start timestamp (milliseconds since epoch).
+     * @param finished End timestamp (milliseconds since epoch).
+     * @param defaults Defaults used for fields that are normally derived from [CliOptions].
+     * @return A complete [HadolintCliResult] with empty targets/missing/failed lists and an "unknown" runner.
      */
-    private sealed interface Parsed {
+    private fun buildDefaultResult(
+        exitCode: Int,
+        started: Long,
+        finished: Long,
+        defaults: CliOptions
+    ): HadolintCliResult = HadolintCliResult(
+        exitCode = exitCode,
+        threshold = defaults.failureThreshold.value,
+        strictFiles = defaults.strictFiles,
+        targets = emptyList(),
+        missing = emptyList(),
+        failed = emptyList(),
+        runner = "unknown",
+        startedAtEpochMs = started,
+        finishedAtEpochMs = finished
+    )
 
-        /**
-         * Parsing succeeded.
-         *
-         * @property options Parsed [CliOptions].
-         */
-        data class Ok(val options: CliOptions) : Parsed
-
-        /**
-         * Parsing resulted in a terminal response.
-         *
-         * Examples:
-         * - Help requested
-         * - Invalid flag/value detected
-         *
-         * @property result Final [HadolintCliResult] to emit.
-         */
-        data class Done(val result: HadolintCliResult) : Parsed
+    /**
+     * Serializes [result] to JSON and writes it to [out].
+     *
+     * This is the only place where JSON is emitted, ensuring stdout remains parseable and schema-stable.
+     *
+     * @param out Destination stream for JSON output.
+     * @param result Result to encode.
+     * @return The same [HadolintCliResult] for convenient chaining/testing.
+     */
+    private fun emitResult(out: PrintStream, result: HadolintCliResult): HadolintCliResult {
+        out.println(json.encodeToString(result))
+        return result
     }
 
     /**
-     * Runs the CLI workflow and returns a structured JSON-friendly result.
+     * Runs the CLI workflow and returns a JSON-friendly result.
      *
-     * ## Contract:
+     * ## Behavior
      *
-     * - Always returns a [HadolintCliResult].
-     * - Always prints exactly one JSON object to [out] via [emitResult].
-     * - Diagnostic/progress output is written to [err].
+     * - Always emits exactly one JSON result via [emitResult].
+     * - Writes usage and error diagnostics to [err].
+     * - Returns a [HadolintCliResult] whose `exitCode` is suitable for [main].
+     *
+     * ## Parsing
+     *
+     * Parsing is performed by [parseHadolintOptions] and delegated to Clikt:
+     *
+     * - Help requested -> prints formatted help to [err] and emits a success JSON result (exit code `0`).
+     * - Parse/validation error -> prints a normalized error message to [err] and emits a failure JSON result (exit code
+     *   `1`).
+     *
+     * ## Testability
+     *
+     * The main side effects are injectable:
+     *
+     * - Environment probes: [hadolintAvailable], [dockerAvailable]
+     * - Filesystem: [exists]
+     * - Runner selection: [runnerSelector]
+     * - Time: [nowEpochMs]
+     * - Streams: [out], [err]
      *
      * @param args Raw CLI arguments.
      * @param runnerSelector Strategy for selecting the runner (injectable for tests).
@@ -287,63 +392,16 @@ object HadolintCli {
         nowEpochMs: () -> Long = { System.currentTimeMillis() }
     ): HadolintCliResult {
         val started = nowEpochMs()
+        val defaultOptions = defaultCliOptions()
 
-        // Defaults used when parsing fails or help is requested. This keeps the schema stable even for early
-        // termination paths.
-        val defaultOptions = CliOptions(
-            dockerfiles = listOf("Dockerfile"),
-            failureThreshold = ValidThreshold.default,
-            strictFiles = false
-        )
-
-        val result = when (val parsed: Parsed = parseAndExecute(args, err, defaultOptions, started, nowEpochMs)) {
-            is Parsed.Done -> parsed.result
-            is Parsed.Ok -> lintDockerfiles(
-                parsed = parsed,
-                exists = exists,
-                err = err,
-                runnerSelector = runnerSelector,
-                hadolintAvailable = hadolintAvailable,
-                dockerAvailable = dockerAvailable,
-                nowEpochMs = nowEpochMs,
-                started = started
-            )
+        val parseOutcome = parseHadolintOptions(args, err, started, nowEpochMs, defaultOptions)
+        if (parseOutcome is ParseOutcome.EarlyResult) {
+            return emitResult(out, parseOutcome.result)
         }
+        parseOutcome as ParseOutcome.Ok
+        val options = parseOutcome.options
 
-        return emitResult(out, result)
-    }
-
-    /**
-     * Runs resolution and linting for parsed options and builds the final [HadolintCliResult].
-     *
-     * This function is intentionally side-effect-light:
-     *
-     * - All user-facing logs are sent through [PrintStreamLintLogger] to [err].
-     * - It returns a fully populated result object, including timestamps and runner identification.
-     *
-     * @param parsed Successful parse result containing [CliOptions].
-     * @param exists Filesystem existence predicate.
-     * @param err Diagnostic stream (human output).
-     * @param runnerSelector Runner selection strategy.
-     * @param hadolintAvailable Availability probe.
-     * @param dockerAvailable Availability probe.
-     * @param nowEpochMs Time source.
-     * @param started Start timestamp captured by [runCliJson].
-     * @return Fully populated [HadolintCliResult].
-     */
-    private fun lintDockerfiles(
-        parsed: Parsed.Ok,
-        exists: (Path) -> Boolean,
-        err: PrintStream,
-        runnerSelector: (Boolean, Boolean) -> HadolintRunner,
-        hadolintAvailable: () -> Boolean,
-        dockerAvailable: () -> Boolean,
-        nowEpochMs: () -> Long,
-        started: Long
-    ): HadolintCliResult {
-        val options = parsed.options
         val logger = PrintStreamLintLogger(err)
-
         val resolved = resolveDockerfilePaths(options, exists, logger)
 
         val execution = executeLinting(
@@ -355,103 +413,115 @@ object HadolintCli {
             logger = logger
         )
 
-        val finished = nowEpochMs()
-
-        return HadolintCliResult(
-            exitCode = execution.exitCode.value,
-            threshold = options.failureThreshold.value,
-            strictFiles = options.strictFiles,
-            targets = resolved.existing.map(Path::toString),
-            missing = resolved.missing.map(Path::toString),
-            failed = execution.failed.map(Path::toString),
-            runner = execution.runnerId.name.lowercase(),
+        val result = buildExecutionResult(
+            options = options,
+            resolved = resolved,
+            execution = execution,
             startedAtEpochMs = started,
-            finishedAtEpochMs = finished
+            finishedAtEpochMs = nowEpochMs()
         )
+        return emitResult(out, result)
     }
 
     /**
-     * Parses arguments and materializes early-termination results.
+     * Returns the default CLI options used for schema-stable early results.
      *
-     * This function centralizes the “parse stage” policy:
+     * These defaults mirror the behavior of [HadolintCommand.run] when the user provides no arguments.
+     */
+    private fun defaultCliOptions(): CliOptions = CliOptions(
+        dockerfiles = listOf("Dockerfile"),
+        failureThreshold = ValidThreshold.default,
+        strictFiles = false
+    )
+
+    /**
+     * Parses arguments into [CliOptions] or materializes an early [HadolintCliResult].
      *
-     * - Help requested -> print usage to [err], return exit code `0`.
-     * - Parse/validation error -> print a message to [err], return exit code `1`.
-     * - Success -> return [Parsed.Ok].
+     * This function is the single place where Clikt parsing exceptions are translated into:
      *
-     * Returning [Parsed.Done] avoids early returns in [runCliJson] and keeps the control flow easy to follow and test.
+     * - formatted help text (stderr) and exit code `0`, or
+     * - a readable error message (stderr) and exit code `1`.
      *
      * @param args Raw CLI arguments.
-     * @param err Diagnostic stream for help/errors.
-     * @param defaultOptions Defaults used when parse does not yield [CliOptions].
-     * @param started Start timestamp captured by the caller.
-     * @param nowEpochMs Time source for the termination timestamp.
-     * @return [Parsed.Ok] on success, otherwise [Parsed.Done].
+     * @param err Destination for usage and diagnostics.
+     * @param started Start timestamp captured by [runCliJson].
+     * @param nowEpochMs Time source for the early result end timestamp.
+     * @param defaultOptions Defaults used to fill required JSON fields on early termination.
+     * @return [ParseOutcome.Ok] on success, otherwise [ParseOutcome.EarlyResult].
      */
-    private fun parseAndExecute(
+    private fun parseHadolintOptions(
         args: Array<String>,
         err: PrintStream,
-        defaultOptions: CliOptions,
         started: Long,
-        nowEpochMs: () -> Long
-    ): Parsed = try {
-        Parsed.Ok(parseArgs(args))
-    } catch (_: HelpRequested) {
-        printUsage(err)
-        Parsed.Done(
-            HadolintCliResult(
-                exitCode = 0,
-                threshold = defaultOptions.failureThreshold.value,
-                strictFiles = defaultOptions.strictFiles,
-                targets = emptyList(),
-                missing = emptyList(),
-                failed = emptyList(),
-                runner = "unknown",
-                startedAtEpochMs = started,
-                finishedAtEpochMs = nowEpochMs()
-            )
-        )
-    } catch (e: IllegalArgumentException) {
-        err.println(e.message ?: e.toString())
-        Parsed.Done(
-            HadolintCliResult(
-                exitCode = 1,
-                threshold = defaultOptions.failureThreshold.value,
-                strictFiles = defaultOptions.strictFiles,
-                targets = emptyList(),
-                missing = emptyList(),
-                failed = emptyList(),
-                runner = "unknown",
-                startedAtEpochMs = started,
-                finishedAtEpochMs = nowEpochMs()
-            )
-        )
+        nowEpochMs: () -> Long,
+        defaultOptions: CliOptions
+    ): ParseOutcome {
+        val command = HadolintCommand()
+        return try {
+            command.parse(args.toList())
+            ParseOutcome.Ok(command.options)
+        } catch (e: PrintHelpMessage) {
+            printHelpMessage(e, err)
+            ParseOutcome.EarlyResult(buildDefaultResult(0, started, nowEpochMs(), defaultOptions))
+        } catch (e: UsageError) {
+            err.println(parseArgsErrorMessage(e))
+            ParseOutcome.EarlyResult(buildDefaultResult(1, started, nowEpochMs(), defaultOptions))
+        }
     }
 
     /**
-     * Serializes [result] to JSON and writes it to [out].
+     * Prints formatted help text for a Clikt [PrintHelpMessage] exception.
      *
-     * This is the *only* place where JSON is emitted. Keeping emission centralized:
+     * When Clikt provides a formatted help string via the command context, that help is printed verbatim. Otherwise, a
+     * minimal fallback usage line is printed.
      *
-     * - ensures stdout stays parseable,
-     * - avoids partial JSON,
-     * - and makes it easy to evolve the schema.
-     *
-     * @return The same [HadolintCliResult] for convenient call chaining/testing.
+     * @param error Help exception thrown by Clikt.
+     * @param err Destination stream (stderr).
      */
-    private fun emitResult(
-        out: PrintStream,
-        result: HadolintCliResult
-    ): HadolintCliResult {
-        out.println(json.encodeToString(result))
-        return result
+    private fun printHelpMessage(
+        error: PrintHelpMessage,
+        err: PrintStream
+    ) {
+        val formattedHelp = error.context?.command?.getFormattedHelp(error)
+        if (formattedHelp != null) {
+            err.print(formattedHelp)
+            return
+        }
+        err.println(error.message ?: "Usage: hadolint-cli [options]")
     }
+
+    /**
+     * Builds a full [HadolintCliResult] from a successful lint execution.
+     *
+     * @param options Parsed CLI options.
+     * @param resolved Partitioned dockerfile paths (existing vs. missing).
+     * @param execution Lint execution summary, including failures and runner information.
+     * @param startedAtEpochMs Start timestamp captured before parsing/execution.
+     * @param finishedAtEpochMs End timestamp captured after execution.
+     * @return A complete [HadolintCliResult] suitable for JSON serialization.
+     */
+    private fun buildExecutionResult(
+        options: CliOptions,
+        resolved: ResolveResult,
+        execution: LintExecution,
+        startedAtEpochMs: Long,
+        finishedAtEpochMs: Long
+    ): HadolintCliResult = HadolintCliResult(
+        exitCode = execution.exitCode.value,
+        threshold = options.failureThreshold.value,
+        strictFiles = options.strictFiles,
+        targets = resolved.existing.map(Path::toString),
+        missing = resolved.missing.map(Path::toString),
+        failed = execution.failed.map(Path::toString),
+        runner = execution.runnerId.name.lowercase(),
+        startedAtEpochMs = startedAtEpochMs,
+        finishedAtEpochMs = finishedAtEpochMs
+    )
 
     /**
      * Process entry point.
      *
-     * - Executes [runCliJson], which prints JSON to stdout.
-     * - Exits with [HadolintCliResult.exitCode] so the CLI remains shell-friendly.
+     * Executes [runCliJson] and terminates the process with the emitted [HadolintCliResult.exitCode].
      *
      * @param args Raw CLI arguments.
      */
