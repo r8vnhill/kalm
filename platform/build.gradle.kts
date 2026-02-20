@@ -19,7 +19,7 @@
 plugins {
     // Enables the Java Platform plugin, which allows defining a set of dependency constraints (used for BOM
     // publication).
-    id("java-platform")
+    `java-platform`
 
     // Reuse dependency locking conventions without cross-project blocks.
     id("kalm.reproducible")
@@ -30,27 +30,27 @@ plugins {
 }
 
 // Access the shared version catalog (`libs.versions.toml`)
-val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val libs: VersionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
 javaPlatform {
-    // Allow this platform to declare dependencies on other projects or libraries.
-    // Without this, only version constraints can be added (no project dependencies).
+    // Allow this platform to declare dependencies on other projects or libraries. Without this, only version
+    // constraints can be added (no project dependencies).
     allowDependencies()
 }
 
 dependencies {
     constraints {
-        // ---- Core alignment ----
+        // ## Core alignment ##
         // Ensure any consumer that uses this BOM automatically aligns with the version of KALM's core module (once
         // published).
         api(projects.core)
 
-        // ---- Kotlin alignment ----
+        // ## Kotlin alignment ##
         // Lock the Kotlin stdlib version to the one used across all KALM modules.
         // Prevents mismatched runtime versions when KALM is used as a dependency.
         api(libs.findLibrary("kotlin-stdlib").orElseThrow())
 
-        // ---- Testing alignment ----
+        // ## Testing alignment ##
         // Align Kotest components so users who write tests with KALM get a consistent testing toolchain (assertions +
         // engine).
         api(libs.findLibrary("kotest-assertions-core").orElseThrow())
@@ -58,7 +58,7 @@ dependencies {
     }
 }
 
-// --- Maven publication configuration ---
+// ## Maven publication configuration ##
 // Publishes a BOM artifact (pom packaging) under the same coordinates as other KALM artifacts, with optional metadata
 // controlled by project properties.
 publishing {
@@ -108,10 +108,9 @@ publishing {
         }
     }
 
-    // --- Repository configuration ---
-    // Dynamically set the Maven repository if publishing properties are present.
-    // This lets CI/CD or local scripts publish to internal or snapshot repositories  without hardcoding credentials or
-    // URLs in the build script.
+    // ### Repository configuration ###
+    // Dynamically set the Maven repository if publishing properties are present. This lets CI/CD or local scripts
+    // publish to internal or snapshot repositories without hardcoding credentials or URLs in the build script.
     project.findProperty("kalm.publish.repoUrl")?.toString()?.let { repoUrl ->
         repositories {
             maven {

@@ -6,14 +6,64 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import tasks.SyncVersionPropertiesTask
 
-val allowUnstableCoordinates: List<String> = providers
+/**
+ * ## Unstable Dependency Allowlist
+ *
+ * Lazily resolves a comma-separated Gradle property: `kalm.dependencyUpdates.unstableAllowlist`
+ *
+ * ### Format
+ *
+ * Each entry must follow: `group:name`
+ *
+ * Wildcards are supported per segment:
+ *
+ * - `*:*` -> allow all unstable upgrades (discouraged)
+ * - `com.example:*` -> allow all modules in a group
+ * - `*:core` -> allow all groups for a given module
+ *
+ * Multiple entries are comma-separated: `com.example:*, org.foo:bar`
+ *
+ * ### Design Rationale
+ *
+ * - Uses [Provider] to preserve configuration avoidance.
+ * - Parsing is deferred until required.
+ * - Keeps dependency policy declarative and CI-configurable.
+ *
+ * ### Safety
+ *
+ * - Invalid entries (missing `:`) are ignored by pattern matching.
+ * - Empty values are filtered out.
+ */
+val allowUnstableCoordinates: Provider<List<String>> = providers
     .gradleProperty("kalm.dependencyUpdates.unstableAllowlist")
-    .orNull
-    ?.split(",")
-    ?.map { it.trim() }
-    ?.filter { it.isNotEmpty() }
-    ?: emptyList()
+    .map { raw ->
+        raw
+            .split(",")
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+    }
+    .orElse(emptyList())
 
+/**
+ * Matches a `group:name` pattern against the provided coordinates.
+ *
+ * ## Pattern Rules
+ *
+ * - Exactly two segments separated by `:`.
+ * - `*` matches any value in that segment.
+ * - Matching is exact (no partial or regex matching).
+ *
+ * ## Examples
+ *
+ *     "com.foo:*".matchesCoordinatePattern("com.foo", "core") == true
+ *     "*:core".matchesCoordinatePattern("com.bar", "core") == true
+ *     "com.foo:core".matchesCoordinatePattern("com.foo", "api") == false
+ *
+ * ## Design Constraints
+ *
+ * - No regex for predictability and performance.
+ * - Strict format avoids ambiguous matching behavior.
+ */
 fun String.matchesCoordinatePattern(group: String, name: String): Boolean {
     val parts = split(":", limit = 2)
     if (parts.size != 2) {
@@ -26,42 +76,71 @@ fun String.matchesCoordinatePattern(group: String, name: String): Boolean {
     return groupMatches && nameMatches
 }
 
+/**
+ * Determines whether a given coordinate is explicitly allowed to receive unstable version recommendations.
+ *
+ * ## Behavior
+ *
+ * - Evaluates against the configured allowlist.
+ * - Uses exact matching with wildcard support.
+ * - Returns `false` if no allowlist entries exist.
+ *
+ * ## Configuration Cache
+ *
+ * - Calls `.get()` intentionally inside task configuration logic.
+ * - Value is stable for the duration of a build invocation.
+ */
 fun isAllowedUnstableCoordinate(group: String, name: String): Boolean =
-    allowUnstableCoordinates.any { it.matchesCoordinatePattern(group, name) }
+    allowUnstableCoordinates.get().any { it.matchesCoordinatePattern(group, name) }
 
 /**
  * ## Dependency Updates Policy (ben-manes/gradle-versions-plugin)
  *
- * Centralized configuration for all [DependencyUpdatesTask] instances.
+ * Centralized configuration applied to all [DependencyUpdatesTask] instances.
  *
- * ### Purpose:
+ * ## Policy Objectives
  *
- * - Enforce a *stable-only* upgrade policy.
- * - Generate structured upgrade reports for review.
- * - Integrate with the `dependencyMaintenance` composite workflow.
+ * - Enforce a stable-only upgrade policy.
+ * - Preserve reproducibility.
+ * - Produce structured reports for human + CI review.
  *
- * ### Version Filtering Policy:
+ * ## Stability Detection Strategy
  *
- * - Rejects all known pre-release qualifiers: alpha, beta, rc, cr, milestone, preview, eap, snapshot, mX, etc.
- * - Only stable versions are recommended in upgrade reports.
+ * A version is considered **stable** if:
  *
- * ### Reproducibility Rationale:
+ * 1. It does NOT contain a known unstable qualifier.
+ * 2. OR it contains a known stable qualifier (e.g., GA, FINAL).
+ * 3. OR it matches a purely numeric semantic-like pattern.
  *
- * - Pre-release versions introduce instability and non-determinism.
- * - Stable-only upgrades align with strict dependency locking.
+ * A version is considered **unstable** if it contains tokens like:
  *
- * ### Reporting:
+ * alpha, beta, rc, cr, mX, milestone, preview, eap, snapshot, dev, nightly, canary
  *
- * - JSON output -> machine-readable (automation, CI parsing).
- * - Plain output -> human-readable (local inspection).
- * - Written to: build/dependencyUpdates/
+ * Matching is case-insensitive and token-boundary-aware.
  *
- * ### Configuration Cache:
+ * ## Allowlist Override
  *
- * - Explicitly marked incompatible.
- * - The task inspects live configurations, which violates configuration cache constraints.
+ * Coordinates listed in `kalm.dependencyUpdates.unstableAllowlist` are allowed to bypass unstable filtering.
  *
- * ### Workflow:
+ * ## Reporting
+ *
+ * ### Outputs:
+ *
+ * - JSON -> machine-readable for CI automation.
+ * - Plain text -> human-readable inspection.
+ *
+ * ### Location:
+ *
+ *     build/dependencyUpdates/report.{json,txt}
+ *
+ * ## Configuration Cache
+ *
+ * Marked incompatible because:
+ *
+ * - The task inspects live configurations.
+ * - Dependency resolution state is not cache-safe.
+ *
+ * ## Usage
  *
  *     ./gradlew dependencyUpdates
  *     ./gradlew dependencyMaintenance
@@ -69,25 +148,53 @@ fun isAllowedUnstableCoordinate(group: String, name: String): Boolean =
 tasks.withType<DependencyUpdatesTask>().configureEach {
 
     /**
-     * Regex detecting common pre-release qualifiers.
+     * Regex detecting known unstable qualifiers.
      *
-     * Matches tokens are separated by: `. - +`
+     * Tokens must be separated by: `.`, `-`, or `+`
      *
-     * ## Examples rejected:
-     *
-     * - 1.0.0-alpha
-     * - 2.0.0-RC1
-     * - 3.1.0-M2
-     * - 4.0.0-preview
-     * - 5.0.0-SNAPSHOT
+     * Prevents false positives like: "architect" containing "rc"
      */
-    val preRelease = Regex(
-        """(?i)(?:^|[.\-+])(?:alpha|beta|rc|cr|m\d*|milestone|preview|eap|snapshot)(?:$|[.\-+])"""
+    val unstableQualifier = Regex(
+        """(?i)(?:^|[.\-+])(?:alpha|beta|rc|cr|m\d*|milestone|preview|eap|snapshot|dev|nightly|canary)(?:$|[.\-+])"""
     )
 
+    /**
+     * Explicitly stable markers.
+     */
+    val stableQualifier = Regex("""(?i)(?:^|[.\-+])(?:final|ga|release)(?:$|[.\-+])""")
+
+    /**
+     * Matches numeric or semver-like versions:
+     *
+     * - 1.0.0
+     * - 2.3.1
+     * - 1.0.0+meta
+     */
+    val numericVersion = Regex("""^[0-9]+(?:\.[0-9]+)*(?:[-+][0-9A-Za-z.]+)?$""")
+
+    /**
+     * Determines version stability using layered heuristics.
+     *
+     * ### Order of Evaluation
+     *
+     * 1. Reject if an unstable token is detected.
+     * 2. Accept if an explicit stable token is detected.
+     * 3. Accept if purely numeric/semver-like.
+     * 4. Otherwise -> unstable.
+     */
+    fun isStableVersion(version: String): Boolean {
+        val normalized = version.trim()
+        if (unstableQualifier.containsMatchIn(normalized)) {
+            return false
+        }
+        if (stableQualifier.containsMatchIn(normalized)) {
+            return true
+        }
+        return numericVersion.matches(normalized)
+    }
+
     rejectVersionIf {
-        val v = candidate.version.lowercase()
-        val isPreRelease = preRelease.containsMatchIn(v)
+        val isPreRelease = !isStableVersion(candidate.version)
         val isAllowlisted = isAllowedUnstableCoordinate(candidate.group, candidate.module)
         isPreRelease && !isAllowlisted
     }
@@ -154,34 +261,55 @@ val dependencyUpdatesNoParallel = "dependencyUpdatesNoParallel"
 val dependencyUpdatesNoParallelTask: TaskProvider<Task> = tasks.register(
     dependencyUpdatesNoParallel
 ) {
+    /**
+     * ## dependencyUpdatesNoParallel
+     *
+     * Wrapper task enforcing non-parallel execution for dependencyUpdates.
+     *
+     * ### Rationale
+     *
+     * The versions plugin may exhibit nondeterministic behavior under parallel project execution.
+     *
+     * This task:
+     *
+     * - Depends on `dependencyUpdates`
+     * - Fails fast if parallel execution is enabled
+     *
+     * ### Correct Invocation
+     *
+     *     ./gradlew dependencyUpdatesNoParallel --no-parallel
+     */
     group = "dependencies"
-    description = "Runs dependencyUpdates. Use --no-parallel at invocation time when required."
+    description = "Runs dependencyUpdates and fails fast if parallel project execution is enabled."
+    doFirst {
+        check(!gradle.startParameter.isParallelProjectExecutionEnabled) {
+            "Run dependencyUpdatesNoParallel with --no-parallel to avoid tooling reliability issues."
+        }
+    }
     dependsOn(tasks.named("dependencyUpdates"))
 }
 
 /**
  * ## dependencyMaintenance
  *
- * Composite lifecycle task for dependency review.
+ * Composite lifecycle task for dependency governance.
  *
- * ### Responsibilities:
+ * ### Responsibilities
  *
- * 1. Update the version catalog (via versionCatalogUpdate).
- * 2. Generate upgrade reports (dependencyUpdates).
+ * 1. Run `versionCatalogUpdate`
+ * 2. Run `dependencyUpdates` (non-parallel)
  *
- * ### Output:
+ * ### Guarantees
  *
- * - Updated gradle/libs.versions.toml
- * - build/dependencyUpdates/report.{json,txt}
+ * - Version catalog remains current.
+ * - Upgrade candidates are reported.
+ * - Stable-only policy enforced.
  *
- * ### Usage:
+ * ### Intended Usage
  *
- *     ./gradlew dependencyMaintenance
- *
- * ### Intended for:
- *
- * - Scheduled dependency audits
- * - Manual version review
+ * - Scheduled audits
+ * - Manual upgrade review
+ * - CI dependency checks
  */
 val dependencyMaintenance: TaskProvider<Task> = tasks.register("dependencyMaintenance") {
     group = "dependencies"
@@ -195,8 +323,19 @@ val dependencyMaintenance: TaskProvider<Task> = tasks.register("dependencyMainte
 /**
  * ## Dependency Locking Helpers
  *
- * These tasks encode common lockfile workflows so contributors do not need to memorize long commands.
- * They print copy-paste commands because `--write-locks` is a command-line switch, not a task input.
+ * Guidance-only tasks that print recommended commands.
+ *
+ * ### Why Not Automate?
+ *
+ * `--write-locks` is a CLI flag, not a task input. Encoding it directly in a task would break Gradle's execution model.
+ *
+ * Therefore, these tasks:
+ *
+ * - Preserve reproducibility
+ * - Avoid side effects
+ * - Provide copy-paste guidance
+ *
+ * They are intentionally marked: `notCompatibleWithConfigurationCache(...)`
  */
 tasks.register("locksWriteAll") {
     group = "dependencies"
@@ -231,51 +370,55 @@ tasks.register("locksDiff") {
 /**
  * ## verifyAll
  *
- * Root-level verification gate.
+ * Root-level verification aggregation task.
  *
- * Lazily aggregates matching subproject tasks:
+ * Dynamically wires subproject tasks:
+ *
  * - test
  * - detekt
  * - apiCheck
  *
- * ### Design Goals:
+ * ### Design Principles
  *
- * - No hardcoded task paths.
- * - Adapts to optional convention plugins.
- * - Avoids eager task realization.
+ * - No hardcoded project paths.
+ * - Compatible with optional convention plugins.
+ * - Uses lazy task matching.
+ * - Preserves configuration avoidance.
  *
- * ### Usage:
+ * ### CI Role
  *
- *     ./gradlew verifyAll
+ * Primary quality gate prior to:
  *
- * ### CI Role:
- *
- * - Primary quality gate before release.
+ * - Release
+ * - Dependency updates
+ * - Lockfile refresh
  */
 val verifyAll: TaskProvider<Task> = tasks.register("verifyAll") {
     group = "verification"
     description = "Runs tests, static analysis, and API compatibility checks in one go."
 }
 
+val verifyTaskNames = setOf("test", "detekt", "apiCheck")
+
 val versionCatalog = "gradle/libs.versions.toml"
 
 /**
  * ## syncVersionProperties
  *
- * Synchronizes root gradle.properties with version catalog.
+ * Synchronizes selected `gradle.properties` entries with the canonical version catalog:
  *
- * ### Guarantees:
+ *     gradle/libs.versions.toml
  *
- * - Catalog remains canonical.
+ * ### Invariants
+ *
+ * - Version catalog is the single source of truth.
  * - Property files mirror selected aliases.
+ * - No mutation outside mapped keys.
  *
- * ### Execution Order:
+ * ### Safety
  *
- * - Reads the current version catalog state.
- *
- * ### Usage:
- *
- *     ./gradlew syncVersionProperties
+ * - Idempotent.
+ * - Does not remove unrelated properties.
  */
 val syncVersionProperties by tasks.registering(SyncVersionPropertiesTask::class) {
     propertyMappings.set(versionPropertyMappings)
@@ -329,11 +472,9 @@ val syncBuildLogicVersionProperties = tasks.register<SyncVersionPropertiesTask>(
  * - Preserves configuration cache friendliness.
  */
 subprojects {
-    listOf("test", "detekt", "apiCheck").forEach { taskName ->
-        tasks.matching { it.name == taskName }.configureEach {
-            rootProject.tasks.named("verifyAll").configure {
-                dependsOn(this@configureEach)
-            }
+    tasks.matching { it.name in verifyTaskNames }.configureEach {
+        rootProject.tasks.named("verifyAll").configure {
+            dependsOn(this@configureEach)
         }
     }
 }
@@ -343,29 +484,28 @@ subprojects {
  *
  * Master release-readiness workflow.
  *
- * ### Orchestrates:
+ * ### Orchestrates
  *
- * 1. verifyAll
- * 2. syncVersionProperties
- * 3. syncBuildLogicVersionProperties
+ * 1. `verifyAll`
+ * 2. `syncVersionProperties`
+ * 3. `syncBuildLogicVersionProperties`
  *
- * ### Intended Use Cases:
+ * ### Intended Usage
  *
  * - Local pre-push validation
- * - CI release gate
- * - Dependency audit cycle
+ * - CI merge gate
+ * - Dependency review cycle
  *
- * ### Command:
+ * ### Design Philosophy
  *
- *     ./gradlew preflight
+ * "If preflight passes, the build is releasable."
  *
- * ### Produces:
+ * Ensures:
  *
- * - Test reports
- * - Static analysis results
- * - API compatibility verification
- * - Dependency upgrade reports
- * - Synchronized property files
+ * - Tests pass
+ * - Static analysis is clean
+ * - API compatibility holds
+ * - Version properties are synchronized
  */
 tasks.register("preflight") {
     group = "verification"
