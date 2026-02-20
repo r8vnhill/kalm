@@ -1,5 +1,14 @@
 package cl.ravenhill.kalm.tools.hadolint
 
+import cl.ravenhill.kalm.tools.cli.detectMissingOptionValue
+import cl.ravenhill.kalm.tools.cli.extractNoSuchOptionName
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.NoSuchOption
+import com.github.ajalt.clikt.core.UsageError
+import com.github.ajalt.clikt.core.parse
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.multiple
+import com.github.ajalt.clikt.parameters.options.option
 import kotlinx.serialization.json.Json
 import java.io.PrintStream
 import java.nio.file.Files
@@ -46,6 +55,22 @@ object HadolintCli {
      * caught in [parseAndExecute] and translated into a successful JSON result.
      */
     private class HelpRequested : Throwable()
+
+    private data class ParsedState(var options: CliOptions? = null)
+
+    private class HadolintParser(private val state: ParsedState) : CliktCommand(name = "hadolint-cli") {
+        private val dockerfiles by option("--dockerfile", "-f").multiple()
+        private val threshold by option("--failure-threshold", "-t")
+        private val strictFiles by option("--strict-files").flag(default = false)
+
+        override fun run() {
+            state.options = CliOptions(
+                dockerfiles = if (dockerfiles.isEmpty()) listOf("Dockerfile") else dockerfiles,
+                failureThreshold = threshold?.let(ValidThreshold::fromString) ?: ValidThreshold.default,
+                strictFiles = strictFiles
+            )
+        }
+    }
 
     /**
      * JSON encoder for serializing [HadolintCliResult].
@@ -94,83 +119,32 @@ object HadolintCli {
      * @throws IllegalArgumentException If a flag is unknown, a value is missing, or a value is invalid.
      */
     fun parseArgs(args: Array<String>): CliOptions {
-        val dockerfiles = mutableListOf<String>()
-        var failureThreshold = ValidThreshold.default
-        var strictFiles = false
+        if (args.any { it == "--help" || it == "-h" }) {
+            throw HelpRequested()
+        }
+        detectMissingOptionValue(
+            args = args.toList(),
+            optionNames = setOf("--dockerfile", "-f", "--failure-threshold", "-t")
+        )?.let { missingValue ->
+            when (missingValue) {
+                "Missing value for option --failure-threshold",
+                "Missing value for option -t" -> throw IllegalArgumentException("Missing value for --failure-threshold")
 
-        var i = 0
-        while (i < args.size) {
-            when (val arg = args[i]) {
-                "--dockerfile", "-f" -> i = parseDockerfileArgument(i, args, dockerfiles)
-
-                "--failure-threshold", "-t" -> {
-                    val pair = parseFailureThreshold(i, args)
-                    failureThreshold = pair.first
-                    i = pair.second
-                }
-
-                "--strict-files" -> {
-                    strictFiles = true
-                    i += 1
-                }
-
-                "--help", "-h" -> {
-                    throw HelpRequested()
-                }
-
-                else -> throw IllegalArgumentException("Unknown argument: $arg")
+                else -> throw IllegalArgumentException("Missing value for --dockerfile")
             }
         }
 
-        return CliOptions(
-            dockerfiles = if (dockerfiles.isEmpty()) listOf("Dockerfile") else dockerfiles,
-            failureThreshold = failureThreshold,
-            strictFiles = strictFiles
-        )
-    }
-
-    /**
-     * Parses a `--failure-threshold` / `-t` flag and its value.
-     *
-     * @param i Index of the flag argument in [args].
-     * @param args Full CLI argument array.
-     * @return A pair `(threshold, nextIndex)` where `nextIndex` points after the consumed pair.
-     * @throws IllegalArgumentException If the value is missing or not a valid [ValidThreshold].
-     */
-    private fun parseFailureThreshold(
-        i: Int,
-        args: Array<String>
-    ): Pair<ValidThreshold, Int> {
-        var currentIndex = i
-        if (currentIndex + 1 >= args.size) {
-            throw IllegalArgumentException("Missing value for --failure-threshold")
+        return try {
+            val state = ParsedState()
+            HadolintParser(state).parse(args.toList())
+            requireNotNull(state.options)
+        } catch (error: UsageError) {
+            val message = when (error) {
+                is NoSuchOption -> "Unknown argument: ${extractNoSuchOptionName(error.message.orEmpty())}"
+                else -> error.message ?: "Invalid argument"
+            }
+            throw IllegalArgumentException(message)
         }
-        val threshold = ValidThreshold.fromString(args[currentIndex + 1])
-        currentIndex += 2
-        return threshold to currentIndex
-    }
-
-    /**
-     * Parses a `--dockerfile` / `-f` flag and its value.
-     *
-     * @param i Index of the flag argument in [args].
-     * @param args Full CLI argument array.
-     * @param dockerfiles Accumulator list for dockerfile path strings.
-     * @return Updated parsing index after consuming the pair.
-     * @throws IllegalArgumentException If the value is missing.
-     */
-    private fun parseDockerfileArgument(
-        i: Int,
-        args: Array<String>,
-        dockerfiles: MutableList<String>
-    ): Int {
-        var currentIndex = i
-        if (currentIndex + 1 >= args.size) {
-            throw IllegalArgumentException("Missing value for --dockerfile")
-        }
-        dockerfiles += args[currentIndex + 1]
-        currentIndex += 2
-        return currentIndex
     }
 
     /**

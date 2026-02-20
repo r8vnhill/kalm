@@ -5,6 +5,16 @@
 
 package cl.ravenhill.kalm.tools.locks
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.NoSuchOption
+import com.github.ajalt.clikt.core.NoSuchSubcommand
+import com.github.ajalt.clikt.core.UsageError
+import com.github.ajalt.clikt.core.parse
+import com.github.ajalt.clikt.core.subcommands
+import com.github.ajalt.clikt.parameters.options.multiple
+import com.github.ajalt.clikt.parameters.options.option
+import cl.ravenhill.kalm.tools.cli.detectMissingOptionValue
+import cl.ravenhill.kalm.tools.cli.extractNoSuchOptionName
 import kotlin.system.exitProcess
 
 object DependencyLocksCli {
@@ -32,30 +42,6 @@ object DependencyLocksCli {
         data object Diff : Command
     }
 
-    data class ExecutionRequest(
-        val json: Boolean,
-        val args: Array<String>
-    )
-
-    private sealed interface ExecutionRequestResult {
-        data class Ok(val request: ExecutionRequest) : ExecutionRequestResult
-        data class Error(val message: String) : ExecutionRequestResult
-    }
-
-    private fun parseExecutionRequest(args: Array<String>): ExecutionRequestResult {
-        val jsonFlags = args.count { it == "--json" }
-        if (jsonFlags > 1) {
-            return ExecutionRequestResult.Error("Duplicate option --json")
-        }
-        val normalizedArgs = args.filterNot { it == "--json" }.toTypedArray()
-        return ExecutionRequestResult.Ok(
-            ExecutionRequest(
-                json = jsonFlags == 1,
-                args = normalizedArgs
-            )
-        )
-    }
-
     sealed interface CliResult {
         data class Success(val command: String) : CliResult
         data class Failure(val message: String) : CliResult
@@ -74,17 +60,14 @@ object DependencyLocksCli {
             """{"exitCode":0,"command":null,"message":"${jsonEscape(USAGE.trimIndent())}"}"""
     }
 
-    fun run(args: Array<String>): CliResult {
-        val requestResult = parseExecutionRequest(args)
-        if (requestResult is ExecutionRequestResult.Error) {
-            return CliResult.Failure(requestResult.message)
-        }
-        requestResult as ExecutionRequestResult.Ok
-        val command = parseCommand(requestResult.request.args) ?: return CliResult.Help
-        return when (command) {
-            is ParseResult.Error -> CliResult.Failure(command.message)
-            is ParseResult.Ok -> CliResult.Success(render(command.command))
-        }
+    private data class ExecutionRequest(
+        val json: Boolean,
+        val commandArgs: Array<String>
+    )
+
+    private sealed interface ExecutionRequestResult {
+        data class Ok(val request: ExecutionRequest) : ExecutionRequestResult
+        data class Error(val message: String) : ExecutionRequestResult
     }
 
     private sealed interface ParseResult {
@@ -92,97 +75,165 @@ object DependencyLocksCli {
         data class Error(val message: String) : ParseResult
     }
 
-    private fun parseCommand(args: Array<String>): ParseResult? {
-        if (args.isEmpty()) {
-            return ParseResult.Error("Missing command. Supported commands: $SUPPORTED_COMMANDS")
+    private data class ParsedCommandState(var command: Command? = null)
+
+    private class RootParser(private val state: ParsedCommandState) : CliktCommand(name = "locks-cli") {
+        override val invokeWithoutSubcommand: Boolean = true
+        override val printHelpOnEmptyArgs: Boolean = false
+
+        init {
+            subcommands(
+                WriteAllParser(state),
+                WriteModuleParser(state),
+                WriteConfigurationParser(state),
+                DiffParser(state)
+            )
         }
-        val commandName = args.first()
-        if (commandName == "help" || commandName == "--help") {
-            return null
-        }
-        val options = args.drop(1)
-        return when (commandName) {
-            "write-all" -> parseNoOptions(commandName, options, Command.WriteAll)
-            "write-module" -> parseWriteModule(options)
-            "write-configuration" -> parseWriteConfiguration(options)
-            "diff" -> parseNoOptions(commandName, options, Command.Diff)
-            else -> ParseResult.Error("Unknown command '$commandName'. Supported commands: $SUPPORTED_COMMANDS")
+
+        override fun run() {
+            if (currentContext.invokedSubcommand == null) {
+                throw UsageError("Missing command. Supported commands: $SUPPORTED_COMMANDS")
+            }
         }
     }
 
-    private fun parseNoOptions(
-        commandName: String,
-        options: List<String>,
-        command: Command
-    ): ParseResult {
-        if (options.isNotEmpty()) {
-            return ParseResult.Error("Unknown option ${options.first()}")
+    private class WriteAllParser(private val state: ParsedCommandState) : CliktCommand(name = "write-all") {
+        override fun run() {
+            state.command = Command.WriteAll
         }
-        return ParseResult.Ok(command)
     }
 
-    private fun parseWriteModule(options: List<String>): ParseResult {
-        val parsed = parseOptions(options, setOf("--module"))
-        if (parsed is ParseResult.Error) return parsed
-        parsed as ParsedOptions
-        val module = parsed.values["--module"]
-            ?: return ParseResult.Error("Missing required option --module for write-module")
-        return ParseResult.Ok(Command.WriteModule(module))
-    }
+    private class WriteModuleParser(private val state: ParsedCommandState) : CliktCommand(name = "write-module") {
+        private val modules by option("--module").multiple()
 
-    private fun parseWriteConfiguration(options: List<String>): ParseResult {
-        val parsed = parseOptions(options, setOf("--module", "--configuration"))
-        if (parsed is ParseResult.Error) return parsed
-        parsed as ParsedOptions
-        val module = parsed.values["--module"]
-        val configuration = parsed.values["--configuration"]
-        if (module == null || configuration == null) {
-            return ParseResult.Error("write-configuration requires --module and --configuration")
+        override fun run() {
+            if (modules.isEmpty()) {
+                throw UsageError("Missing required option --module for write-module")
+            }
+            if (modules.size > 1) {
+                throw UsageError("Duplicate option --module")
+            }
+            val module = modules.single()
+            if (module.isBlank()) {
+                throw UsageError("Missing value for option --module")
+            }
+            state.command = Command.WriteModule(module)
         }
-        return ParseResult.Ok(Command.WriteConfiguration(module, configuration))
     }
 
-    private data class ParsedOptions(val values: Map<String, String>)
+    private class WriteConfigurationParser(private val state: ParsedCommandState) :
+        CliktCommand(name = "write-configuration") {
+        private val modules by option("--module").multiple()
+        private val configurations by option("--configuration").multiple()
 
-    private fun parseOptions(
-        tokens: List<String>,
-        allowed: Set<String>
-    ): Any {
-        val values = mutableMapOf<String, String>()
+        override fun run() {
+            if (modules.isEmpty() || configurations.isEmpty()) {
+                throw UsageError("write-configuration requires --module and --configuration")
+            }
+            if (modules.size > 1) {
+                throw UsageError("Duplicate option --module")
+            }
+            if (configurations.size > 1) {
+                throw UsageError("Duplicate option --configuration")
+            }
+            val module = modules.single()
+            val configuration = configurations.single()
+            if (module.isBlank()) {
+                throw UsageError("Missing value for option --module")
+            }
+            if (configuration.isBlank()) {
+                throw UsageError("Missing value for option --configuration")
+            }
+            state.command = Command.WriteConfiguration(module, configuration)
+        }
+    }
+
+    private class DiffParser(private val state: ParsedCommandState) : CliktCommand(name = "diff") {
+        override fun run() {
+            state.command = Command.Diff
+        }
+    }
+
+    private fun parseExecutionRequest(args: Array<String>): ExecutionRequestResult {
+        val jsonFlags = args.count { it == "--json" }
+        if (jsonFlags > 1) {
+            return ExecutionRequestResult.Error("Duplicate option --json")
+        }
+        return ExecutionRequestResult.Ok(
+            ExecutionRequest(
+                json = jsonFlags == 1,
+                commandArgs = args.filterNot { it == "--json" }.toTypedArray()
+            )
+        )
+    }
+
+    fun run(args: Array<String>): CliResult {
+        val request = parseExecutionRequest(args)
+        if (request is ExecutionRequestResult.Error) {
+            return CliResult.Failure(request.message)
+        }
+        request as ExecutionRequestResult.Ok
+        val commandArgs = request.request.commandArgs
+        if (commandArgs.firstOrNull() == "help" || commandArgs.any { it == "--help" || it == "-h" }) {
+            return CliResult.Help
+        }
+        return when (val parsed = parseCommand(commandArgs)) {
+            is ParseResult.Ok -> CliResult.Success(render(parsed.command))
+            is ParseResult.Error -> CliResult.Failure(parsed.message)
+        }
+    }
+
+    private fun parseCommand(args: Array<String>): ParseResult {
+        val missingValueMessage = detectMissingOptionValue(
+            args = args.toList(),
+            optionNames = setOf("--module", "--configuration")
+        )
+        if (missingValueMessage != null) {
+            return ParseResult.Error(missingValueMessage)
+        }
+        val state = ParsedCommandState()
+        return try {
+            RootParser(state).parse(args.toList())
+            ParseResult.Ok(requireNotNull(state.command))
+        } catch (error: UsageError) {
+            ParseResult.Error(normalizeError(error, args))
+        }
+    }
+
+    private fun normalizeError(
+        error: UsageError,
+        args: Array<String>
+    ): String = when (error) {
+        is NoSuchSubcommand -> "Unknown command '${args.firstOrNull().orEmpty()}'. Supported commands: $SUPPORTED_COMMANDS"
+        is NoSuchOption -> "Unknown option ${findUnknownOption(args) ?: extractNoSuchOptionName(error.message.orEmpty())}"
+        else -> error.message ?: "Invalid arguments"
+    }
+
+    private fun findUnknownOption(args: Array<String>): String? {
+        val allowedOptions = when (args.firstOrNull()) {
+            "write-module" -> setOf("--module")
+            "write-configuration" -> setOf("--module", "--configuration")
+            else -> emptySet()
+        }
+        val tokens = args.drop(1)
         var index = 0
         while (index < tokens.size) {
             val token = tokens[index]
             if (!token.startsWith("--")) {
-                return ParseResult.Error("Unknown option $token")
+                index += 1
+                continue
             }
-            val (name, value, nextIndexOrNull) = if (token.contains('=')) {
-                val split = token.split("=", limit = 2)
-                Triple(split[0], split[1], null)
+            val optionName = token.substringBefore('=')
+            if (optionName !in allowedOptions) {
+                return optionName
+            }
+            if (!token.contains('=')) {
+                index += 2
             } else {
-                val next = tokens.getOrNull(index + 1)
-                if (next == null || next.startsWith("--")) {
-                    if (token !in allowed) {
-                        return ParseResult.Error("Unknown option $token")
-                    }
-                    return ParseResult.Error("Missing value for option $token")
-                }
-                Triple(token, next, index + 2)
+                index += 1
             }
-
-            if (name !in allowed) {
-                return ParseResult.Error("Unknown option $name")
-            }
-            if (name in values) {
-                return ParseResult.Error("Duplicate option $name")
-            }
-            if (value.isBlank()) {
-                return ParseResult.Error("Missing value for option $name")
-            }
-
-            values[name] = value
-            index = nextIndexOrNull ?: index + 1
         }
-        return ParsedOptions(values)
+        return null
     }
 
     private fun render(command: Command): String = when (command) {
