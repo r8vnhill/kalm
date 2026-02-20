@@ -74,10 +74,17 @@ $InformationPreference = 'Continue'
 
 $repoRootScript = Join-Path $PSScriptRoot '..' 'lib' 'Get-KalmRepoRoot.ps1'
 $quoteArgsScript = Join-Path $PSScriptRoot '..' 'lib' 'Join-QuotedArgs.ps1'
-$findLocksCommandScript = Join-Path $PSScriptRoot '..' 'lib' 'Find-LocksCliCommand.ps1'
+$findJsonObjectLineScript = Join-Path $PSScriptRoot '..' 'lib' 'Find-JsonObjectLine.ps1'
+$findLocksJsonCommandScript = Join-Path $PSScriptRoot '..' 'lib' 'Find-LocksCliJsonCommand.ps1'
 $resolveExecutionCommandScript = Join-Path $PSScriptRoot '..' 'lib' 'Resolve-LocksCliExecutionCommand.ps1'
 
-foreach ($scriptPath in @($repoRootScript, $quoteArgsScript, $findLocksCommandScript, $resolveExecutionCommandScript)) {
+foreach ($scriptPath in @(
+        $repoRootScript,
+        $quoteArgsScript,
+        $findJsonObjectLineScript,
+        $findLocksJsonCommandScript,
+        $resolveExecutionCommandScript
+    )) {
     if (-not (Test-Path -LiteralPath $scriptPath)) {
         throw "Required helper script not found: '$scriptPath'"
     }
@@ -85,7 +92,8 @@ foreach ($scriptPath in @($repoRootScript, $quoteArgsScript, $findLocksCommandSc
 
 . $repoRootScript
 . $quoteArgsScript
-. $findLocksCommandScript
+. $findJsonObjectLineScript
+. $findLocksJsonCommandScript
 . $resolveExecutionCommandScript
 
 $repoRoot = Get-KalmRepoRoot -StartPath $PSScriptRoot
@@ -101,7 +109,7 @@ if (-not (Test-Path -LiteralPath $gradlew)) {
     throw "Gradle wrapper not found at '$gradlew'."
 }
 
-$argsString = Join-QuotedArgs -Arguments $CliArgs
+$argsString = Join-QuotedArgs -Arguments (@("--json") + $CliArgs)
 $gradleArgs = @(':tools:runLocksCli', "--args=$argsString", '--quiet')
 Write-Verbose ("Gradle invocation args: {0}" -f ($gradleArgs -join ' '))
 
@@ -112,7 +120,7 @@ try {
     if ($gradleExitCode -ne 0) {
         throw "Failed to run :tools:runLocksCli (exit code $gradleExitCode)."
     }
-    $command = Find-LocksCliCommand -Lines $rawOutput
+    $command = Find-LocksCliJsonCommand -Lines $rawOutput
     $executionCommand = Resolve-LocksCliExecutionCommand -Command $command
     Write-Verbose ("Extracted command: {0}" -f $command)
     Write-Verbose ("Execution command: {0}" -f $executionCommand)
