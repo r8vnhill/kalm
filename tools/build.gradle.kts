@@ -6,83 +6,43 @@
 /**
  * # :tools (build.gradle.kts)
  *
- * The `:tools` module provides reusable JVM-based tooling components that support the broader KALM ecosystem.
+ * The `:tools` module contains reusable JVM-based tooling components that support development workflows and internal
+ * quality processes across the KALM ecosystem.
  *
- * ## Purpose
+ * This module is intentionally isolated from application runtime modules and is designed to provide deterministic,
+ * composable, and testable tooling.
  *
- * ### This module is intended for:
+ * ## Architectural Role
  *
- * - Shared utilities used across build logic or runtime modules.
- * - Small, focused tools that support development, quality checks, automation, or internal workflows.
- * - Logic that should remain decoupled from application entry points.
+ * `:tools` is a **library-style module** that hosts:
  *
- * ### The module is designed to be:
+ * - Standalone CLI utilities
+ * - Internal automation helpers
+ * - Validation and quality enforcement tools
+ * - Development-time infrastructure logic
  *
- * - **Modular** --- no implicit coupling to application modules.
- * - **Reusable** --- logic can be consumed independently.
- * - **Testable** --- all behavior should be verifiable in isolation.
- * - **Lightweight** --- avoid unnecessary runtime dependencies.
+ * ### It does **not**:
  *
- * ## Applied Convention Plugins
+ * - Contain application entry points
+ * - Depend on UI layers
+ * - Implicitly couple to runtime modules
  *
- * ### `kalm.library`
+ * Tools should be independently executable and verifiable in isolation.
  *
- * Applies standard library conventions:
+ * ## CLI Task Registration
  *
- * - Reproducible build configuration
- * - Strict dependency management
- * - Consistent publication metadata
- * - Shared quality gates
+ * This module exposes CLI entry points via `JavaExec` tasks.
  *
- * This ensures all library modules behave consistently and can be versioned independently.
+ * ## Running CLI Tools
  *
- * ### `kalm.jvm`
+ * From the project root:
  *
- * Applies JVM-specific conventions:
+ * ```
+ * ./gradlew :tools:runHadolintCli
+ * ./gradlew :tools:runLocksCli
+ * ```
  *
- * - Toolchain configuration
- * - Kotlin/JVM defaults
- * - Compiler options alignment
- *
- * This guarantees consistent bytecode targets and avoids environment drift.
- *
- * ## Testing Strategy
- *
- * The module uses Kotest via:
- *
- * `testImplementation(libs.bundles.kotest)`
- *
- * Recommended testing practices:
- *
- * - Prefer **Property-Based Testing (PBT)** for pure utilities.
- * - Use **Data-Driven Testing (DDT)** for edge-case coverage.
- * - Keep test functions small and deterministic.
- * - Avoid hidden global state.
- *
- * Tools modules should prioritize:
- *
- * - Determinism
- * - Side effect isolation
- * - Clear input/output contracts
- *
- * ## Design Guidelines
- *
- * - Keep classes and functions small (< 25 lines where practical).
- * - Favor pure functions and immutability.
- * - Avoid unnecessary abstraction layers.
- * - Prefer composition to inheritance.
- * - Do not introduce framework-level dependencies unless strictly necessary.
- *
- * ## When to Add Dependencies
- *
- * Only introduce a dependency if it:
- *
- * - Significantly reduces complexity,
- * - Improves correctness or safety,
- * - Avoids reimplementing well-tested behavior,
- * - Or enables better testing.
- *
- * Tooling modules should remain lightweight.
+ * If CLI arguments are required, they should be wired via `args(...)` or Gradle properties to maintain reproducibility.
  */
 
 plugins {
@@ -97,16 +57,27 @@ dependencies {
     testImplementation(libs.bundles.kotest)
 }
 
-tasks.register<JavaExec>("runHadolintCli") {
-    group = "verification"
-    description = "Runs cl.ravenhill.kalm.tools.hadolint.HadolintCli"
-    classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("cl.ravenhill.kalm.tools.hadolint.HadolintCli")
+fun registerCliTask(
+    name: String,
+    mainClassName: String,
+    taskDescription: String
+) {
+    tasks.register<JavaExec>(name) {
+        group = "verification"
+        description = taskDescription
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set(mainClassName)
+    }
 }
 
-tasks.register<JavaExec>("runLocksCli") {
-    group = "verification"
-    description = "Runs cl.ravenhill.kalm.tools.locks.DependencyLocksCli"
-    classpath = sourceSets.main.get().runtimeClasspath
-    mainClass.set("cl.ravenhill.kalm.tools.locks.DependencyLocksCli")
-}
+registerCliTask(
+    name = "runHadolintCli",
+    mainClassName = "cl.ravenhill.kalm.tools.hadolint.HadolintCli",
+    taskDescription = "Runs cl.ravenhill.kalm.tools.hadolint.HadolintCli"
+)
+
+registerCliTask(
+    name = "runLocksCli",
+    mainClassName = "cl.ravenhill.kalm.tools.locks.DependencyLocksCli",
+    taskDescription = "Runs cl.ravenhill.kalm.tools.locks.DependencyLocksCli"
+)
