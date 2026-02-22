@@ -76,14 +76,14 @@ $repoRootScript = Join-Path $PSScriptRoot '..' 'lib' 'Get-KalmRepoRoot.ps1'
 $quoteArgsScript = Join-Path $PSScriptRoot '..' 'lib' 'Join-QuotedArgs.ps1'
 $findJsonObjectLineScript = Join-Path $PSScriptRoot '..' 'lib' 'Find-JsonObjectLine.ps1'
 $findLocksJsonCommandScript = Join-Path $PSScriptRoot '..' 'lib' 'Find-LocksCliJsonCommand.ps1'
-$resolveExecutionCommandScript = Join-Path $PSScriptRoot '..' 'lib' 'Resolve-LocksCliExecutionCommand.ps1'
+$resolveExecutionCommandModule = Join-Path $PSScriptRoot '..' 'lib' 'Resolve-LocksCliExecutionCommand.psm1'
 
 foreach ($scriptPath in @(
         $repoRootScript,
         $quoteArgsScript,
         $findJsonObjectLineScript,
         $findLocksJsonCommandScript,
-        $resolveExecutionCommandScript
+        $resolveExecutionCommandModule
     )) {
     if (-not (Test-Path -LiteralPath $scriptPath)) {
         throw "Required helper script not found: '$scriptPath'"
@@ -94,7 +94,7 @@ foreach ($scriptPath in @(
 . $quoteArgsScript
 . $findJsonObjectLineScript
 . $findLocksJsonCommandScript
-. $resolveExecutionCommandScript
+Import-Module $resolveExecutionCommandModule -Force
 
 $repoRoot = Get-KalmRepoRoot -StartPath $PSScriptRoot
 Write-Verbose ("Resolved repository root: {0}" -f $repoRoot)
