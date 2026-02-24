@@ -115,4 +115,10 @@ Describe 'Resolve-LocksCliExecutionCommand' {
                 Should -Be $expected
         }
     }
+
+    It 'builds a structured execution spec with executable and arguments' {
+        $spec = ConvertTo-LocksCliExecutionSpec -Command './gradlew test --scan' -ForceWindows $true
+        $spec.Executable | Should -Be 'gradlew.bat'
+        $spec.Arguments | Should -Be @('test', '--scan')
+    }
 }

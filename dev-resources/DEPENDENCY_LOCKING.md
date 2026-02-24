@@ -86,8 +86,8 @@ When that happens, regenerate locks with `--write-locks`.
 
 > [!TIP]
 > For module/configuration-specific lock workflows, prefer the CLI wrapper:
-> - `./scripts/gradle/Invoke-LocksCli.ps1 write-module --module :core`
-> - `./scripts/gradle/Invoke-LocksCli.ps1 write-configuration --module :core --configuration testRuntimeClasspath`
+> - `pwsh -NoProfile -Command "Import-Module ./scripts/gradle/Invoke-LocksCli.psm1 -Force; Invoke-LocksCli write-module --module :core; exit $LASTEXITCODE"`
+> - `pwsh -NoProfile -Command "Import-Module ./scripts/gradle/Invoke-LocksCli.psm1 -Force; Invoke-LocksCli write-configuration --module :core --configuration testRuntimeClasspath; exit $LASTEXITCODE"`
 >
 > Design principle: keep Gradle tasks wiring-only; use `tools/` CLIs plus `scripts/` wrappers for runtime input.
 

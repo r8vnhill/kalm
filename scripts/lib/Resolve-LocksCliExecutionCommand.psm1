@@ -1,6 +1,16 @@
 #Requires -Version 7.4
 Set-StrictMode -Version 3.0
 
+class LocksCliExecutionSpec {
+    [string] $Executable
+    [string[]] $Arguments
+
+    LocksCliExecutionSpec([string] $executable, [string[]] $arguments) {
+        $this.Executable = $executable
+        $this.Arguments = $arguments
+    }
+}
+
 <#
 .SYNOPSIS
     Represents the components of a command prefix required for safe rewriting.
@@ -304,4 +314,71 @@ function Resolve-LocksCliExecutionCommand {
     }
 }
 
-Export-ModuleMember -Function Resolve-LocksCliExecutionCommand
+function ConvertTo-LocksCliExecutionSpec {
+    [CmdletBinding()]
+    [OutputType([LocksCliExecutionSpec])]
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [string] $Command,
+
+        [bool] $ForceWindows = $IsWindows
+    )
+
+    process {
+        $normalized = Resolve-LocksCliExecutionCommand -Command $Command -ForceWindows:$ForceWindows
+        $tokens = [System.Collections.Generic.List[string]]::new()
+        $current = [System.Text.StringBuilder]::new()
+        $inSingle = $false
+        $inDouble = $false
+        $escaped = $false
+
+        foreach ($ch in $normalized.ToCharArray()) {
+            if ($escaped) {
+                [void] $current.Append($ch)
+                $escaped = $false
+                continue
+            }
+
+            if (-not $inSingle -and $ch -eq '\') {
+                $escaped = $true
+                continue
+            }
+
+            if (-not $inDouble -and $ch -eq "'") {
+                $inSingle = -not $inSingle
+                continue
+            }
+
+            if (-not $inSingle -and $ch -eq '"') {
+                $inDouble = -not $inDouble
+                continue
+            }
+
+            if (-not $inSingle -and -not $inDouble -and [char]::IsWhiteSpace($ch)) {
+                if ($current.Length -gt 0) {
+                    $tokens.Add($current.ToString())
+                    [void] $current.Clear()
+                }
+                continue
+            }
+
+            [void] $current.Append($ch)
+        }
+
+        if ($escaped -or $inSingle -or $inDouble) {
+            throw "Unable to parse command for execution due to unmatched escaping or quoting: '$normalized'"
+        }
+        if ($current.Length -gt 0) {
+            $tokens.Add($current.ToString())
+        }
+        if ($tokens.Count -eq 0) {
+            throw 'Unable to parse command for execution: no executable token found.'
+        }
+
+        $exe = $tokens[0]
+        $args = if ($tokens.Count -gt 1) { $tokens.GetRange(1, $tokens.Count - 1).ToArray() } else { @() }
+        return [LocksCliExecutionSpec]::new($exe, $args)
+    }
+}
+
+Export-ModuleMember -Function Resolve-LocksCliExecutionCommand, ConvertTo-LocksCliExecutionSpec

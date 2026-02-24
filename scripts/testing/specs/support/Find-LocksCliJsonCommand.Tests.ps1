@@ -46,11 +46,11 @@ Describe 'Find-LocksCliJsonCommand' {
     # Stores any existing `Find-JsonObjectLine` function so tests that override it can safely
     # restore the original implementation after execution.
     BeforeEach {
-        $params = @{
+        $commandLookup = @{
             CommandType = 'Function'
             ErrorAction = 'SilentlyContinue'
         }
-        $script:originalFindJsonObjectLine = Get-Command Find-JsonObjectLine @params
+        $script:originalFindJsonObjectLine = Get-Command Find-JsonObjectLine @commandLookup
     }
 
     # Restores `Find-JsonObjectLine` after each test.
@@ -59,11 +59,11 @@ Describe 'Find-LocksCliJsonCommand' {
     # any temporary override is removed to maintain isolation between tests.
     AfterEach {
         if ($null -ne $script:originalFindJsonObjectLine) {
-            $params = @{
+            $setItemArgs = @{
                 Path  = 'function:Find-JsonObjectLine'
                 Value = $script:originalFindJsonObjectLine.ScriptBlock
             }
-            Set-Item @params
+            Set-Item @setItemArgs
         }
         else {
             Remove-Item function:Find-JsonObjectLine -ErrorAction SilentlyContinue

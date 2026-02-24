@@ -351,9 +351,15 @@ tasks.register("locksCliHelp") {
     description = "Prints examples for the lock workflow CLI wrapper."
     notCompatibleWithConfigurationCache("Guidance task; no need to store configuration cache state.")
     doLast {
-        logger.lifecycle("./scripts/gradle/Invoke-LocksCli.ps1 write-module --module :core")
+        // TODO: Change this to print a multi-line message instead of commands separated by `;`
         logger.lifecycle(
-            "./scripts/gradle/Invoke-LocksCli.ps1 write-configuration --module :core --configuration testRuntimeClasspath"
+            "pwsh -NoProfile -Command \"Import-Module ./scripts/gradle/Invoke-LocksCli.psm1 -Force; " +
+                "Invoke-LocksCli write-module --module :core; exit ${'$'}LASTEXITCODE\""
+        )
+        logger.lifecycle(
+            "pwsh -NoProfile -Command \"Import-Module ./scripts/gradle/Invoke-LocksCli.psm1 -Force; " +
+                "Invoke-LocksCli write-configuration --module :core --configuration testRuntimeClasspath; " +
+                "exit ${'$'}LASTEXITCODE\""
         )
     }
 }

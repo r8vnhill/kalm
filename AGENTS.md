@@ -76,7 +76,7 @@ If a command cannot be executed due to environment constraints, this must be rep
 
 - Lockfiles are source-controlled and must remain consistent with dependency changes.
 - When dependencies change, regenerate lockfiles and commit them together.
-- Prefer existing lock workflows (`Invoke-LocksCli.ps1` / `:tools` locks CLI) over ad-hoc commands.
+- Prefer existing lock workflows (`Invoke-LocksCli.psm1` / `:tools` locks CLI) over ad-hoc commands.
 
 ## Documentation Rules
 
