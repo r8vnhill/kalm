@@ -62,3 +62,4 @@ todo.md
 .kotlin
 ~todo.md
 **/bin/
+~tmp/
