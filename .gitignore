@@ -1,11 +1,14 @@
 # === Gradle ===
-.gradle/
+**/.gradle/
 !gradle/wrapper/gradle-wrapper.jar  # allow wrapper JAR to be tracked
-!convention-plugins/gradle/wrapper/gradle-wrapper.jar  # allow wrapper JAR to be tracked
-build/
+**/build/
 !**/build.gradle.kts
 !**/settings.gradle.kts
 !**/gradle.properties
+
+# Allow functionalTest fixture build outputs from build-logic to be tracked when needed
+!build-logic/src/functionalTest/build/
+!build-logic/src/functionalTest/build/**
 
 # === IntelliJ IDEA ===
 .idea/
@@ -20,10 +23,16 @@ build/
 *.ear
 
 # === Logs / Output / Reports ===
-logs/
-out/
-test-reports/
+**/logs/
+**/out/
+**/test-reports/
 *.log
+
+# === JVM crash dumps ===
+hs_err_pid*
+replay_pid*
+*.hprof
+*.lck
 
 # === OS-generated files ===
 .DS_Store
@@ -47,4 +56,9 @@ node_modules/
 # === VS Code === (optional if contributors use it)
 .vscode/
 
-.kotlin/
+todo.md
+*.bak
+.venv
+.kotlin
+~todo.md
+**/bin/

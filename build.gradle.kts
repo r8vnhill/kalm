@@ -1,179 +1,69 @@
-@file:Suppress("SpellCheckingInspection")
-
 /*
- * ===============================
- * Root build configuration (KTS)
- * ===============================
- *
- * Purpose
- * -------
- * - Apply shared conventions and quality tooling that all subprojects benefit from.
- * - Centralize static analysis (Detekt), code coverage (Kover), dependency hygiene (Version Catalog Update + Ben
- *   Manes), and ABI checks (binary-compatibility).
- *
- * Design
- * ------
- * - Keep things configuration-cache friendly: prefer `configureEach`, avoid lambdas capturing outer scope, and stick to
- *   Provider/Property APIs.
- * - Push reusable conventions into build-logic; leave the root as orchestration glue.
+ * Copyright (c) 2026, Ignacio Slater-Muñoz.
+ * 2-Clause BSD License.
  */
 
-import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension
-import plugins.VerifyKnobJavaDefaultTask
-import java.util.*
+/**
+ * # Root Build Logic
+ *
+ * This file applies root-level plugins and conventions shared across all subprojects.
+ * It enforces reproducible builds, dependency locking, and version maintenance routines.
+ *
+ * ## Summary
+ * - Enables dependency locking with `LockMode.STRICT` across all projects.
+ * - Configures binary compatibility validation.
+ * - Adds helper tasks for dependency and verification maintenance.
+ * - Restricts unstable dependency updates (alpha, beta, RC, etc.).
+ *
+ * ## Related documentation
+ * - [Gradle Dependency Locking](https://docs.gradle.org/current/userguide/dependency_locking.html)
+ * - [Ben Manes Versions Plugin](https://github.com/ben-manes/gradle-versions-plugin)
+ * - [Version Catalog Update Plugin](https://github.com/littlerobots/version-catalog-update-plugin)
+ * - [Kotlin Binary Compatibility Validator](https://github.com/Kotlin/binary-compatibility-validator)
+ */
 
-//#region Plugins ======================================================================================================
-// - knob.reproducible: reproducible archives (stable timestamps/order).
-// - kotlin binary compatibility: validates ABI changes for published modules.
-// - detekt: static analysis for Kotlin (root defaults, applied in subprojects where needed).
-// - version-catalog-update: keeps libs.versions.toml tidy and helps bump versions.
-// - ben-manes versions: reports dependency updates (does NOT change files).
-// - kover: multiplatform coverage (configured below).
-// - doctor: sanity checks for Gradle builds (misconfig detection).
 plugins {
-    id("knob.reproducible")
+    // Ensures byte-for-byte reproducible archives and metadata (via kalm.reproducible plugin).
+    id("kalm.reproducible")
 
+    // Applies dependency locking conventions without relying on allprojects {}.
+    id("kalm.dependency-locking")
+
+    id("kalm.build-tasks")
+
+    // Provides API compatibility checks for public Kotlin APIs.
     alias(libs.plugins.kotlin.bin.compatibility)
 
-    // Centralize Detekt default config at root; subprojects opt-in to the plugin.
-    alias(libs.plugins.detekt)
+    // Registers Detekt for subprojects without applying it to the root.
+    alias(libs.plugins.detekt) apply false
 
-    alias(libs.plugins.version.catalog.update)
-    alias(libs.plugins.ben.manes.versions)
-    alias(libs.plugins.kover)
-    alias(libs.plugins.doctor)
+    // Adds dependency maintenance helpers:
+    alias(libs.plugins.version.catalog.update) // Version Catalog Update (VCU)
+    alias(libs.plugins.ben.manes.versions) // Ben Manes dependency updates report
 }
-//#endregion
 
-//#region Kotlin binary-compatibility validation =======================================================================
-// Narrow scope to API-bearing projects so ABI checks are signal-y, not noisy.
+/**
+ * # Kotlin Binary Compatibility Validation
+ *
+ * Ensures that changes to public APIs do not break binary compatibility.
+ * Projects listed in `ignoredProjects` are skipped (e.g., test utilities or examples).
+ */
 apiValidation {
-    ignoredProjects.addAll(
-        listOf(
-            projects.examples.name,
-            projects.benchmark.name,
-            projects.utils.testCommons.name
-        )
+    ignoredProjects += listOf(
+        // Uncomment to exclude optional modules from binary compatibility validation.
+        // "test-utils", "examples"
     )
 }
-//#endregion
 
-//#region Detekt (root defaults) =======================================================================================
-// Root-wide defaults; subprojects applying detekt inherit these (see propagation below).
-detekt {
-    buildUponDefaultConfig = true
-    config.setFrom(rootProject.files("config/detekt/detekt.yml"))
-    parallel = true
-}
-
-val detektPluginId = libs.plugins.detekt.get().pluginId
-
-//#region Propagate Detekt defaults and attach Kover to JVM modules ----------------------------------------------------
-// Keeps individual module scripts small and consistent.
-subprojects {
-    plugins.withId(detektPluginId) {
-        extensions.configure(DetektExtension::class) {
-            buildUponDefaultConfig = true
-            config.setFrom(rootProject.files("config/detekt/detekt.yml"))
-            parallel = true
-        }
-    }
-    // Apply Kover where Kotlin/JVM is present (avoids adding to non-JVM projects).
-    plugins.withId("org.jetbrains.kotlin.jvm") {
-        apply(plugin = "org.jetbrains.kotlinx.kover")
-    }
-}
-//#endregion
-
-//#region Convenience: `lint` runs all Detekt tasks (root + subprojects) -----------------------------------------------
-// Handy for CI or local quick checks.
-tasks.register("lint") {
-    group = "verification"
-    description = "Runs static analysis (Detekt) across the project."
-    dependsOn(tasks.matching { it.name == "detekt" })
-}
-//#endregion
-//#endregion
-
-//#region Dependency Updates
-// Produces PR-friendly tidy diffs and keeps unused entries during refactoring
+/**
+ * # Version Catalog Update (VCU)
+ *
+ * Automatically sorts version keys alphabetically and preserves unused entries.
+ * This helps maintain a clean, consistent `libs.versions.toml`.
+ */
 versionCatalogUpdate {
     sortByKey.set(true)
-    keep { keepUnusedVersions.set(true) }
-}
-
-// Generates JSON/plain reports of available updates; pairs well with VCU.
-// Note: Not config-cache compatible by the nature of its work.
-tasks.withType<DependencyUpdatesTask>().configureEach {
-    // Accept stable candidates only (mirrors VCU policy).
-    rejectVersionIf {
-        val v = candidate.version.lowercase(Locale.ROOT)
-        listOf("alpha", "beta", "rc", "cr", "m", "milestone", "preview", "eap", "snapshot")
-            .any(v::contains)
-    }
-    checkForGradleUpdate = true
-    outputFormatter = "json,plain"
-    outputDir = layout.buildDirectory.dir("dependencyUpdates").get().asFile.toString()
-    reportfileName = "report"
-    notCompatibleWithConfigurationCache("This task inspects configurations, breaking configuration cache.")
-}
-
-// Runs both VCU and the updates report.
-tasks.register("dependencyMaintenance") {
-    group = "dependencies"
-    description = "Runs version catalog updates and dependency update reports."
-    dependsOn("versionCatalogUpdate", "dependencyUpdates")
-}
-//#endregion
-
-//#region Kover defaults ===============================================================================================
-// Global exclusions for generated/DI glue, etc. Per-module overrides still possible.
-kover {
-    reports {
-        filters {
-            excludes {
-                packages(".*generated.*", ".*build.*")
-                classes(".*Dagger.*", ".*Hilt.*", ".*Module.*", ".*Factory.*")
-                annotatedBy("javax.annotation.Generated", "kotlinx.serialization.Serializable")
-            }
-        }
+    keep {
+        keepUnusedVersions.set(true)
     }
 }
-//#endregion
-
-//#region Default Java version consistency check (root ↔ build-logic) ==================================================
-// Why: build-logic runs inside the Gradle JVM; we want one source of truth for the “default” Java major version (e.g.,
-// 21/22) used by toolchains across the build.
-// This fails early if root and build-logic disagree.
-//
-// Opt-out: -PskipJavaDefaultCheck=true
-// Wires into all `assemble` tasks, so CI and local builds enforce it.
-// =====================================================================================================================
-
-// Single provider for the skip flag (avoid duplicate lookups).
-val skipJavaDefaultCheck = providers.gradleProperty("skipJavaDefaultCheck")
-    .map(String::toBoolean)
-    .orElse(false)
-
-// Register the verification task implemented in build-logic (plugin package).
-val verifyKnobJavaDefault by tasks.registering(VerifyKnobJavaDefaultTask::class) {
-    group = "verification"
-    description = "Ensures knob.java.default is present in root and build-logic gradle.properties and that both match."
-
-    // Input files tracked with RELATIVE path sensitivity by the task itself.
-    rootProps.set(layout.projectDirectory.file("gradle.properties"))
-    buildLogicProps.set(layout.projectDirectory.file("build-logic/gradle.properties"))
-
-    // Honor the global skip flag; the task has a default false convention already.
-    skipCheck.set(skipJavaDefaultCheck)
-}
-
-// Make every `assemble` in the build depend on the consistency check.
-// This stays CC-friendly (no captured outer state) because we reference a named task.
-allprojects {
-    tasks.matching { it.name == "assemble" }.configureEach {
-        dependsOn(rootProject.tasks.named("verifyKnobJavaDefault"))
-    }
-}
-//#endregion

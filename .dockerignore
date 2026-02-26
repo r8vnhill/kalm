@@ -1,0 +1,36 @@
+# Git and version control
+.git
+.gitignore
+.gitmodules
+.github
+
+# IDE and editor files
+.vscode
+.idea
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build artifacts and caches (will be rebuilt in container)
+build/
+.gradle/
+out/
+dist/
+
+# Logs and temp files
+logs/
+logs-test/
+*.log
+# OS-specific
+Thumbs.db
+# Documentation artifacts (not needed in image)
+*.md
+wiki/
+doc/
+
+# Node modules, Python caches (if ever added)
+node_modules/
+__pycache__/
+*.pyc

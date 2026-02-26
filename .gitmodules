@@ -1,0 +1,3 @@
+[submodule "wiki"]
+	path = wiki
+	url = git@gitlab.com:r8vnhill/kalm.wiki.git

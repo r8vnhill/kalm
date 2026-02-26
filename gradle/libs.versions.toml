@@ -1,48 +1,49 @@
 [versions]
-arrow = "2.1.2"
-ben-manes-versions = "0.52.0"
+ben-manes-versions = "0.53.0"
 detekt = "1.23.8"
-doctor = "0.11.0"
-dokka = "2.0.0"
-kotest = "6.0.0.M17"
-kotest-arrow = "2.0.0"
-kotlin = "2.2.20-Beta2"
+detekt-redmadrobot = "0.19.1"
+foojay-resolver = "1.0.0"
+junit = "6.0.3"
+kotest = "6.1.3"
+kotlin = "2.3.20-Beta2"
 kotlin-bin-compatibility-validator = "0.18.1"
-kover = "0.9.1"
-mockk = "1.14.5"
-version-catalog-update = "1.0.0"
+kotlinx-serialization = "1.10.0"
+version-catalog-update = "1.0.1"
 
 [libraries]
-arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+# Gradle plugins used in build-logic dependencies
+ben-manes-versions-plugin = { module = "com.github.ben-manes:gradle-versions-plugin", version.ref = "ben-manes-versions" }
+# Optional formatting plugin for Detekt (requires detekt CLI/tooling)
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
-kotest-arrow = { module = "io.kotest.extensions:kotest-assertions-arrow", version.ref = "kotest-arrow" }
-kotest-arrow-property = { module = "io.kotest.extensions:kotest-property-arrow", version.ref = "kotest-arrow" }
+detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+detekt-redmadrobot-plugin = { module = "com.redmadrobot.detekt:com.redmadrobot.detekt.gradle.plugin", version.ref = "detekt-redmadrobot" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+# Core Kotlin Gradle plugin (required for all Kotlin projects)
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
-mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 [plugins]
 ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
+dependency-updates = { id = "com.github.ben-manes.versions", version.ref = "ben-manes-versions" }
+# Static analysis plugin for Kotlin codebases
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
-doctor = { id = "com.osacky.doctor", version.ref = "doctor" }
-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+detekt-redmadrobot = { id = "com.redmadrobot.detekt", version.ref = "detekt-redmadrobot" }
+foojay-resolver = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojay-resolver" }
+# Plugin to check binary compatibility of public APIs
 kotlin-bin-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "kotlin-bin-compatibility-validator" }
-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "version-catalog-update" }
 
 [bundles]
-arrow = [
-    "arrow-core",
-]
-testing = [
-    "kotest-arrow",
-    "kotest-arrow-property",
+kotest = [
     "kotest-assertions-core",
     "kotest-framework-engine",
     "kotest-property",
     "kotest-runner-junit5",
-    "mockk",
 ]

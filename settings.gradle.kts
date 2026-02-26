@@ -1,82 +1,56 @@
 /*
- * Copyright (c) 2025
+ * Copyright (c) 2026, Ignacio Slater-Muñoz.
  * 2-Clause BSD License.
- *
- * === Purpose ===
- * Centralizes project-wide settings that affect *all* included builds and subprojects:
- *  - Plugin resolution (where plugins come from + versions for settings plugins)
- *  - Dependency resolution policy and repositories
- *  - Toolchain resolver (foojay) at settings scope
- *  - Build cache configuration
- *  - Project structure (root name + modules)
  */
+import org.gradle.api.GradleException
 
-rootProject.name = "knob"
-
-// === FEATURE PREVIEWS ===
-// Enables type-safe project accessors so you can reference modules as `projects.core` instead of string paths in build
-// scripts. This only changes the generated accessors; it’s safe to enable.
+// Enable typesafe accessors for the version catalog (generated `libs` accessors)
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-// === PLUGIN MANAGEMENT ===
+// Include local builds that define convention and build logic plugins.
+//
+// This enables the use of precompiled script plugins (e.g., `kalm.reproducible`) throughout the project without needing
+// to publish them to a remote repository.
 pluginManagement {
-    // Include the build that provides your precompiled/convention plugins.
-    includeBuild("build-logic")
+    includeBuild("build-logic") // Reusable precompiled Gradle plugins for project modules
 
     repositories {
-        gradlePluginPortal()
-        mavenCentral()
+        mavenCentral()                    // For dependencies from Maven Central
+        gradlePluginPortal()              // For resolving external Gradle plugins
     }
 
-    // Version the *settings-level* plugin(s) here so the top-level `plugins {}` can be versionless.
-    // Allows centralizing versions via gradle.properties.
-    val foojayResolverVersion = providers
-        .gradleProperty("version.foojay.resolver")
-        .orElse("1.0.0")
-        .get()
-
     plugins {
+        val foojayResolverVersion = providers.gradleProperty("plugin.foojay-resolver.version")
+            .orNull
+            ?: throw GradleException(
+                "Property 'plugin.foojay-resolver.version' is required. " +
+                    "Run ':syncVersionProperties' to mirror the 'foojay-resolver' alias from gradle/libs.versions.toml."
+            )
+
         id("org.gradle.toolchains.foojay-resolver-convention") version foojayResolverVersion
     }
 }
 
-// === DEPENDENCY RESOLUTION MANAGEMENT (for subprojects) ===
-// - Controls repositories for *project dependencies* (not plugins).
-// - `FAIL_ON_PROJECT_REPOS` ensures modules cannot add adhoc repositories, improving reproducibility.
-@Suppress("UnstableApiUsage")
-dependencyResolutionManagement {
-    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+// endregion
 
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention")
+}
+
+dependencyResolutionManagement {
+    @Suppress("UnstableApiUsage")
+    repositoriesMode = RepositoriesMode.PREFER_SETTINGS // Forces using only the repositories declared here
+
+    @Suppress("UnstableApiUsage")
     repositories {
         mavenCentral()
     }
 }
 
-// === SETTINGS PLUGINS ===
-// Foojay resolver lets Gradle automatically provision JDKs for toolchains on CI/clean machines.
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention")
-}
+// Root project name used in logs and outputs
+rootProject.name = "kalm"
 
-// === BUILD CACHE ===
-buildCache {
-    local {
-        isEnabled = true
-    }
-}
-
-include(
-    ":dependency-constraints",  // BOM for consistent versions across modules
-
-    ":utils:domain",            // Domain-specific models and utilities
-    ":utils:test-commons",      // Common test utilities for Knob modules
-    ":utils:math",              // Efficient math utilities (JVM-only, uses Math.fma, Vector API)
-
-    ":core",                    // Core Knob library; contains the main Problem-solving API
-    ":analytical",              // Analytical search algorithms
-    ":local-search",            // Local search algorithms
-
-    ":benchmark",               // Benchmarking utilities for Knob
-
-    ":examples"                 // Example applications using Knob
-)
+// Include project modules
+include(":core")
+include(":platform")
+include(":tools")
