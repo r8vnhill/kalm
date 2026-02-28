@@ -85,11 +85,12 @@ Locks only need updating when:
 When that happens, regenerate locks with `--write-locks`.
 
 > [!TIP]
-> For module/configuration-specific lock workflows, prefer the CLI wrapper:
-> - `pwsh -NoProfile -Command "Import-Module ./scripts/gradle/Invoke-LocksCli.psm1 -Force; Invoke-LocksCli write-module --module :core; exit $LASTEXITCODE"`
-> - `pwsh -NoProfile -Command "Import-Module ./scripts/gradle/Invoke-LocksCli.psm1 -Force; Invoke-LocksCli write-configuration --module :core --configuration testRuntimeClasspath; exit $LASTEXITCODE"`
+> For module/configuration-specific lock workflows, use the locks CLI directly:
+> - `./gradlew :tools:runLocksCli --args="write-module --module :core --json"`
+> - `./gradlew :tools:runLocksCli --args="write-configuration --module :core --configuration testRuntimeClasspath --json"`
+> - `./gradlew :tools:runLocksCli --args="diff --json"`
 >
-> Design principle: keep Gradle tasks wiring-only; use `tools/` CLIs plus `scripts/` wrappers for runtime input.
+> Run `./gradlew locksCliHelp` for more examples.
 
 ## Quick FAQ
 

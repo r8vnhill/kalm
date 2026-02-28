@@ -4,23 +4,20 @@ Quick guide to refresh the version catalog and inspect available dependency upgr
 
 ## 1️⃣ Run updates
 
+**Recommended: Use the Docker container for guaranteed reproducibility:**
+
+```bash
+# Using docker compose (recommended)
+docker compose run --rm kalm ./gradlew updateDependencies --no-daemon
+```
+
+**Alternative: Use local Gradle wrapper**
+
 Ensure Gradle runs with the JDK expected by the build (see `gradle.properties`).
 
-> [!TIP]
-> If the IDE cannot manage the required JDK (e.g., on remote shells or CI):
-> 1. Prefer the PowerShell helper (available cross-platform).
->    ```powershell
->    .\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'updateDependencies','--no-daemon'
->    ```
-> 2. Use the Bash helper only when PowerShell is unavailable.
->    ```bash
->    ./scripts/gradle/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- updateDependencies --no-daemon
->    ```
-
-```powershell
-# PowerShell example
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-22'
-.\gradlew updateDependencies --no-daemon
+```bash
+# The Gradle wrapper will use JAVA_HOME or the configured toolchain
+./gradlew updateDependencies --no-daemon
 ```
 
 ### What this does
@@ -34,9 +31,12 @@ Some versions are mirrored from the version catalog to `gradle.properties` files
 
 If you need to manually sync after updating the version catalog:
 
-```powershell
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-22'
-.\gradlew syncVersionProperties syncBuildLogicVersionProperties --no-daemon
+```bash
+# Using Docker (recommended)
+docker compose run --rm kalm ./gradlew syncVersionProperties syncBuildLogicVersionProperties --no-daemon
+
+# Or locally
+./gradlew syncVersionProperties syncBuildLogicVersionProperties --no-daemon
 ```
 
 This ensures that:
@@ -47,24 +47,29 @@ This ensures that:
 
 Always refresh Gradle lockfiles after updating dependencies and commit the results.
 
-```powershell
-$env:JAVA_HOME = 'C:\Program Files\Java\jdk-22'
-.\gradlew --write-locks preflight --no-daemon
+```bash
+# Using Docker (recommended)
+docker compose run --rm kalm ./gradlew --write-locks preflight --no-daemon
+
+# Or locally
+./gradlew --write-locks preflight --no-daemon
 ```
 
 If you only need to sync locks without running the full preflight suite (for example when iterating quickly), you can target a specific task:
 
-```powershell
-.\gradlew --write-locks check --no-daemon
+```bash
+./gradlew --write-locks check --no-daemon
 ```
 
 If plugin accessors need regeneration (after plugin ID/name changes):
 
-```powershell
-.\gradlew :build-logic:generatePrecompiledScriptPluginAccessors --no-daemon -Dorg.gradle.java.home='C:\Program Files\Java\jdk-17'
-```
+```bash
+# Using Docker (handles JDK version automatically)
+docker compose run --rm kalm ./gradlew :build-logic:generatePrecompiledScriptPluginAccessors --no-daemon
 
-> Accessors must be generated using the JVM expected by `:build-logic` (usually JDK 17 or 21).
+# Or locally (ensure correct JDK version)
+./gradlew :build-logic:generatePrecompiledScriptPluginAccessors --no-daemon
+```
 
 ## 4️⃣ Commit example
 

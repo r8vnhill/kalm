@@ -2,6 +2,22 @@
 
 PowerShell automation tools for Git, Gradle, and project maintenance workflows.
 
+## Recommended: Use Docker for Gradle Tasks
+
+For maximum reproducibility, run Gradle tasks using the containerized environment:
+
+```bash
+# Run any Gradle task
+docker compose run --rm kalm ./gradlew verifyAll
+
+# Run with arguments
+docker compose run --rm kalm ./gradlew :tools:test --tests "FullyQualifiedTestName"
+```
+
+This ensures consistent JDK version, dependencies, and environment across all contributors and CI.
+
+See [dev-resources/CONTAINERS_AND_ENVIRONMENTS.md](../dev-resources/CONTAINERS_AND_ENVIRONMENTS.md) for more details.
+
 ## Requirements
 
 - **PowerShell 7.4+** (cross-platform)
@@ -151,117 +167,6 @@ If the wiki has diverged from the remote (fast-forward not possible), run with a
 # Or rebase local commits on top of remote/main
 ./scripts/git/Sync-WikiOnly.ps1 -PullStrategy rebase -SkipPush
 ```
-
-## Gradle with JDK
-
-### Invoke-GradleWithJdk.ps1
-
-Run Gradle with a specific JDK version (bypasses JAVA_HOME).
-
-#### Usage
-
-```powershell
-# Windows
-.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build'
-
-# Pass through gradle arguments after JdkPath
-.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath '/usr/lib/jvm/java-22-openjdk' -GradleArgument '--no-daemon', 'verifyAll'
-
-# Example: run preflight with JDK 22
-.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'preflight', '--no-parallel'
-```
-
-#### Parameters
-
-- `-JdkPath <path>`: Absolute path to JDK installation
-- `-GradleArgument <args[]>`: Array of arguments to pass to Gradle
-
-### invoke_gradle_with_jdk.sh
-
-Bash/Zsh equivalent of the PowerShell script.
-
-### Invoke-LocksCli.psm1
-
-Runs dependency-lock workflows through the dedicated CLI in `:tools` instead of parameterized Gradle tasks.
-
-#### Usage
-
-```powershell
-Import-Module .\scripts\gradle\Invoke-LocksCli.psm1 -Force
-
-# Refresh all lockfiles
-Invoke-LocksCli write-all
-
-# Refresh lockfiles for one module
-Invoke-LocksCli write-module --module :core
-
-# Refresh one configuration lock state
-Invoke-LocksCli write-configuration --module :core --configuration testRuntimeClasspath
-
-# Show lockfile diff command
-Invoke-LocksCli diff
-```
-
-#### Why this exists
-
-- Keeps Gradle tasks non-interactive and deterministic.
-- Moves argument-heavy workflows into a CLI tool (`cl.ravenhill.kalm.tools.locks.DependencyLocksCli`).
-- Provides a reusable module command for contributors and CI.
-
----
-
-## Container Usage
-
-All scripts in this repository (Gradle invocations, Pester test runners, Git sync scripts, etc.) work inside the KALM
-Docker/OCI image. For container-based local development or CI:
-
-### Running Scripts Inside a Container
-
-```bash
-# Recommended: use Docker Compose from the repo root
-docker compose run --rm kalm
-
-# Inside the container, use scripts as normal:
-$ ./gradlew verifyAll
-$ .\scripts\testing\Invoke-PesterWithConfig.ps1
-```
-
-Variant (no Compose):
-
-```bash
-docker run --rm -it -v /path/to/kalm:/workspace kalm-env:local
-```
-
-### Container Compatibility
-
-Scripts are **container-agnostic** by default:
-
-- All paths use PowerShell's cross-platform operators (`Join-Path`, relative paths).
-- No hard-coded Windows drive letters or assumptions.
-- Git and PowerShell behaviors are consistent inside and outside the container.
-
-If a script assumes a specific platform or tool version, it will clearly document that in its `#Requires` or error
-messages.
-
-### Further Reading
-
-See `dev-resources/CONTAINERS_AND_ENVIRONMENTS.md` for the minimal Compose quickstart, and
-`wiki/Container-Build-and-Run.md` for Buildx/docker run variants and advanced scenarios.
-
-### Usage
-
-```bash
-# Unix/Linux/macOS
-./scripts/gradle/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build
-
-# Example with multiple gradle arguments
-./scripts/gradle/invoke_gradle_with_jdk.sh --jdk ~/sdkman/candidates/java/22.0.2-tem -- test --info --no-daemon
-```
-
-### Arguments
-
-- `--jdk <path>`: Path to JDK installation
-- `-- <args...>`: Everything after `--` is passed to Gradle
 
 ## Remote Sync
 
@@ -428,16 +333,6 @@ Notes:
 - Always run with `-WhatIf` first to preview actions.
 - `-IncludeRootChanges` will stage and commit untracked files in the root repository — use cautiously.
 - Use `-SkipPull` when you intentionally don't want to fetch remote updates before committing.
-
-### Run Gradle with Specific JDK
-
-```powershell
-# Verify build with JDK 22
-.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument 'verifyAll'
-
-# Run benchmarks with JDK 22
-.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Java\jdk-22' -GradleArgument ':benchmark:jmh'
-```
 
 ## Troubleshooting
 

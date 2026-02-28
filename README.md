@@ -34,18 +34,23 @@ cd kalm
 ./gradlew preflight
 ```
 
-### Running Gradle with a specific JDK
+### Running Gradle Builds
 
-Prefer configuring the IDE first. When that is not possible (e.g., CI pipelines or remote shells), invoke Gradle via the helper scripts in this order:
+**Recommended: Use Docker for reproducible builds:**
 
-1. PowerShell (recommended even on Unix when available)
-	```powershell
-	.\scripts\gradle\Invoke-GradleWithJdk.ps1 -JdkPath 'C:\Program Files\Java\jdk-22' -GradleArgument 'clean', 'build', '--no-daemon'
-	```
-2. Bash / POSIX shells (fallback compatibility)
-	```bash
-	./scripts/gradle/invoke_gradle_with_jdk.sh --jdk /usr/lib/jvm/temurin-22 -- clean build --no-daemon
-	```
+```bash
+# Run any Gradle task in the containerized environment
+docker compose run --rm kalm ./gradlew clean build --no-daemon
+```
+
+**Alternative: Use local Gradle wrapper**
+
+```bash
+# The wrapper uses the JDK configured in gradle.properties
+./gradlew clean build --no-daemon
+```
+
+For IDE integration, configure your IDE to use the JDK version specified in `gradle.properties`.
 
 ### Syncing GitLab and GitHub Mirrors
 

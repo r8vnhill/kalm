@@ -22,21 +22,12 @@ For behavior changes:
 
 - Keep Gradle tasks non-interactive and deterministic.
 - Avoid user-workflow branching via ad hoc Gradle parameters.
-- Use Gradle for orchestration/wiring; move UX/argument-heavy flows to CLI tools.
-
-### 3) CLI + Script split
-
-When a workflow needs runtime input or rich args:
-
-- implement logic in `tools/` (Kotlin CLI)
-- expose via `scripts/` (PowerShell wrapper)
-
-This is the preferred architecture for lockfile and quality tooling.
+- Use Gradle for orchestration/wiring; move UX/argument-heavy flows to CLI tools in `tools/`.
 
 ## Repository Structure (relevant to agents)
 
-- `tools/`: Kotlin/JVM CLI tools and shared CLI helpers.
-- `scripts/`: PowerShell wrappers and automation (entrypoints for contributors/CI).
+- `tools/`: Kotlin/JVM CLI tools and shared CLI helpers (primary automation layer).
+- `scripts/`: PowerShell utilities for git, docker, and testing workflows.
 - `build-logic/`: Gradle convention plugins (`kalm.*`).
 - `wiki/`: Primary long-form documentation.
 - `dev-resources/`: concise operational references; avoid deep duplication with wiki.
@@ -76,7 +67,7 @@ If a command cannot be executed due to environment constraints, this must be rep
 
 - Lockfiles are source-controlled and must remain consistent with dependency changes.
 - When dependencies change, regenerate lockfiles and commit them together.
-- Prefer existing lock workflows (`Invoke-LocksCli.psm1` / `:tools` locks CLI) over ad-hoc commands.
+- Use the `:tools` locks CLI for lockfile operations.
 
 ## Documentation Rules
 
