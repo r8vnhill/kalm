@@ -7,9 +7,9 @@ package cl.ravenhill.kalm.engine
 
 import cl.ravenhill.kalm.repr.Feature
 
-interface OptimizationEngine<F> where F : Feature<*, F> {
+public interface OptimizationEngine<F> where F : Feature<*, F> {
 
-    val objectiveFunction: (F) -> Double
+    public val objectiveFunction: (F) -> Double
 
-    fun optimize(initialState: F): F
+    public fun optimize(initialState: F): F
 }

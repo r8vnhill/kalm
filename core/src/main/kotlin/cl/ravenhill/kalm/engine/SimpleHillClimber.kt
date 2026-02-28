@@ -7,7 +7,7 @@ package cl.ravenhill.kalm.engine
 
 import cl.ravenhill.kalm.repr.ScalarFeature
 
-class SimpleHillClimber(
+public class SimpleHillClimber(
     override val objectiveFunction: (ScalarFeature) -> Double,
     private val stepSize: Double = 0.1,
     private val maxIterations: Int = 100
@@ -32,7 +32,7 @@ class SimpleHillClimber(
     }
 }
 
-fun main() {
+public fun main() {
     val engine = SimpleHillClimber(objectiveFunction = { -(it.x * it.x) + 4 })
     val result = engine.optimize(ScalarFeature(x = 0.0))
     println("Best x: ${result.x}") // Should converge toward 0.0

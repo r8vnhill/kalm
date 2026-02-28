@@ -9,6 +9,11 @@ plugins {
     id("kalm.detekt-redmadrobot")
 }
 
+kotlin {
+    explicitApi()
+}
+
 dependencies {
+    implementation(libs.arrow.core)
     testImplementation(libs.bundles.kotest)
 }
