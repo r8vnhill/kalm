@@ -32,8 +32,9 @@ Set-KalmDryRun $false
 Run tests (Pester helper):
 
 ```powershell
-pwsh -NoProfile -Command "./scripts/testing/Invoke-PesterWithConfig.ps1"
+pwsh -NoProfile -Command "Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1'))"
 ```
 
 Why use the module
 - Using a module makes the dry-run API explicit and avoids accidental global state collisions or repeated dot-sourcing.
+

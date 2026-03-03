@@ -40,8 +40,8 @@ services:
     <<: *kalm-base
     profiles:
       - pester
-    # Keep the `pwsh` entrypoint; pass the script as a command argument
-    command: ["-File", "./scripts/testing/Invoke-PesterWithConfig.ps1"]
+    # Keep the `pwsh` entrypoint; run Pester with the shared repo configuration
+    command: ["-NoProfile", "-Command", "Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1'))"]
 
   hadolint-kts:
     <<: *kalm-base

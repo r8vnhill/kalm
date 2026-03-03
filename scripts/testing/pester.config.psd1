@@ -1,7 +1,7 @@
 @{
     Run = @{
         # Execute every test file living under scripts/testing/specs to keep coverage in sync.
-        # Path is relative to where Invoke-PesterWithConfig.ps1 is invoked (repo root).
+        # Path is relative to where Invoke-Pester is invoked (repo root).
         Path     = @('scripts/testing/specs/**/*.Tests.ps1')
         PassThru = $true
     }
@@ -12,3 +12,4 @@
         OutputFormat = 'NUnitXml'
     }
 }
+

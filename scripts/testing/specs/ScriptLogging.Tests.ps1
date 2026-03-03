@@ -5,7 +5,7 @@ Purpose
 -------
 These unit tests exercise the public behavior of the `KalmScriptLogger` helper used by the
 repository's PowerShell automation helpers. They are small, fast, and designed to run in CI or
-locally via the repo test helper.
+locally via direct Pester invocation with the repo configuration.
 
 What this file covers
 - Initialization: logger names are sanitized and required directories/files are created
@@ -52,7 +52,7 @@ How to run
 ----------
 - Preferred (repo helper):
     ```powershell
-    .\scripts\Invoke-PesterWithConfig.ps1
+    Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile '.\\scripts\\testing\\pester.config.psd1'))
     ```
 
 - Direct (Pester):
@@ -244,3 +244,4 @@ Describe 'KalmScriptLogger' {
         }
     }
 }
+

@@ -173,7 +173,7 @@ docker compose run --rm kalm
 
 # Inside the container, use scripts as normal:
 $ ./gradlew verifyAll
-$ .\scripts\testing\Invoke-PesterWithConfig.ps1
+$ Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile '.\scripts\testing\pester.config.psd1'))
 ```
 
 Variant (no Compose):
@@ -259,11 +259,11 @@ Lint Dockerfiles with Hadolint via the Gradle task that runs `cl.ravenhill.kalm.
 - `-FailureThreshold <error|warning|info|style|ignore>`: Hadolint failure threshold (default: `warning`)
 - `-StrictFiles`: Fail if any specified Dockerfile is missing
 
-### Invoke-PesterWithConfig.ps1
+### Pester (shared configuration)
 
-Run Pester using the repository's canonical configuration file. This helper loads
-`scripts/testing/pester.config.psd1`, constructs a `PesterConfiguration` and
-invokes `Invoke-Pester` so tests run consistently on developer machines and CI.
+Run Pester using the repository's canonical configuration file by constructing a
+`PesterConfiguration` from `scripts/testing/pester.config.psd1` and invoking
+`Invoke-Pester` so tests run consistently on developer machines and CI.
 
 Requirements:
 - Pester 5.x (the script uses `New-PesterConfiguration`)
@@ -272,10 +272,10 @@ Requirements:
 Usage:
 ```powershell
 # From the repository root
-.\scripts\testing\Invoke-PesterWithConfig.ps1
+Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile '.\scripts\testing\pester.config.psd1'))
 
 # Explicit pwsh invocation (useful in CI)
-pwsh -NoProfile -Command "./scripts/testing/Invoke-PesterWithConfig.ps1"
+pwsh -NoProfile -Command "Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1'))"
 ```
 
 Notes:
@@ -401,13 +401,13 @@ Get-Command -Module GitSync
 - Run all tests from Windows PowerShell (pwsh):
 
 ```powershell
-./scripts/testing/Invoke-PesterWithConfig.ps1
+Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1'))
 ```
 
 - Run tests inside WSL using pwsh (useful for cross-platform verification):
 
 ```powershell
-wsl.exe -e bash -lc 'cd "$(wslpath -a .)" && pwsh -NoLogo -NoProfile -File ./scripts/testing/Invoke-PesterWithConfig.ps1'
+wsl.exe -e bash -lc 'cd "$(wslpath -a .)" && pwsh -NoLogo -NoProfile -Command "Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile '\''./scripts/testing/pester.config.psd1'\''))"'
 ```
 
 Notes:

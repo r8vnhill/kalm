@@ -21,7 +21,7 @@ Multi-module Kotlin/Gradle optimization sandbox with strict reproducibility and 
 - Static analysis: `detektAll` for everything, `detektDiff` for branch deltas, `detektFormat` to auto-fix. Config lives in `config/detekt/detekt.yml`.
 - Dependency locking is strict (`gradle.lockfile`, `<module>/gradle.lockfile`, `settings-gradle.lockfile`); only rerun tasks with `--write-locks` when explicitly asked and commit every touched lockfile.
 - Need a specific JDK? Run `./scripts/gradle/Invoke-GradleWithJdk.ps1 -JdkPath <path> -GradleArgument 'verifyAll'`.
-- PowerShell quality gates: `./scripts/quality/Invoke-PSSA.ps1` for linting and `./scripts/testing/Invoke-PesterWithConfig.ps1` for tests (reads `scripts/testing/pester.config.psd1`).
+- PowerShell quality gates: `./scripts/quality/Invoke-PSSA.ps1` for linting and `Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1'))` for tests.
 
 ## Git + wiki expectations
 - Prefer script-first syncs: `./scripts/git/Sync-RepoAndWiki.ps1` for the whole repo, `Sync-WikiOnly.ps1 -UpdatePointer` for docs. Always dry-run with `-WhatIf` when touching remotes or submodules.

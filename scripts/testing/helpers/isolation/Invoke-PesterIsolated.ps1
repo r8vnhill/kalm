@@ -3,7 +3,7 @@
 Run a single test file using the repository Pester settings in an isolated pwsh process.
 
 .DESCRIPTION
-Invoked by Invoke-PesterWithConfig.ps1. Loads the repo pester settings, overrides
+Invoked by an isolated Pester harness. Loads the repo pester settings, overrides
 Run.Path and TestResult.OutputPath for the single file, invokes Invoke-Pester and
 emits a sentinel JSON line prefixed with __PesterResult__:: so the caller can
 separate logs from the per-file metadata.
@@ -62,3 +62,4 @@ $metadata = [pscustomobject]@{
 Write-Output "__PesterResult__::$(ConvertTo-Json -Depth 4 -Compress -InputObject $metadata)"
 
 Exit 0
+

@@ -35,7 +35,7 @@ Inside the container:
 
 ```powershell
 ./gradlew verifyAll
-./scripts/testing/Invoke-PesterWithConfig.ps1
+Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1'))
 ```
 
 ### One-off commands (no interactive shell)
@@ -62,3 +62,4 @@ If you create files inside the container and want them owned by your host user:
 ```bash
 docker compose run --rm --user "$(id -u):$(id -g)" kalm
 ```
+

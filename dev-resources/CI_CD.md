@@ -39,7 +39,7 @@ The `pester:tests` job validates PowerShell automation scripts using [Pester 5.x
 
 - **Stage:** `test`
 - **Image:** `mcr.microsoft.com/powershell:7.4-alpine-3.20`
-- **Script:** `./scripts/testing/Invoke-PesterWithConfig.ps1`
+- **Command:** `Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1'))`
 - **Artifacts:** Test results are published as JUnit XML reports under `build/test-results/pester/`
 
 **When it runs:**
@@ -50,7 +50,7 @@ The `pester:tests` job validates PowerShell automation scripts using [Pester 5.x
 **Local testing:**
 ```powershell
 # Run Pester tests locally using the same configuration as CI
-./scripts/testing/Invoke-PesterWithConfig.ps1
+Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1'))
 ```
 
 **Configuration:**
@@ -79,7 +79,7 @@ As KALM transitions to container-based reproducibility (tracked in `dev-resource
 For more details on the roadmap, see `dev-resources/PLAN-dockerization.md`.
 
 > [!tip]
-> Use `-Verbose` to see detailed output during local runs: `./scripts/testing/Invoke-PesterWithConfig.ps1 -Verbose`
+> Use `-Verbose` to see detailed output during local runs: `Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1')) -Verbose`
 
 ## Versioning and Tagging Strategy
 

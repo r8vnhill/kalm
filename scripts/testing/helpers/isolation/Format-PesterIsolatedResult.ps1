@@ -4,12 +4,12 @@
 Prints only the captured Pester output for each test file.
 
 .DESCRIPTION
-Consumes the PSCustomObject emitted by Invoke-PesterWithConfig.ps1, or
+Consumes the PSCustomObject emitted by the isolated Pester harness, or
 objects that expose Output/File properties, and writes the original Pester
 log lines to the console without re-printing the metadata block.
 
 .EXAMPLE
-./scripts/testing/Invoke-PesterWithConfig.ps1 | ./scripts/testing/helpers/Format-PesterIsolatedResult.ps1
+Invoke-Pester -Configuration (New-PesterConfiguration -Hashtable (Import-PowerShellDataFile './scripts/testing/pester.config.psd1')) | ./scripts/testing/helpers/Format-PesterIsolatedResult.ps1
 #>
 [CmdletBinding()]
 param(
@@ -56,3 +56,4 @@ process {
         Write-Information $line -InformationAction Continue
     }
 }
+
