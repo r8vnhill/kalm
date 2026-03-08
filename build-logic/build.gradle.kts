@@ -125,6 +125,10 @@ testing {
     }
 }
 
+gradlePlugin {
+    testSourceSets(sourceSets["functionalTest"])
+}
+
 /*
  * Integrate functional tests into the standard verification lifecycle.
  *

@@ -40,6 +40,8 @@
  * #### `kalm.build-tasks.verification`
  *
  * - Registers `verifyAll` aggregate task for root-level quality checks
+ * - Registers `preflight` as a read-only release-readiness check
+ * - Registers `syncWorkspaceMetadata` for explicit version/property synchronization
  * - Dynamically wires subproject tasks: `test`, `detekt`, `apiCheck`
  * - No hardcoded project paths; adapts to project structure
  * - Primary quality gate before release, updates, and lockfile refresh

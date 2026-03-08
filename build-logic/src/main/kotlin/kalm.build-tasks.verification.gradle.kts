@@ -3,6 +3,32 @@
  * 2-Clause BSD License.
  */
 
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.language.base.plugins.LifecycleBasePlugin
+
+private val verifyAllTaskName = "verifyAll"
+private val preflightTaskName = "preflight"
+private val syncWorkspaceMetadataTaskName = "syncWorkspaceMetadata"
+private val verificationTaskNames = setOf("test", "detekt", "apiCheck")
+
+fun Project.wireVerificationTasks(
+    aggregate: TaskProvider<out Task>,
+    taskNames: Set<String>
+) {
+    subprojects {
+        tasks.configureEach {
+            if (name in taskNames) {
+                aggregate.configure {
+                    dependsOn(this@configureEach)
+                }
+            }
+        }
+    }
+}
+
 /**
  * ## verifyAll
  *
@@ -29,12 +55,10 @@
  * - Dependency updates
  * - Lockfile refresh
  */
-val verifyAll: TaskProvider<Task> = tasks.register("verifyAll") {
-    group = "verification"
+val verifyAll = tasks.register<DefaultTask>(verifyAllTaskName) {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs tests, static analysis, and API compatibility checks in one go."
 }
-
-val verifyTaskNames = setOf("test", "detekt", "apiCheck")
 
 /**
  * ## Dynamic Subproject Wiring
@@ -53,24 +77,16 @@ val verifyTaskNames = setOf("test", "detekt", "apiCheck")
  * - Avoids projectsEvaluated lifecycle hook.
  * - Preserves configuration cache friendliness.
  */
-subprojects {
-    tasks.matching { it.name in verifyTaskNames }.configureEach {
-        rootProject.tasks.named("verifyAll").configure {
-            dependsOn(this@configureEach)
-        }
-    }
-}
+wireVerificationTasks(verifyAll, verificationTaskNames)
 
 /**
  * ## preflight
  *
- * Master release-readiness workflow.
+ * Read-only release-readiness workflow.
  *
  * ### Orchestrates
  *
  * 1. `verifyAll`
- * 2. `syncVersionProperties`
- * 3. `syncBuildLogicVersionProperties`
  *
  * ### Intended Usage
  *
@@ -87,13 +103,32 @@ subprojects {
  * - Tests pass
  * - Static analysis is clean
  * - API compatibility holds
- * - Version properties are synchronized
  */
-tasks.register("preflight") {
-    group = "verification"
-    description = "Runs verification gates and dependency maintenance helpers."
+tasks.register<DefaultTask>(preflightTaskName) {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    description = "Runs release-readiness verification gates without modifying workspace files."
+    dependsOn(verifyAll)
+}
+
+/**
+ * ## syncWorkspaceMetadata
+ *
+ * Explicit workspace-mutation lifecycle task for version/property synchronization.
+ *
+ * ### Orchestrates
+ *
+ * 1. `syncVersionProperties`
+ * 2. `syncBuildLogicVersionProperties`
+ *
+ * ### Intended Usage
+ *
+ * - Refreshing mirrored version properties after catalog changes
+ * - Preparing the workspace before lockfile or release workflows
+ */
+tasks.register<DefaultTask>(syncWorkspaceMetadataTaskName) {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    description = "Synchronizes workspace metadata files derived from the version catalog."
     dependsOn(
-        verifyAll,
         tasks.named("syncVersionProperties"),
         tasks.named("syncBuildLogicVersionProperties")
     )
