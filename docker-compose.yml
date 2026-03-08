@@ -20,28 +20,32 @@ services:
     tty: true
     stdin_open: true
 
-  # Convenience service for running gradle tasks
-  gradle:
+  gradle-shell:
+    &gradle-shell-base
     <<: *kalm-base
     profiles:
       - gradle
-    volumes:
+    volumes: &gradle-overlay-volumes
       - .:/workspace
       - gradle-cache:/gradle-cache
+      - gradle-root-dot-gradle:/workspace/.gradle
+      - gradle-root-dot-kotlin:/workspace/.kotlin
+      - gradle-root-build:/workspace/build
+      - gradle-core-build:/workspace/core/build
+      - gradle-platform-build:/workspace/platform/build
+      - gradle-tools-build:/workspace/tools/build
+      - gradle-build-logic-dot-gradle:/workspace/build-logic/.gradle
+      - gradle-build-logic-dot-kotlin:/workspace/build-logic/.kotlin
+      - gradle-build-logic-build:/workspace/build-logic/build
     environment:
       GRADLE_USER_HOME: /gradle-cache
-    # Clear image entrypoint for easier command override
-    entrypoint: []
-    command: ["./gradlew"]
-    # Users pass gradle arguments like: docker compose --profile gradle run --rm gradle verifyAll
 
-  # Convenience service for running Pester tests
-  pester:
-    <<: *kalm-base
-    profiles:
-      - pester
-    # Keep the `pwsh` entrypoint; pass the script as a command argument
-    command: ["-File", "./scripts/testing/Invoke-PesterWithConfig.ps1"]
+  # Convenience service for running gradle tasks
+  gradle:
+    <<: *gradle-shell-base
+    # Run Gradle by default; runtime args are appended to this entrypoint.
+    entrypoint: ["./gradlew"]
+    # Users pass gradle tasks like: docker compose --profile gradle run --rm gradle verifyAll
 
   hadolint-kts:
     <<: *kalm-base
@@ -57,3 +61,12 @@ services:
 
 volumes:
   gradle-cache: {}
+  gradle-root-dot-gradle: {}
+  gradle-root-dot-kotlin: {}
+  gradle-root-build: {}
+  gradle-core-build: {}
+  gradle-platform-build: {}
+  gradle-tools-build: {}
+  gradle-build-logic-dot-gradle: {}
+  gradle-build-logic-dot-kotlin: {}
+  gradle-build-logic-build: {}

@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2026, Ignacio Slater-Muñoz.
+# 2-Clause BSD License.
+#
+
 # KALM Build Environment Setup Script
 #
 # This script configures the KALM build environment inside a Docker container:
@@ -69,10 +74,6 @@ printf "Installing PowerShell 7.4+ and OpenJDK 22...\n"
 apt-get install -y --no-install-recommends \
 	powershell \
 	openjdk-22-jdk-headless
-
-# Install Pester (PowerShell testing framework) for running test suites
-printf "Installing Pester...\n"
-pwsh -NoProfile -Command 'Install-Module -Name Pester -Repository PSGallery -Force -Scope AllUsers -SkipPublisherCheck'
 
 # Configure UTF-8 locale (important for reproducibility)
 printf "Configuring UTF-8 locale...\n"

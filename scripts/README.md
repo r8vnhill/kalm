@@ -8,10 +8,13 @@ For maximum reproducibility, run Gradle tasks using the containerized environmen
 
 ```bash
 # Run any Gradle task
-docker compose run --rm kalm ./gradlew verifyAll
+docker compose --profile gradle run --rm gradle verifyAll
 
 # Run with arguments
-docker compose run --rm kalm ./gradlew :tools:test --tests "FullyQualifiedTestName"
+docker compose --profile gradle run --rm gradle :tools:test --tests "FullyQualifiedTestName"
+
+# Open an interactive shell with the Gradle writable overlays mounted
+docker compose --profile gradle run --rm gradle-shell
 ```
 
 This ensures consistent JDK version, dependencies, and environment across all contributors and CI.
@@ -77,6 +80,9 @@ Reusable functions for Git operations (imported automatically by sync scripts):
 ### Sync-RepoAndWiki.ps1
 
 Full repository sync: main repo and all submodules (pull → commit → push).
+
+The script reads `.gitmodules` dynamically, so it syncs any configured submodule (for example, `wiki/` and
+`traceability-log/`).
 
 #### Usage
 
@@ -225,44 +231,19 @@ Lint Dockerfiles with Hadolint via the Gradle task that runs `cl.ravenhill.kalm.
 - `-FailureThreshold <error|warning|info|style|ignore>`: Hadolint failure threshold (default: `warning`)
 - `-StrictFiles`: Fail if any specified Dockerfile is missing
 
-### Invoke-PesterWithConfig.ps1
+### Legacy PowerShell Testing
 
-Run Pester using the repository's canonical configuration file. This helper loads
-`scripts/testing/pester.config.psd1`, constructs a, and
-invokes `Invoke-Pester` so tests run consistently on developer machines and CI.
+Containerized Pester support has been retired. The historical helper path
+`scripts/testing/Invoke-PesterWithConfig.ps1` is not part of the supported container workflow and is
+being phased out as the repository moves toward a single-language toolchain centered on Gradle and
+Kotlin.
 
-#### Requirements:
+For current container usage, prefer:
 
-- Pester 5.x (the script uses `New-PesterConfiguration`)
-- PowerShell 7.4+
-
-#### Usage:
-
-```powershell
-# From the repository root
-.\scripts\testing\Invoke-PesterWithConfig.ps1
-
-# Explicit pwsh invocation (useful in CI)
-pwsh -NoProfile -Command "./scripts/testing/Invoke-PesterWithConfig.ps1"
+```bash
+docker compose --profile gradle run --rm gradle verifyAll
+docker compose --profile gradle run --rm gradle-shell
 ```
-
-#### Notes:
-
-- The script will report a clear error if `scripts/testing/pester.config.psd1`
-  is missing.
-- Use `-Verbose` when troubleshooting test runs to see the resolved settings path
-  and Pester invocation details.
-
-#### CI/CD Integration
-
-The Pester test job is automatically executed in GitLab CI/CD on:
-
-- Merge request events
-- Commits to the default branch
-- Git tag pushes
-
-Test results are published as JUnit XML artifacts for pipeline reporting. See `.gitlab-ci.yml` and
-`dev-resources/CI_CD.md` for pipeline configuration details.
 
 ----
 
@@ -286,6 +267,18 @@ All scripts follow these principles:
 # Then use the script to push changes and update the pointer (dry-run first):
 .\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)" -WhatIf
 .\scripts/git/Sync-WikiOnly.ps1 -WikiCommitMessage "📚 docs(wiki): explain feature X" -UpdatePointer -RootCommitMessage "📚 docs: update wiki pointer (feature X)"
+```
+
+### Typical Traceability Log Workflow
+
+```powershell
+# Edit prompt/plan files under `traceability-log/`
+
+# Preview all sync operations first
+.\scripts/git/Sync-RepoAndWiki.ps1 -WhatIf
+
+# Commit/push submodule changes and update pointer in root repo
+.\scripts/git/Sync-RepoAndWiki.ps1
 ```
 
 ### Full Project Sync
@@ -367,23 +360,13 @@ Get-Command -Module GitSync
 - **Git workflows:** [`dev-resources/GIT_STANDARD.md`](../dev-resources/GIT_STANDARD.md)
 - **Dependency locking:** [`dev-resources/DEPENDENCY_LOCKING.md`](../dev-resources/DEPENDENCY_LOCKING.md)
 
-## Testing (Pester)
+## Testing
 
-- Run all tests from Windows PowerShell (pwsh):
+For the supported container workflow, run Gradle verification:
 
-```powershell
-./scripts/testing/Invoke-PesterWithConfig.ps1
+```bash
+docker compose --profile gradle run --rm gradle verifyAll
 ```
 
-- Run tests inside WSL using pwsh (useful for cross-platform verification):
-
-```powershell
-wsl.exe -e bash -lc 'cd "$(wslpath -a .)" && pwsh -NoLogo -NoProfile -File ./scripts/testing/Invoke-PesterWithConfig.ps1'
-```
-
-Notes:
-
-- The harness isolates each test file in its own pwsh process to avoid class redefinition issues and writes results to
-  `build/test-results/pester`.
-- If `wsl.exe -e pwsh` fails due to PATH, invoking via `bash -lc` ensures the shell environment is initialized so `pwsh`
-  is resolvable.
+PowerShell/Pester-based test guidance is legacy and is being phased out with the broader move toward
+a single-language toolchain.

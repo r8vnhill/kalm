@@ -8,7 +8,7 @@ Quick guide to refresh the version catalog and inspect available dependency upgr
 
 ```bash
 # Using docker compose (recommended)
-docker compose run --rm kalm ./gradlew updateDependencies --no-daemon
+docker compose --profile gradle run --rm gradle updateDependencies --no-daemon
 ```
 
 **Alternative: Use local Gradle wrapper**
@@ -33,7 +33,7 @@ If you need to manually sync after updating the version catalog:
 
 ```bash
 # Using Docker (recommended)
-docker compose run --rm kalm ./gradlew syncVersionProperties syncBuildLogicVersionProperties --no-daemon
+docker compose --profile gradle run --rm gradle syncVersionProperties syncBuildLogicVersionProperties --no-daemon
 
 # Or locally
 ./gradlew syncVersionProperties syncBuildLogicVersionProperties --no-daemon
@@ -49,7 +49,7 @@ Always refresh Gradle lockfiles after updating dependencies and commit the resul
 
 ```bash
 # Using Docker (recommended)
-docker compose run --rm kalm ./gradlew --write-locks preflight --no-daemon
+docker compose --profile gradle run --rm gradle --write-locks preflight --no-daemon
 
 # Or locally
 ./gradlew --write-locks preflight --no-daemon
@@ -65,7 +65,7 @@ If plugin accessors need regeneration (after plugin ID/name changes):
 
 ```bash
 # Using Docker (handles JDK version automatically)
-docker compose run --rm kalm ./gradlew :build-logic:generatePrecompiledScriptPluginAccessors --no-daemon
+docker compose --profile gradle run --rm gradle :build-logic:generatePrecompiledScriptPluginAccessors --no-daemon
 
 # Or locally (ensure correct JDK version)
 ./gradlew :build-logic:generatePrecompiledScriptPluginAccessors --no-daemon

@@ -52,6 +52,9 @@ For PowerShell 7.4+ users, the `scripts/` directory includes automation tools fo
 .\scripts/git/Sync-RepoAndWiki.ps1 -SubmoduleOnly
 ```
 
+This command dynamically reads `.gitmodules`, so it applies to all configured submodules (for example, `wiki/` and
+`traceability-log/`).
+
 **`Sync-WikiOnly.ps1`** - Wiki-focused sync:
 ```powershell
 # Sync wiki content only
@@ -62,6 +65,18 @@ For PowerShell 7.4+ users, the `scripts/` directory includes automation tools fo
 
 # Preview changes
 .\scripts/git/Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
+```
+
+**Traceability Log Workflow (`traceability-log/`)**
+
+Use the generic sync script for prompt/plan traceability history updates:
+
+```powershell
+# Dry-run first (recommended)
+.\scripts/git/Sync-RepoAndWiki.ps1 -WhatIf
+
+# Execute sync and pointer updates
+.\scripts/git/Sync-RepoAndWiki.ps1
 ```
 
 **Common Parameters:**

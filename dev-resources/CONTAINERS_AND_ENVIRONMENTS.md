@@ -35,7 +35,6 @@ Inside the container:
 
 ```powershell
 ./gradlew verifyAll
-./scripts/testing/Invoke-PesterWithConfig.ps1
 ```
 
 ### One-off commands (no interactive shell)
@@ -46,14 +45,19 @@ Use the convenience services:
 # Gradle (uses a persistent cache volume)
 docker compose --profile gradle run --rm gradle verifyAll
 
-# Pester
-docker compose --profile pester run --rm pester
-
 # Hadolint Kotlin script
 docker compose --profile hadolint run --rm hadolint-kts
 # Example with options
 docker compose --profile hadolint run --rm hadolint-kts --failure-threshold error --dockerfile Dockerfile
 ```
+
+For the `gradle` service, Compose appends the supplied task names to the service entrypoint, so
+`docker compose --profile gradle run --rm gradle verifyAll` runs `./gradlew verifyAll` inside the
+container.
+
+Containerized Pester support has been retired. The supported container workflows are the Gradle and
+Hadolint services; any remaining PowerShell test references should be treated as legacy/local-only
+until they are fully removed.
 
 ### Linux file ownership note
 

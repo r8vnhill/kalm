@@ -31,10 +31,10 @@ if (Get-KalmDryRun) { Write-Output 'dry-run: skipping side-effects' }
 Set-KalmDryRun $false
 ```
 
-Run tests (Pester helper):
+Run container verification:
 
-```powershell
-pwsh -NoProfile -Command "./scripts/testing/Invoke-PesterWithConfig.ps1"
+```bash
+docker compose --profile gradle run --rm gradle verifyAll
 ```
 
 Why use the module

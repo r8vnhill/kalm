@@ -1,3 +1,7 @@
 [submodule "wiki"]
 	path = wiki
 	url = git@gitlab.com:r8vnhill/kalm.wiki.git
+[submodule "traceability-log"]
+	path = traceability-log
+	url = git@gitlab.com:r8vnhill/kalm-traceability-log.git
+	branch = main

@@ -40,7 +40,10 @@ cd kalm
 
 ```bash
 # Run any Gradle task in the containerized environment
-docker compose run --rm kalm ./gradlew clean build --no-daemon
+docker compose --profile gradle run --rm gradle clean build --no-daemon
+
+# Open an interactive shell with the Gradle writable overlays mounted
+docker compose --profile gradle run --rm gradle-shell
 ```
 
 **Alternative: Use local Gradle wrapper**
@@ -136,14 +139,15 @@ The wiki documents:
 - Benchmark setup and reproducibility guidelines
 - Challenges faced during implementation and lessons learned
 
-To fetch wiki content locally as a submodule:
+To fetch submodule content locally (including `wiki/` and `traceability-log/`):
 ```bash
 git submodule update --init --recursive
 ```
 
-Or sync to the latest wiki version:
-```bash
-./gradlew syncWiki
+To sync wiki content and update the root pointer using the maintained script workflow:
+```powershell
+.\scripts\git\Sync-WikiOnly.ps1 -UpdatePointer -WhatIf
+.\scripts\git\Sync-WikiOnly.ps1 -UpdatePointer
 ```
 
 ---
