@@ -38,7 +38,9 @@ class BuildTasksVerificationPluginFunctionalTest {
 
             allprojects {
                 tasks.register("unrelated") {
-                    throw GradleException("unrelated task should not be realized")
+                    doLast {
+                        throw GradleException("unrelated task should not be realized")
+                    }
                 }
             }
             """.trimIndent()

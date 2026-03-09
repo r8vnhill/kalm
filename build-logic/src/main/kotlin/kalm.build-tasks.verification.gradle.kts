@@ -9,51 +9,108 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.language.base.plugins.LifecycleBasePlugin
 
+/**
+ * Canonical name of the root verification aggregation task.
+ *
+ * This task is intentionally declared as a constant so the name is defined in one place and can be
+ * reused consistently across registrations and wiring logic.
+ */
 private val verifyAllTaskName = "verifyAll"
+
+/**
+ * Canonical name of the read-only release-readiness task.
+ *
+ * `preflight` is meant to provide a stable entry point for local validation and CI checks that
+ * should not mutate the workspace.
+ */
 private val preflightTaskName = "preflight"
+
+/**
+ * Canonical name of the explicit workspace-synchronization task.
+ *
+ * Unlike [preflight], this task is allowed to orchestrate workspace mutations when metadata files
+ * derived from the version catalog must be refreshed.
+ */
 private val syncWorkspaceMetadataTaskName = "syncWorkspaceMetadata"
+
+/**
+ * Names of verification tasks that may exist in subprojects and should be aggregated into
+ * [verifyAllTaskName].
+ *
+ * The set is intentionally small and based on stable lifecycle-style task names so subprojects can
+ * opt in simply by exposing tasks with these names.
+ */
 private val verificationTaskNames = setOf("test", "detekt", "apiCheck")
 
+/**
+ * Wires matching tasks from every subproject into an aggregate task.
+ *
+ * This helper scans all subprojects and connects any task whose name belongs to [taskNames] as a
+ * dependency of [aggregate]. Missing tasks are ignored naturally, which keeps the build compatible
+ * with optional plugins and heterogeneous subprojects.
+ *
+ * The wiring is performed lazily through task matching so the build does not need to eagerly realize
+ * tasks or rely on late lifecycle hooks such as `projectsEvaluated`.
+ *
+ * ## Usage:
+ * Use this function to create root-level lifecycle tasks that aggregate a common set of tasks exposed
+ * by subprojects.
+ *
+ * ### Example 1: Aggregate verification tasks
+ * ```kotlin
+ * val verifyAll = tasks.register<DefaultTask>("verifyAll")
+ * wireVerificationTasks(verifyAll, setOf("test", "detekt", "apiCheck"))
+ * ```
+ *
+ * ### Example 2: Aggregate custom analysis tasks
+ * ```kotlin
+ * val analyseAll = tasks.register<DefaultTask>("analyseAll")
+ * wireVerificationTasks(analyseAll, setOf("lint", "detekt"))
+ * ```
+ *
+ * @param aggregate Root task that should depend on matching subproject tasks.
+ * @param taskNames Names of subproject tasks that should be attached to [aggregate].
+ */
 fun Project.wireVerificationTasks(
     aggregate: TaskProvider<out Task>,
     taskNames: Set<String>
 ) {
     subprojects {
-        tasks.configureEach {
-            if (name in taskNames) {
-                aggregate.configure {
-                    dependsOn(this@configureEach)
-                }
+        tasks.matching { it.name in taskNames }.all {
+            aggregate.configure {
+                dependsOn(this@all)
             }
         }
     }
 }
 
 /**
- * ## verifyAll
- *
  * Root-level verification aggregation task.
  *
- * Dynamically wires subproject tasks:
+ * `verifyAll` acts as the main verification entry point for the workspace. Rather than requiring
+ * contributors or CI jobs to invoke several quality-related tasks manually, it centralizes them
+ * behind a single lifecycle task.
  *
- * - test
- * - detekt
- * - apiCheck
+ * Tasks are discovered dynamically in subprojects and attached only when they exist. This makes the
+ * task safe for multi-project builds where some modules may not apply all verification-related
+ * plugins.
  *
- * ### Design Principles
+ * ### Aggregated task names
+ * - `test`
+ * - `detekt`
+ * - `apiCheck`
  *
- * - No hardcoded project paths.
- * - Compatible with optional convention plugins.
- * - Uses lazy task matching.
- * - Preserves configuration avoidance.
+ * ### Design notes
+ * - Avoids hardcoded subproject paths.
+ * - Works with optional convention plugins.
+ * - Preserves lazy configuration.
+ * - Remains friendly to configuration caching.
  *
- * ### CI Role
- *
- * Primary quality gate prior to:
- *
- * - Release
- * - Dependency updates
- * - Lockfile refresh
+ * ### Typical use cases
+ * - Local quality validation before pushing changes.
+ * - CI quality gates for merge requests.
+ * - Release validation.
+ * - Dependency or lockfile maintenance workflows.
  */
 val verifyAll = tasks.register<DefaultTask>(verifyAllTaskName) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
@@ -61,48 +118,37 @@ val verifyAll = tasks.register<DefaultTask>(verifyAllTaskName) {
 }
 
 /**
- * ## Dynamic Subproject Wiring
+ * Lazily connects subproject verification tasks to [verifyAll].
  *
- * Lazily connects quality-related tasks from all subprojects into verifyAll.
+ * This call expands [verifyAll] into a workspace-wide verification entry point by wiring every
+ * subproject task whose name appears in [verificationTaskNames].
  *
- * ### Matching task names:
- *
- * - test
- * - detekt
- * - apiCheck
- *
- * ### Implementation Notes:
- *
- * - Uses `tasks.matching { }.configureEach { }`
- * - Avoids projectsEvaluated lifecycle hook.
- * - Preserves configuration cache friendliness.
+ * Because the wiring relies on task matching instead of eager lookup, it remains robust when:
+ * - subprojects are added or removed,
+ * - plugins are applied conditionally,
+ * - not every module exposes the same verification tasks.
  */
 wireVerificationTasks(verifyAll, verificationTaskNames)
 
 /**
- * ## preflight
+ * Read-only release-readiness lifecycle task.
  *
- * Read-only release-readiness workflow.
+ * `preflight` represents the verification workflow that should pass before considering the current
+ * state of the build ready for integration or release-oriented work. It is intentionally read-only:
+ * it validates the workspace without updating generated files or synchronizing metadata.
  *
- * ### Orchestrates
+ * ### Current orchestration
+ * 1. [verifyAllTaskName]
  *
- * 1. `verifyAll`
+ * ### What passing preflight means
+ * - Tests pass.
+ * - Static analysis checks pass.
+ * - API compatibility checks pass when applicable.
  *
- * ### Intended Usage
- *
- * - Local pre-push validation
- * - CI merge gate
- * - Dependency review cycle
- *
- * ### Design Philosophy
- *
- * "If preflight passes, the build is releasable."
- *
- * Ensures:
- *
- * - Tests pass
- * - Static analysis is clean
- * - API compatibility holds
+ * ### Typical use cases
+ * - Local pre-push validation.
+ * - CI merge gates.
+ * - Validation before dependency updates are merged.
  */
 tasks.register<DefaultTask>(preflightTaskName) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
@@ -111,19 +157,26 @@ tasks.register<DefaultTask>(preflightTaskName) {
 }
 
 /**
- * ## syncWorkspaceMetadata
+ * Explicit workspace-mutation lifecycle task for metadata synchronization.
  *
- * Explicit workspace-mutation lifecycle task for version/property synchronization.
+ * `syncWorkspaceMetadata` groups tasks that refresh files derived from the version catalog or other
+ * canonical workspace metadata sources. It exists to make mutation explicit: callers can choose
+ * whether they want a read-only workflow such as [preflightTaskName] or a synchronization workflow
+ * that updates tracked files.
  *
- * ### Orchestrates
- *
+ * ### Current orchestration
  * 1. `syncVersionProperties`
  * 2. `syncBuildLogicVersionProperties`
  *
- * ### Intended Usage
+ * ### Typical use cases
+ * - Refreshing mirrored version properties after catalog changes.
+ * - Preparing the workspace before lockfile updates.
+ * - Normalizing derived metadata before release preparation.
  *
- * - Refreshing mirrored version properties after catalog changes
- * - Preparing the workspace before lockfile or release workflows
+ * ### Design notes
+ * - Keeps workspace mutations behind an explicit lifecycle task.
+ * - Improves discoverability of metadata synchronization steps.
+ * - Separates validation concerns from file-updating concerns.
  */
 tasks.register<DefaultTask>(syncWorkspaceMetadataTaskName) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
