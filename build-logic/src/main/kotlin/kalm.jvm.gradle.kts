@@ -11,7 +11,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 // Apply shared Kotlin build configuration via convention plugin.
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.dokka")
     id("kalm.reproducible")
     id("kalm.dependency-locking")
 }

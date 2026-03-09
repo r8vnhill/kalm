@@ -9,11 +9,15 @@ import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.language.base.plugins.LifecycleBasePlugin
 
+private enum class VerificationTask(val taskName: String) {
+    VERIFY_ALL("verifyAll"),
+}
+
 /**
  * Canonical name of the root verification aggregation task.
  *
- * This task is intentionally declared as a constant so the name is defined in one place and can be
- * reused consistently across registrations and wiring logic.
+ * This task is intentionally declared as a constant so the name is defined in one place and can be reused consistently
+ * across registrations and wiring logic.
  */
 private val verifyAllTaskName = "verifyAll"
 
@@ -76,11 +80,13 @@ fun Project.wireVerificationTasks(
     taskNames: Set<String>
 ) {
     subprojects {
-        tasks.matching { it.name in taskNames }.all {
-            aggregate.configure {
-                dependsOn(this@all)
+        tasks
+            .matching { it.name in taskNames }
+            .all {
+                aggregate.configure {
+                    dependsOn(this@all)
+                }
             }
-        }
     }
 }
 
