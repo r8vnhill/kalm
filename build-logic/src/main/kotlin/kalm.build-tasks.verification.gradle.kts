@@ -3,48 +3,17 @@
  * 2-Clause BSD License.
  */
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.tasks.TaskProvider
-import org.gradle.language.base.plugins.LifecycleBasePlugin
-
-private enum class VerificationTask(val taskName: String) {
+private enum class AggregateTask(val taskName: String) {
     VERIFY_ALL("verifyAll"),
+    PREFLIGHT("preflight"),
+    SYNC_WORKSPACE_METADATA("syncWorkspaceMetadata"),
 }
 
-/**
- * Canonical name of the root verification aggregation task.
- *
- * This task is intentionally declared as a constant so the name is defined in one place and can be reused consistently
- * across registrations and wiring logic.
- */
-private val verifyAllTaskName = "verifyAll"
-
-/**
- * Canonical name of the read-only release-readiness task.
- *
- * `preflight` is meant to provide a stable entry point for local validation and CI checks that
- * should not mutate the workspace.
- */
-private val preflightTaskName = "preflight"
-
-/**
- * Canonical name of the explicit workspace-synchronization task.
- *
- * Unlike [preflight], this task is allowed to orchestrate workspace mutations when metadata files
- * derived from the version catalog must be refreshed.
- */
-private val syncWorkspaceMetadataTaskName = "syncWorkspaceMetadata"
-
-/**
- * Names of verification tasks that may exist in subprojects and should be aggregated into
- * [verifyAllTaskName].
- *
- * The set is intentionally small and based on stable lifecycle-style task names so subprojects can
- * opt in simply by exposing tasks with these names.
- */
-private val verificationTaskNames = setOf("test", "detekt", "apiCheck")
+private enum class VerificationTask(val taskName: String) {
+    TEST("test"),
+    DETEKT("detekt"),
+    API_CHECK("apiCheck"),
+}
 
 /**
  * Wires matching tasks from every subproject into an aggregate task.
@@ -73,21 +42,15 @@ private val verificationTaskNames = setOf("test", "detekt", "apiCheck")
  * ```
  *
  * @param aggregate Root task that should depend on matching subproject tasks.
- * @param taskNames Names of subproject tasks that should be attached to [aggregate].
  */
-fun Project.wireVerificationTasks(
-    aggregate: TaskProvider<out Task>,
-    taskNames: Set<String>
-) {
-    subprojects {
-        tasks
-            .matching { it.name in taskNames }
-            .all {
-                aggregate.configure {
-                    dependsOn(this@all)
-                }
+fun Project.wireVerificationTasks(aggregate: TaskProvider<out Task>) = subprojects {
+    tasks
+        .matching { it.name in VerificationTask.entries.map(VerificationTask::taskName) }
+        .all {
+            aggregate.configure {
+                dependsOn(this@all)
             }
-    }
+        }
 }
 
 /**
@@ -118,7 +81,7 @@ fun Project.wireVerificationTasks(
  * - Release validation.
  * - Dependency or lockfile maintenance workflows.
  */
-val verifyAll = tasks.register<DefaultTask>(verifyAllTaskName) {
+val verifyAll = tasks.register<DefaultTask>(AggregateTask.VERIFY_ALL.taskName) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs tests, static analysis, and API compatibility checks in one go."
 }
@@ -134,7 +97,7 @@ val verifyAll = tasks.register<DefaultTask>(verifyAllTaskName) {
  * - plugins are applied conditionally,
  * - not every module exposes the same verification tasks.
  */
-wireVerificationTasks(verifyAll, verificationTaskNames)
+wireVerificationTasks(verifyAll)
 
 /**
  * Read-only release-readiness lifecycle task.
@@ -144,7 +107,7 @@ wireVerificationTasks(verifyAll, verificationTaskNames)
  * it validates the workspace without updating generated files or synchronizing metadata.
  *
  * ### Current orchestration
- * 1. [verifyAllTaskName]
+ * 1. `verifyAll`
  *
  * ### What passing preflight means
  * - Tests pass.
@@ -156,7 +119,7 @@ wireVerificationTasks(verifyAll, verificationTaskNames)
  * - CI merge gates.
  * - Validation before dependency updates are merged.
  */
-tasks.register<DefaultTask>(preflightTaskName) {
+tasks.register<DefaultTask>(AggregateTask.PREFLIGHT.taskName) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs release-readiness verification gates without modifying workspace files."
     dependsOn(verifyAll)
@@ -167,7 +130,7 @@ tasks.register<DefaultTask>(preflightTaskName) {
  *
  * `syncWorkspaceMetadata` groups tasks that refresh files derived from the version catalog or other
  * canonical workspace metadata sources. It exists to make mutation explicit: callers can choose
- * whether they want a read-only workflow such as [preflightTaskName] or a synchronization workflow
+ * whether they want a read-only workflow such as `preflight` or a synchronization workflow
  * that updates tracked files.
  *
  * ### Current orchestration
@@ -184,7 +147,7 @@ tasks.register<DefaultTask>(preflightTaskName) {
  * - Improves discoverability of metadata synchronization steps.
  * - Separates validation concerns from file-updating concerns.
  */
-tasks.register<DefaultTask>(syncWorkspaceMetadataTaskName) {
+tasks.register<DefaultTask>(AggregateTask.SYNC_WORKSPACE_METADATA.taskName) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Synchronizes workspace metadata files derived from the version catalog."
     dependsOn(
